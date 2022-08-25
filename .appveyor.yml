@@ -62,7 +62,7 @@ environment:
 
     # Ubuntu core tests
     - ID: Ubu20
-      DTS: datalad_helloworld
+      DTS: datalad_gooey
       APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu2004
       INSTALL_SYSPKGS: python3-virtualenv
       # system git-annex is way too old, use better one
@@ -71,14 +71,14 @@ environment:
     # Windows core tests
     - ID: WinP39core
       # ~35 min
-      DTS: datalad_helloworld
+      DTS: datalad_gooey
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
       # Python version specification is non-standard on windows
       PY: 39-x64
       INSTALL_GITANNEX: git-annex -m datalad/packages
     # MacOS core tests
     - ID: MacP38core
-      DTS: datalad_helloworld
+      DTS: datalad_gooey
       APPVEYOR_BUILD_WORKER_IMAGE: macOS
       PY: 3.8
       INSTALL_GITANNEX: git-annex
@@ -197,8 +197,8 @@ test_script:
   - cmd: md __testhome__
   - sh: mkdir __testhome__
   - cd __testhome__
-  - cmd: python -m pytest -s -v -m "not (turtle)" --doctest-modules --cov=datalad_helloworld --pyargs %DTS%
-  - sh:  python -m pytest -s -v -m "not (turtle)" --doctest-modules --cov=datalad_helloworld --pyargs ${DTS}
+  - cmd: python -m pytest -s -v -m "not (turtle)" --doctest-modules --cov=datalad_gooey --pyargs %DTS%
+  - sh:  python -m pytest -s -v -m "not (turtle)" --doctest-modules --cov=datalad_gooey --pyargs ${DTS}
 
 
 after_test:

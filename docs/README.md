@@ -1,7 +1,7 @@
 ## Editing, building, and publishing extension documentation
 
 
-The `datalad-extension-template` uses [Sphinx](https://www.sphinx-doc.org/en/master/index.html#) for document generation
+`datalad-gooey` uses [Sphinx](https://www.sphinx-doc.org/en/master/index.html#) for document generation
 and suggests using [Read the Docs](https://docs.readthedocs.io/en/stable/) for automatic documentation building, versioning, and hosting.
 
 Once you are ready to document your extension software, take note of the following:
