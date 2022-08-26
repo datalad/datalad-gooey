@@ -169,9 +169,10 @@ class DataladTreeModel(QAbstractItemModel):
         return res
 
     def columnCount(self, parent: QModelIndex) -> int:
-        # Basically how many 2nd-axis nodes exist for a parent.
-        # In a tree this is always 1 (AKA only one axis: rows)
-        return 3
+        # Basically how many 2nd-axis items exist for a parent.
+        # here, columns are property columns in a tree view
+        # (i.e. Name, Type)
+        return 2
 
     def rowCount(self, parent: QModelIndex) -> int:
         lgr.log(8, f"rowCount({parent.internalPointer()})")
@@ -228,6 +229,10 @@ class DataladTreeModel(QAbstractItemModel):
 
     def headerData(self, section: int, orientation: Qt.Orientation,
                    role: Qt.ItemDataRole = Qt.DisplayRole):
+        loglevel = 8 if role == Qt.DisplayRole else 5
+        lgr.log(loglevel, "headerData(%s, role=%r)", section, role)
+        res = None
         if role == Qt.DisplayRole:
-            lgr.log(8, f"headerData({section}, {orientation}, {role})")
-            return f"Section {section}"
+            res = {0: 'Name', 1: 'Type'}[section]
+        lgr.log(loglevel, "headerData() -> %r", res)
+        return res
