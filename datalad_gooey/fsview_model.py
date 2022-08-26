@@ -159,13 +159,13 @@ class DataladTreeModel(QAbstractItemModel):
         # this method is implemented, because it allows connected
         # views to inspect the model more efficiently (sparse), as
         # if they would only have `rowCount()`
-        lgr.log(8, f"hasChildren({parent.row()} {parent.internalPointer()})")
+        lgr.log(8, "hasChildren(%s)", parent.internalPointer())
         res = False
         if self._tree is not None:
             pnode = self._tree[parent.internalPointer()]
             # triggers parsing immediate children on the filesystem
             res = True if pnode.children else False
-        lgr.log(8, f"hasChildren() -> {res}")
+        lgr.log(8, "hasChildren() -> %s", res)
         return res
 
     def columnCount(self, parent: QModelIndex) -> int:
@@ -175,17 +175,17 @@ class DataladTreeModel(QAbstractItemModel):
         return 2
 
     def rowCount(self, parent: QModelIndex) -> int:
-        lgr.log(8, f"rowCount({parent.internalPointer()})")
+        lgr.log(8, "rowCount(%s)", parent.internalPointer())
         if not parent.internalPointer():
             # no parent? this is the tree root
             res = 1
         else:
             res = len(self._tree[parent.internalPointer()].children)
-        lgr.log(8, f"rowCount() -> {res}")
+        lgr.log(8, "rowCount() -> %s", res)
         return res
 
     def index(self, row: int, column: int, parent: QModelIndex) -> QModelIndex:
-        lgr.log(8, f"index({row}, {column}, {parent.internalPointer()})")
+        lgr.log(8, "index(%i, %i, %s)", row, column, parent.internalPointer())
         if not parent.internalPointer():
             # no parent? this is the tree root
             node = self._tree.root
@@ -193,11 +193,11 @@ class DataladTreeModel(QAbstractItemModel):
             pnode = self._tree[parent.internalPointer()]
             node = pnode.children[list(pnode.children.keys())[row]]
         res = self.createIndex(row, column, node.path)
-        lgr.log(8, f"index() -> {node.path}")
+        lgr.log(8, "index() -> %s", node.path)
         return res
 
     def parent(self, child: QModelIndex) -> QModelIndex:
-        lgr.log(8, f"parent({child.internalPointer()} {child.row()} {child.column()})")
+        lgr.log(8, "parent(%s)", child.internalPointer())
         try:
             pnode = self._tree[child.internalPointer().parent]
         except ValueError:
@@ -210,10 +210,11 @@ class DataladTreeModel(QAbstractItemModel):
             list(pnode.children.keys()).index(child.internalPointer().name),
             0,
             pnode.path)
-        lgr.log(8, f"parent() -> {res}")
+        lgr.log(8, "parent() -> %s", res)
         return res
 
-    def data(self, index: QModelIndex, role: Qt.ItemDataRole = Qt.DisplayRole) -> QModelIndex:
+    def data(self, index: QModelIndex,
+             role: Qt.ItemDataRole = Qt.DisplayRole) -> QModelIndex:
         loglevel = 8 if role == Qt.DisplayRole else 5
         lgr.log(loglevel, "data(%s, role=%r)", index.internalPointer(), role)
         #If you do not have a value to return, return an invalid (default-constructed) QVariant .
