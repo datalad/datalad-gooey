@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import (
     QFile,
     QIODevice,
+    Qt,
 )
 from .fsview_model import (
     DataladTree,
@@ -44,6 +45,10 @@ def setup_main_window():
     dmodel = DataladTreeModel()
     dmodel.set_tree(DataladTree(Path.cwd()))
     dbrowser.setModel(dmodel)
+    # established defined sorting order of the tree, and sync it
+    # with the widget sorting indicator state
+    dbrowser.sortByColumn(1, Qt.AscendingOrder)
+
     dbrowser.clicked.connect(clicked)
     dbrowser.doubleClicked.connect(doubleclicked)
     dbrowser.activated.connect(activated)

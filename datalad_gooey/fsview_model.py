@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from typing import Tuple
 from PySide6.QtCore import (
     QAbstractItemModel,
     QModelIndex,
@@ -22,7 +23,10 @@ class DataladTreeNode:
     Path and properties are given at initialization. Child nodes are
     discovered lazily on accessing the ``children`` property.
     """
-    def __init__(self, path, type, **props):
+    def __init__(self, path: Path, type: str,
+                 sort_children_by: str or None = None,
+                 sort_descending: bool = False,
+                 **props) -> None:
         self._path = Path(path)
         self._children = \
             None \
@@ -31,14 +35,25 @@ class DataladTreeNode:
             else False
         self._props = props
         self._props['type'] = type
+        self._sort_by = None \
+            if sort_children_by is None \
+            else (sort_children_by, sort_descending)
 
     @property
     def path(self) -> Path:
         return self._path
 
+    def get_property(self, name):
+        if name == 'path':
+            return self._path
+        else:
+            return self._props[name]
+
     @property
-    def properties(self) -> dict:
-        return self._props
+    def may_have_children(self):
+        # rather than trying to actually load the children and
+        # count them, we report on the potential to have children
+        return self._props.get('type') in ('dataset', 'directory')
 
     @property
     def children(self) -> dict:
@@ -71,7 +86,32 @@ class DataladTreeNode:
                 if Path(r['path']) != self._path
             }
             self._children = children
+            if self._sort_by is not None:
+                # apply requested sorting
+                self.sort_children(*self._sort_by)
         return self._children
+
+    def sort_children(self, by: str, descending: bool) -> None:
+        # remember last requested sorting, in case children have to be rediscovered
+        self._sort_by = (by, descending)
+        cs = self._children
+        if not cs:
+            # nothing to sort, either no children yet, or none by definition
+            return
+
+        self._children = {
+            k: cs[k]
+            for k in sorted(
+                cs,
+                # always include the node name/path as a secondary
+                # sorting criterion for cases where the target
+                # property has many cases of identical property
+                # values, and order shall nevertheless be
+                # predictable
+                key=lambda x: (cs[x].get_property(by), x),
+                reverse=descending,
+            )
+        }
 
     @staticmethod
     def from_tree_result(res):
@@ -101,6 +141,12 @@ class DataladTree:
             result_renderer='disabled', return_type='item-or-list',
         )
         self._root = DataladTreeNode.from_tree_result(rootp)
+        # by default not in any known sorting order
+        self._sorted_by = None
+
+    @property
+    def sorted_by(self) -> Tuple:
+        return self._sorted_by
 
     @property
     def root(self) -> DataladTreeNode:
@@ -120,6 +166,11 @@ class DataladTree:
             for p in key.parts:
                 node = node.children[p]
         return node
+
+    def sort(self, by: str, descending: bool) -> None:
+        """Go through all nodes in the tree and sort their children"""
+        self._sorted_by = (by, descending)
+        self._root.sort_children(by, descending)
 
 
 class DataladTreeModel(QAbstractItemModel):
@@ -154,17 +205,21 @@ class DataladTreeModel(QAbstractItemModel):
     # changes.
     def set_tree(self, tree: DataladTree) -> None:
         self._tree = tree
+        # TODO self.dataChanged.emit()
 
     def hasChildren(self, parent: QModelIndex) -> bool:
         # this method is implemented, because it allows connected
         # views to inspect the model more efficiently (sparse), as
         # if they would only have `rowCount()`
-        lgr.log(8, "hasChildren(%s)", parent.internalPointer())
+        parent_path = parent.internalPointer()
+        lgr.log(8, "hasChildren(%s)", parent_path)
         res = False
-        if self._tree is not None:
-            pnode = self._tree[parent.internalPointer()]
-            # triggers parsing immediate children on the filesystem
-            res = True if pnode.children else False
+        if parent_path is None:
+            # this is the root, we always have the root path/dir as
+            # an initial child
+            res = True
+        elif self._tree is not None:
+            res = self._tree[parent_path].may_have_children
         lgr.log(8, "hasChildren() -> %s", res)
         return res
 
@@ -175,39 +230,43 @@ class DataladTreeModel(QAbstractItemModel):
         return 2
 
     def rowCount(self, parent: QModelIndex) -> int:
-        lgr.log(8, "rowCount(%s)", parent.internalPointer())
-        if not parent.internalPointer():
+        parent_path = parent.internalPointer()
+        lgr.log(8, "rowCount(%s)", parent_path)
+        if not parent_path:
             # no parent? this is the tree root
             res = 1
         else:
-            res = len(self._tree[parent.internalPointer()].children)
+            res = len(self._tree[parent_path].children)
         lgr.log(8, "rowCount() -> %s", res)
         return res
 
     def index(self, row: int, column: int, parent: QModelIndex) -> QModelIndex:
-        lgr.log(8, "index(%i, %i, %s)", row, column, parent.internalPointer())
-        if not parent.internalPointer():
+        parent_path = parent.internalPointer()
+        lgr.log(8, "index(%i, %i, %s)", row, column, parent_path)
+        if not parent_path:
             # no parent? this is the tree root
             node = self._tree.root
         else:
-            pnode = self._tree[parent.internalPointer()]
+            pnode = self._tree[parent_path]
             node = pnode.children[list(pnode.children.keys())[row]]
         res = self.createIndex(row, column, node.path)
         lgr.log(8, "index() -> %s", node.path)
         return res
 
     def parent(self, child: QModelIndex) -> QModelIndex:
-        lgr.log(8, "parent(%s)", child.internalPointer())
+        child_path = child.internalPointer()
+        lgr.log(8, "parent(%s)", child_path)
         try:
-            pnode = self._tree[child.internalPointer().parent]
+            pnode = self._tree[child_path.parent]
         except ValueError:
             # we have no entry for this thing -> no parent
+            lgr.log(8, "parent() -> None")
             return QModelIndex()
 
         # now determine the (row) index of the child within its immediate
         # parent
         res = self.createIndex(
-            list(pnode.children.keys()).index(child.internalPointer().name),
+            list(pnode.children.keys()).index(child_path.name),
             0,
             pnode.path)
         lgr.log(8, "parent() -> %s", res)
@@ -216,15 +275,15 @@ class DataladTreeModel(QAbstractItemModel):
     def data(self, index: QModelIndex,
              role: Qt.ItemDataRole = Qt.DisplayRole) -> QModelIndex:
         loglevel = 8 if role == Qt.DisplayRole else 5
-        lgr.log(loglevel, "data(%s, role=%r)", index.internalPointer(), role)
-        #If you do not have a value to return, return an invalid (default-constructed) QVariant .
+        target_path = index.internalPointer()
+        lgr.log(loglevel, "data(%s, role=%r)", target_path, role)
+        # If you do not have a value to return, return None
         res = None
         if role == Qt.DisplayRole:
-            p = index.internalPointer()
             if index.column() == 0:
-                res = p.name
+                res = target_path.name
             elif index.column() == 1:
-                res = self._tree[p]._props.get('type', 'UNDEF')
+                res = self._tree[target_path]._props.get('type', 'UNDEF')
         lgr.log(loglevel, "data() -> %r", res)
         return res
 
@@ -237,3 +296,21 @@ class DataladTreeModel(QAbstractItemModel):
             res = {0: 'Name', 1: 'Type'}[section]
         lgr.log(loglevel, "headerData() -> %r", res)
         return res
+
+    def sort(self,
+             column: int,
+             order: Qt.SortOrder = Qt.AscendingOrder) -> None:
+        lgr.log(8, "sort(%i, order=%i)", column, order)
+        # map column index to tree node attribute to sort by
+        sort_by = (
+            {0: 'path', 1: 'type'}[column],
+            order == Qt.DescendingOrder,
+        )
+        if not self._tree or sort_by == self._tree.sorted_by:
+            lgr.log(8, "sort() -> not needed")
+            return
+
+        self.layoutAboutToBeChanged.emit()
+        self._tree.sort(*sort_by)
+        self.layoutChanged.emit()
+        lgr.log(8, "sort() -> done")
