@@ -15,13 +15,13 @@ from datalad.support.constraints import EnsureChoice
 from datalad.interface.results import get_status_dict
 
 import logging
-lgr = logging.getLogger('datalad.ext.gooey.hello_cmd')
+lgr = logging.getLogger('datalad.ext.gooey.gooey')
 
 
 # decoration auto-generates standard help
 @build_doc
 # all commands must be derived from Interface
-class HelloWorld(Interface):
+class Gooey(Interface):
     # first docstring line is used a short description in the cmdline help
     # the rest is put in the verbose help and manpage
     """Short description of the command
@@ -44,7 +44,7 @@ class HelloWorld(Interface):
 
     @staticmethod
     # decorator binds the command to the Dataset class as a method
-    @datasetmethod(name='hello_cmd')
+    @datasetmethod(name='gooey')
     # generic handling of command results (logging, rendering, filtering, ...)
     @eval_results
     # signature must match parameter list above
