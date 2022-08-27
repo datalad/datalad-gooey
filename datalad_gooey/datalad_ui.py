@@ -1,4 +1,5 @@
 import threading
+from queue import Queue
 
 from PySide6.QtCore import (
     QObject,
@@ -14,6 +15,7 @@ class _DataladQtUIBridge(QObject):
     """
     # signal to be emmitted when message() was called
     message_received = Signal(str)
+    question_asked = Signal(str)
 
     def __init__(self, app):
         super().__init__()
@@ -23,10 +25,22 @@ class _DataladQtUIBridge(QObject):
         # with which worker threads can thread-safely send messages
         # to the UI for display
         self.message_received.connect(self.show_message)
+        # do not use this queue without an additional global lock
+        # that covers the entire time from emitting the signal
+        # that will lead to queue usage, until the queue is emptied
+        # again
+        self.messageq = Queue(maxsize=1)
+        self.question_asked.connect(self.ask_question)
 
     @Slot(str)
     def show_message(self, msg):
         self._conlog.appendPlainText(msg)
+
+    @Slot(str)
+    def ask_question(self, title):
+        print("Q", title)
+        self.messageq.put(
+            f'I drink coffee, and I know things! {threading.current_thread()}')
 
 
 #class GooeyUI(DialogUI):
@@ -69,8 +83,22 @@ class GooeyUI:
         #self._conlog.cursorPositionChanged.emit()
         #self._conlog.textChanged.emit()
 
+    def question(self, text,
+                 title=None, choices=None,
+                 default=None,
+                 hidden=False,
+                 repeat=None):
+        with self._threadlock:
+            assert self._uibridge.messageq.empty()
+            # acquire the lock before we emit the signal
+            # to make sure that our signal is the only one putting an answer in
+            # the queue
+            self._uibridge.question_asked.emit(title)
+            # this will block until the queue has the answer
+            answer = self._uibridge.messageq.get()
+        return answer
+
     #def error
     #def input
-    #def question
     #def yesno
     #def get_progressbar

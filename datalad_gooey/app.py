@@ -103,9 +103,18 @@ class MyThread (threading.Thread):
 
     def run(self):
         from time import sleep
-        for i in range(100):
-            sleep(1)
-            dlui.ui.message(f'mike{i}\n space\n  more space\n')
+        sleep(2)
+        print(
+            "ANSWER IN THREAD:",
+            dlui.ui.question(
+                'text',
+                title=f'What do you do? {threading.current_thread()}',
+                choices=None, default=None, hidden=False,
+                repeat=None)
+        )
+        #for i in range(100):
+        #    sleep(1)
+        #    dlui.ui.message(f'mike{i}\n space\n  more space\n')
 
 
 def main():
