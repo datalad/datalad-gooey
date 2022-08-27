@@ -39,7 +39,7 @@
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
-       <widget class="QTreeView" name="filesystemView">
+       <widget class="QTreeView" name="filesystemViewer">
         <property name="contextMenuPolicy">
          <enum>Qt::ActionsContextMenu</enum>
         </property>
@@ -115,7 +115,14 @@
         </attribute>
         <layout class="QVBoxLayout" name="verticalLayout_2">
          <item>
-          <widget class="QTextBrowser" name="logBrowser"/>
+          <widget class="QPlainTextEdit" name="logViewer">
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+           <property name="plainText">
+            <string notr="true"/>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>

@@ -21,12 +21,12 @@ class GooeyApp:
     # classes.  This mapping is used (and needs to be kept up-to-date) to look
     # up widget (e.g. to connect their signals/slots)
     _main_window_widgets = {
-        'filesystemView': QTreeView,
+        'filesystemViewer': QTreeView,
         'logViewer': QPlainTextEdit,
     }
 
     def __init__(self):
-        dbrowser = self.get_widget('filesystemView')
+        dbrowser = self.get_widget('filesystemViewer')
         dmodel = DataladTreeModel()
         dmodel.set_tree(DataladTree(Path.cwd()))
         dbrowser.setModel(dmodel)
