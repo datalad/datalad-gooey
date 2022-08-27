@@ -9,11 +9,16 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import (
     Qt,
 )
+
+from datalad import cfg as dlcfg
+import datalad.ui as dlui
+
 from .fsview_model import (
     DataladTree,
     DataladTreeModel,
 )
 from .utils import load_ui
+from .datalad_ui import GooeyUI
 
 
 class GooeyApp:
@@ -26,6 +31,11 @@ class GooeyApp:
     }
 
     def __init__(self):
+        # bend datalad to our needs
+        # we cannot handle ANSI coloring
+        dlcfg.set('datalad.ui.color', 'off', scope='override', force=True)
+
+        # setup UI
         dbrowser = self.get_widget('filesystemViewer')
         dmodel = DataladTreeModel()
         dmodel.set_tree(DataladTree(Path.cwd()))
@@ -34,11 +44,18 @@ class GooeyApp:
         # with the widget sorting indicator state
         dbrowser.sortByColumn(1, Qt.AscendingOrder)
 
+        # demo signal/slot connctions
         dbrowser.clicked.connect(clicked)
         dbrowser.doubleClicked.connect(doubleclicked)
         dbrowser.activated.connect(activated)
         dbrowser.pressed.connect(pressed)
         dbrowser.customContextMenuRequested.connect(contextrequest)
+
+        # ask datalad to use our UI
+        # looks silly with the uiuiuiuiui, but these are the real names ;-)
+        dlui.KNOWN_BACKENDS['gooey'] = GooeyUI
+        dlui.ui.set_backend('gooey')
+        dlui.ui.ui.set_app(self)
 
     @cached_property
     def main_window(self):
@@ -77,9 +94,28 @@ def contextrequest(*args, **kwargs):
     print(f'contextrequest {args!r} {kwargs!r}')
 
 
+import threading
+
+# demo threaded message generator
+class MyThread (threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+
+    def run(self):
+        from time import sleep
+        for i in range(100):
+            sleep(1)
+            dlui.ui.message(f'mike{i}\n space\n  more space\n')
+
+
 def main():
     qtapp = QApplication(sys.argv)
     gooey = GooeyApp()
     gooey.main_window.show()
+
+    # let a command run to have content appear in the console log
+    # uncomment for demo
+    #thread = MyThread().start()
+
 
     sys.exit(qtapp.exec())
