@@ -30,15 +30,19 @@ class GooeyApp:
         'logViewer': QPlainTextEdit,
     }
 
-    def __init__(self):
+    def __init__(self, path: Path = None):
         # bend datalad to our needs
         # we cannot handle ANSI coloring
         dlcfg.set('datalad.ui.color', 'off', scope='override', force=True)
 
+        # set default path
+        if not path:
+            path = Path.cwd()
+        
         # setup UI
         dbrowser = self.get_widget('filesystemViewer')
         dmodel = DataladTreeModel()
-        dmodel.set_tree(DataladTree(Path.cwd()))
+        dmodel.set_tree(DataladTree(path))
         dbrowser.setModel(dmodel)
         # established defined sorting order of the tree, and sync it
         # with the widget sorting indicator state
