@@ -78,14 +78,14 @@ class Gooey(Interface):
 
         # commands should be implemented as generators and should
         # report any results by yielding status dictionaries
-        msg = "DataLad Gooey successfully launched"
+        msg = "DataLad Gooey app successfully executed"
         yield get_status_dict(
             # an action label must be defined, the command name make a good
             # default
             action='gooey',
             # most results will be about something associated with a dataset
             # (component), reported paths MUST be absolute
-            path=path,
+            path=str(path),
             # status labels are used to identify how a result will be reported
             # and can be used for filtering
             status='ok',
