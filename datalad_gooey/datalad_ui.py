@@ -1,10 +1,19 @@
 import threading
+from textwrap import wrap
+from typing import (
+    List,
+    Tuple,
+)
 from queue import Queue
 
 from PySide6.QtCore import (
     QObject,
     Signal,
     Slot,
+)
+from PySide6.QtWidgets import (
+    QInputDialog,
+    QLineEdit,
 )
 
 
@@ -15,7 +24,7 @@ class _DataladQtUIBridge(QObject):
     """
     # signal to be emmitted when message() was called
     message_received = Signal(str)
-    question_asked = Signal(str)
+    question_asked = Signal(dict)
 
     def __init__(self, app):
         super().__init__()
@@ -30,17 +39,67 @@ class _DataladQtUIBridge(QObject):
         # that will lead to queue usage, until the queue is emptied
         # again
         self.messageq = Queue(maxsize=1)
-        self.question_asked.connect(self.ask_question)
+        self.question_asked.connect(self.get_answer)
 
     @Slot(str)
     def show_message(self, msg):
         self._conlog.appendPlainText(msg)
 
     @Slot(str)
-    def ask_question(self, title):
-        print("Q", title)
-        self.messageq.put(
-            f'I drink coffee, and I know things! {threading.current_thread()}')
+    def get_answer(self, props: dict):
+        if props.get('choices') is None:
+            # we are asking for a string
+            response, ok = self._get_text_answer(
+                props['title'],
+                props['text'],
+                props.get('default'),
+                props.get('hidden', False),
+            )
+            # TODO implement internal repeat on request
+        else:
+            response, ok = self._get_choice(
+                props['title'],
+                props['text'],
+                props['choices'],
+                props.get('default'),
+            )
+
+        # place in message Q for the asking thread to retrieve
+        self.messageq.put((ok, response))
+
+    def _get_text_answer(self, title: str, label: str, default: str = None,
+                         hidden: bool = False) -> Tuple:
+        return QInputDialog.getText(
+            # parent
+            self._app.main_window,
+            # dialog title
+            title,
+            # input widget label
+            # we have to perform manual wrapping, QInputDialog won't do it
+            '\n'.join(wrap(label, 70)),
+            # input widget echo mode
+            # this could also be QLineEdit.Password for more hiding
+            QLineEdit.Password if hidden else QLineEdit.Normal,
+            # input widget default text
+            default or '',
+            # TODO look into the following for UI-internal input validation
+            #inputMethodHints=
+        )
+
+    def _get_choice(self, title: str, label: str, choices: List,
+                    default: str = None) -> Tuple:
+        return QInputDialog.getItem(
+            # parent
+            self._app.main_window,
+            # dialog title
+            title,
+            # input widget label
+            # we have to perform manual wrapping, QInputDialog won't do it
+            '\n'.join(wrap(label, 70)),
+            choices,
+            # input widget default choice id
+            choices.index(default) if default else 0,
+        )
 
 
 #class GooeyUI(DialogUI):
@@ -93,9 +152,23 @@ class GooeyUI:
             # acquire the lock before we emit the signal
             # to make sure that our signal is the only one putting an answer in
             # the queue
-            self._uibridge.question_asked.emit(title)
+            self._uibridge.question_asked.emit(dict(
+                title=title,
+                text=text,
+                choices=choices,
+                default=default,
+                hidden=hidden,
+                repeat=repeat,
+            ))
             # this will block until the queue has the answer
-            answer = self._uibridge.messageq.get()
+            ok, answer = self._uibridge.messageq.get()
+            if not ok:
+                # This would happen if the user has pressed the CANCEL button.
+                # DataLadUI seems to have no means to deal with this other than
+                # exception, so here we behave as if the user had Ctrl+C'ed the
+                # CLI.
+                # MIH is not confident that this is how it is supposed to be
+                raise KeyboardInterrupt
         return answer
 
     #def error

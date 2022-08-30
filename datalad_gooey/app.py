@@ -103,13 +103,23 @@ class MyThread (threading.Thread):
 
     def run(self):
         from time import sleep
-        sleep(2)
+        sleep(1)
         print(
             "ANSWER IN THREAD:",
             dlui.ui.question(
-                'text',
-                title=f'What do you do? {threading.current_thread()}',
-                choices=None, default=None, hidden=False,
+                'Long explanation what is the desired input here, really hoping that it would wrap, but it does not seems to be the case here',
+                title=f'What do you do?',
+                choices=None, default='mydefault', hidden=True,
+                repeat=None)
+        )
+        print(
+            "ANSWER IN THREAD:",
+            dlui.ui.question(
+                'Terse',
+                title=f'What do you do?',
+                choices=['Peter', 'Paul', 'Mary'],
+                #default='Stan',
+                hidden=False,
                 repeat=None)
         )
         #for i in range(100):
@@ -124,7 +134,7 @@ def main():
 
     # let a command run to have content appear in the console log
     # uncomment for demo
-    #thread = MyThread().start()
+    thread = MyThread().start()
 
 
     sys.exit(qtapp.exec())
