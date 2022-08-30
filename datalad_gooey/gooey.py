@@ -74,7 +74,7 @@ class Gooey(Interface):
         # let a command run to have content appear in the console log
         # uncomment for demo
         #thread = MyThread().start()
-        sys.exit(qtapp.exec())
+        qtapp.exec()
 
         # commands should be implemented as generators and should
         # report any results by yielding status dictionaries
