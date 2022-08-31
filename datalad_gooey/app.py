@@ -38,7 +38,7 @@ class GooeyApp:
         # set default path
         if not path:
             path = Path.cwd()
-        
+
         # setup UI
         dbrowser = self.get_widget('filesystemViewer')
         dmodel = DataladTreeModel()
@@ -129,6 +129,5 @@ def main():
     # let a command run to have content appear in the console log
     # uncomment for demo
     #thread = MyThread().start()
-
 
     sys.exit(qtapp.exec())

@@ -7,7 +7,6 @@ from datalad.interface.base import build_doc
 from datalad.support.param import Parameter
 from datalad.distribution.dataset import datasetmethod
 from datalad.interface.utils import eval_results
-from datalad.support.constraints import EnsureChoice
 
 from datalad.interface.results import get_status_dict
 
@@ -15,7 +14,6 @@ import logging
 lgr = logging.getLogger('datalad.ext.gooey.gooey')
 
 from datalad_gooey.app import GooeyApp
-from pathlib import Path
 from PySide6.QtWidgets import QApplication
 import sys
 
@@ -63,11 +61,6 @@ class Gooey(Interface):
     # signature must match parameter list above
     # additional generic arguments are added by decorators
     def __call__(path: str = None):
-        if not path:
-            path = Path.cwd()
-        else:
-            path = Path(path).resolve()
-        
         qtapp = QApplication(sys.argv)
         gooey = GooeyApp(path)
         gooey.main_window.show()
