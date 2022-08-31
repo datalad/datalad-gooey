@@ -30,15 +30,21 @@ class GooeyApp:
         'logViewer': QPlainTextEdit,
     }
 
-    def __init__(self):
+    def __init__(self, path: Path = None):
         # bend datalad to our needs
         # we cannot handle ANSI coloring
         dlcfg.set('datalad.ui.color', 'off', scope='override', force=True)
 
+        # set default path
+        if not path:
+            path = Path.cwd()
+
+        self._path = path
+
         # setup UI
         dbrowser = self.get_widget('filesystemViewer')
         dmodel = DataladTreeModel()
-        dmodel.set_tree(DataladTree(Path.cwd()))
+        dmodel.set_tree(DataladTree(path))
         dbrowser.setModel(dmodel)
         # established defined sorting order of the tree, and sync it
         # with the widget sorting indicator state
@@ -51,11 +57,16 @@ class GooeyApp:
         dbrowser.pressed.connect(pressed)
         dbrowser.customContextMenuRequested.connect(contextrequest)
 
+        # remember what backend was in use
+        self._prev_ui_backend = dlui.ui.backend
         # ask datalad to use our UI
         # looks silly with the uiuiuiuiui, but these are the real names ;-)
         dlui.KNOWN_BACKENDS['gooey'] = GooeyUI
         dlui.ui.set_backend('gooey')
         dlui.ui.ui.set_app(self)
+
+    def deinit(self):
+        dlui.ui.set_backend(self._prev_ui_backend)
 
     @cached_property
     def main_window(self):
@@ -72,6 +83,10 @@ class GooeyApp:
             raise RuntimeError(
                 f"Could not locate widget {name} ({wgt_cls.__name__})")
         return wgt
+
+    @property
+    def rootpath(self):
+        return self._path
 
 
 def clicked(*args, **kwargs):
@@ -135,6 +150,5 @@ def main():
     # let a command run to have content appear in the console log
     # uncomment for demo
     thread = MyThread().start()
-
 
     sys.exit(qtapp.exec())
