@@ -1,4 +1,4 @@
-"""DataLad demo command"""
+"""DataLad GUI"""
 
 __docformat__ = 'restructuredtext'
 
@@ -7,16 +7,12 @@ from datalad.interface.base import build_doc
 from datalad.support.param import Parameter
 from datalad.distribution.dataset import datasetmethod
 from datalad.interface.utils import eval_results
-from datalad.support.constraints import EnsureChoice
 
 from datalad.interface.results import get_status_dict
 
 import logging
 lgr = logging.getLogger('datalad.ext.gooey.gooey')
 
-from datalad_gooey.app import GooeyApp
-from pathlib import Path
-from PySide6.QtWidgets import QApplication
 import sys
 
 
@@ -26,7 +22,7 @@ import sys
 class Gooey(Interface):
     # first docstring line is used a short description in the cmdline help
     # the rest is put in the verbose help and manpage
-    """Short description of the command
+    """DataLad GUI
 
     Long description of arbitrary volume.
     """
@@ -63,34 +59,24 @@ class Gooey(Interface):
     # signature must match parameter list above
     # additional generic arguments are added by decorators
     def __call__(path: str = None):
-        if not path:
-            path = Path.cwd()
-        else:
-            path = Path(path).resolve()
-        
+        # local import to keep entrypoint import independent of PySide
+        # availability
+        from PySide6.QtWidgets import QApplication
+        from .app import GooeyApp
+
         qtapp = QApplication(sys.argv)
         gooey = GooeyApp(path)
         gooey.main_window.show()
-        # let a command run to have content appear in the console log
-        # uncomment for demo
-        #thread = MyThread().start()
-        qtapp.exec()
 
-        # commands should be implemented as generators and should
-        # report any results by yielding status dictionaries
-        msg = "DataLad Gooey app successfully executed"
+        # capture Qt's own exit code for error reporting
+        qt_exitcode = qtapp.exec()
+
+        # tell the app to undo its modifications (UI redirection etc.)
+        gooey.deinit()
+
         yield get_status_dict(
-            # an action label must be defined, the command name make a good
-            # default
             action='gooey',
-            # most results will be about something associated with a dataset
-            # (component), reported paths MUST be absolute
-            path=str(path),
-            # status labels are used to identify how a result will be reported
-            # and can be used for filtering
-            status='ok',
-            # arbitrary result message, can be a str or tuple. in the latter
-            # case string expansion with arguments is delayed until the
-            # message actually needs to be rendered (analog to exception
-            # messages)
-            message=msg)
+            path=str(gooey.rootpath),
+            status='ok' if not qt_exitcode else 'error',
+            # no message when everything was OK
+            message='Qt UI errored ' if qt_exitcode else None)
