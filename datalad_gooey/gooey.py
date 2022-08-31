@@ -1,4 +1,4 @@
-"""DataLad demo command"""
+"""DataLad GUI"""
 
 __docformat__ = 'restructuredtext'
 
@@ -13,8 +13,6 @@ from datalad.interface.results import get_status_dict
 import logging
 lgr = logging.getLogger('datalad.ext.gooey.gooey')
 
-from datalad_gooey.app import GooeyApp
-from PySide6.QtWidgets import QApplication
 import sys
 
 
@@ -24,7 +22,7 @@ import sys
 class Gooey(Interface):
     # first docstring line is used a short description in the cmdline help
     # the rest is put in the verbose help and manpage
-    """Short description of the command
+    """DataLad GUI
 
     Long description of arbitrary volume.
     """
@@ -61,12 +59,15 @@ class Gooey(Interface):
     # signature must match parameter list above
     # additional generic arguments are added by decorators
     def __call__(path: str = None):
+        # local import to keep entrypoint import independent of PySide
+        # availability
+        from PySide6.QtWidgets import QApplication
+        from .app import GooeyApp
+
         qtapp = QApplication(sys.argv)
         gooey = GooeyApp(path)
         gooey.main_window.show()
-        # let a command run to have content appear in the console log
-        # uncomment for demo
-        #thread = MyThread().start()
+
         qtapp.exec()
 
         # commands should be implemented as generators and should
