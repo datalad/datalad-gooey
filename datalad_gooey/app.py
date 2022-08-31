@@ -6,7 +6,9 @@ from PySide6.QtWidgets import (
     QTreeView,
 )
 from PySide6.QtCore import (
+    QObject,
     Qt,
+    Signal,
     Slot,
 )
 from PySide6.QtGui import (
@@ -22,9 +24,10 @@ from .fsview_model import (
 )
 from .utils import load_ui
 from .datalad_ui import GooeyUI
+from .datalad_cmd import GooeyDataladCmdExec
 
 
-class GooeyApp:
+class GooeyApp(QObject):
     # Mapping of key widget names used in the main window to their widget
     # classes.  This mapping is used (and needs to be kept up-to-date) to look
     # up widget (e.g. to connect their signals/slots)
@@ -34,7 +37,10 @@ class GooeyApp:
         'logViewer': QPlainTextEdit,
     }
 
+    execute_dataladcmd = Signal(str, tuple, dict)
+
     def __init__(self, path: Path = None):
+        super().__init__()
         # bend datalad to our needs
         # we cannot handle ANSI coloring
         dlcfg.set('datalad.ui.color', 'off', scope='override', force=True)
@@ -45,6 +51,7 @@ class GooeyApp:
 
         self._path = path
         self._main_window = None
+        self._cmdexec = GooeyDataladCmdExec()
 
         # setup UI
         dbrowser = self.get_widget('filesystemViewer')
@@ -70,6 +77,9 @@ class GooeyApp:
         dlui.ui.set_backend('gooey')
         dlui.ui.ui.set_app(self)
 
+        # connect the generic cmd execution signal to the handler
+        self.execute_dataladcmd.connect(self._cmdexec.execute)
+        self._cmdexec.result_received.connect(self.achieved_stuff)
         # demo action to execute things for dev-purposes
         self.get_widget('actionRun_stuff').triggered.connect(self.run_stuff)
 
@@ -98,6 +108,11 @@ class GooeyApp:
     @Slot(bool)
     def run_stuff(self, *args, **kwargs):
         print('BAMM')
+        self.execute_dataladcmd.emit('wtf', tuple(), dict())
+
+    @Slot(dict)
+    def achieved_stuff(self, result):
+        print('HOORAY', result)
 
     @property
     def rootpath(self):
