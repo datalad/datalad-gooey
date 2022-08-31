@@ -115,6 +115,9 @@ class GooeyApp(QObject):
         print('HOORAY', result)
         # TODO think about concurrency issues: maybe two senders connected this
         # signal to this slot, before any of the two finished...
+        # we might need to use a Semaphore to per recieving slot to determine
+        # when we can actually disconnect
+        # Wait with this complexity until necessary
         self._cmdexec.result_received.disconnect(self.achieved_stuff)
 
     @property
