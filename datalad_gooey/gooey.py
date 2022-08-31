@@ -68,23 +68,15 @@ class Gooey(Interface):
         gooey = GooeyApp(path)
         gooey.main_window.show()
 
+        # capture Qt's own exit code for error reporting
         qt_exitcode = qtapp.exec()
 
-        # commands should be implemented as generators and should
-        # report any results by yielding status dictionaries
-        msg = "DataLad Gooey app successfully executed"
+        # tell the app to undo its modifications (UI redirection etc.)
+        gooey.deinit()
+
         yield get_status_dict(
-            # an action label must be defined, the command name make a good
-            # default
             action='gooey',
-            # most results will be about something associated with a dataset
-            # (component), reported paths MUST be absolute
-            path=str(path),
-            # status labels are used to identify how a result will be reported
-            # and can be used for filtering
+            path=str(gooey.rootpath),
             status='ok' if not qt_exitcode else 'error',
-            # arbitrary result message, can be a str or tuple. in the latter
-            # case string expansion with arguments is delayed until the
-            # message actually needs to be rendered (analog to exception
-            # messages)
-            message=msg)
+            # no message when everything was OK
+            message='Qt UI errored ' if qt_exitcode else None)
