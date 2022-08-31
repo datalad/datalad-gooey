@@ -68,7 +68,7 @@ class Gooey(Interface):
         gooey = GooeyApp(path)
         gooey.main_window.show()
 
-        qtapp.exec()
+        qt_exitcode = qtapp.exec()
 
         # commands should be implemented as generators and should
         # report any results by yielding status dictionaries
@@ -82,7 +82,7 @@ class Gooey(Interface):
             path=str(path),
             # status labels are used to identify how a result will be reported
             # and can be used for filtering
-            status='ok',
+            status='ok' if not qt_exitcode else 'error',
             # arbitrary result message, can be a str or tuple. in the latter
             # case string expansion with arguments is delayed until the
             # message actually needs to be rendered (analog to exception
