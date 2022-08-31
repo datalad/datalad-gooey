@@ -1,4 +1,3 @@
-from functools import cached_property
 import sys
 from pathlib import Path
 from PySide6.QtWidgets import (
@@ -45,6 +44,7 @@ class GooeyApp:
             path = Path.cwd()
 
         self._path = path
+        self._main_window = None
 
         # setup UI
         dbrowser = self.get_widget('filesystemViewer')
@@ -76,9 +76,12 @@ class GooeyApp:
     def deinit(self):
         dlui.ui.set_backend(self._prev_ui_backend)
 
-    @cached_property
+    #@cached_property not available for PY3.7
+    @property
     def main_window(self):
-        return load_ui('main_window')
+        if not self._main_window:
+            self._main_window = load_ui('main_window')
+        return self._main_window
 
     def get_widget(self, name):
         wgt_cls = GooeyApp._main_window_widgets.get(name)
