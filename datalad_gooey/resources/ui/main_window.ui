@@ -157,8 +157,29 @@
      <height>21</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menuUtilities">
+    <property name="title">
+     <string>Utilities</string>
+    </property>
+    <addaction name="actionCheck_for_new_version"/>
+    <addaction name="actionRun_stuff"/>
+   </widget>
+   <addaction name="menuUtilities"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionCheck_for_new_version">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Check for new version</string>
+   </property>
+  </action>
+  <action name="actionRun_stuff">
+   <property name="text">
+    <string>Run stuff</string>
+   </property>
+  </action>
  </widget>
  <resources/>
  <connections/>

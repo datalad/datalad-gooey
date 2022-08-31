@@ -8,6 +8,10 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import (
     Qt,
+    Slot,
+)
+from PySide6.QtGui import (
+    QAction,
 )
 
 from datalad import cfg as dlcfg
@@ -26,6 +30,7 @@ class GooeyApp:
     # classes.  This mapping is used (and needs to be kept up-to-date) to look
     # up widget (e.g. to connect their signals/slots)
     _main_window_widgets = {
+        'actionRun_stuff': QAction,
         'filesystemViewer': QTreeView,
         'logViewer': QPlainTextEdit,
     }
@@ -57,6 +62,9 @@ class GooeyApp:
         dlui.ui.set_backend('gooey')
         dlui.ui.ui.set_app(self)
 
+        # demo action to execute things for dev-purposes
+        self.get_widget('actionRun_stuff').triggered.connect(self.run_stuff)
+
     @cached_property
     def main_window(self):
         return load_ui('main_window')
@@ -73,6 +81,9 @@ class GooeyApp:
                 f"Could not locate widget {name} ({wgt_cls.__name__})")
         return wgt
 
+    @Slot(bool)
+    def run_stuff(self, *args, **kwargs):
+        print('BAMM')
 
 def clicked(*args, **kwargs):
     print(f'clicked {args!r} {kwargs!r}')
