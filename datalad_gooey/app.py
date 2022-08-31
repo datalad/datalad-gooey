@@ -79,7 +79,6 @@ class GooeyApp(QObject):
 
         # connect the generic cmd execution signal to the handler
         self.execute_dataladcmd.connect(self._cmdexec.execute)
-        self._cmdexec.result_received.connect(self.achieved_stuff)
         # demo action to execute things for dev-purposes
         self.get_widget('actionRun_stuff').triggered.connect(self.run_stuff)
 
@@ -108,11 +107,15 @@ class GooeyApp(QObject):
     @Slot(bool)
     def run_stuff(self, *args, **kwargs):
         print('BAMM')
-        self.execute_dataladcmd.emit('wtf', tuple(), dict())
+        self._cmdexec.result_received.connect(self.achieved_stuff)
+        self.execute_dataladcmd.emit('wtf', tuple(), dict(sections=['python']))
 
     @Slot(dict)
     def achieved_stuff(self, result):
         print('HOORAY', result)
+        # TODO think about concurrency issues: maybe two senders connected this
+        # signal to this slot, before any of the two finished...
+        self._cmdexec.result_received.disconnect(self.achieved_stuff)
 
     @property
     def rootpath(self):
@@ -139,46 +142,8 @@ def contextrequest(*args, **kwargs):
     print(f'contextrequest {args!r} {kwargs!r}')
 
 
-import threading
-
-# demo threaded message generator
-class MyThread (threading.Thread):
-    def __init__(self):
-        threading.Thread.__init__(self)
-
-    def run(self):
-        from time import sleep
-        sleep(1)
-        print(
-            "ANSWER IN THREAD:",
-            dlui.ui.question(
-                'Long explanation what is the desired input here, really hoping that it would wrap, but it does not seems to be the case here',
-                title=f'What do you do?',
-                choices=None, default='mydefault', hidden=True,
-                repeat=None)
-        )
-        print(
-            "ANSWER IN THREAD:",
-            dlui.ui.question(
-                'Terse',
-                title=f'What do you do?',
-                choices=['Peter', 'Paul', 'Mary'],
-                #default='Stan',
-                hidden=False,
-                repeat=None)
-        )
-        #for i in range(100):
-        #    sleep(1)
-        #    dlui.ui.message(f'mike{i}\n space\n  more space\n')
-
-
 def main():
     qtapp = QApplication(sys.argv)
     gooey = GooeyApp()
     gooey.main_window.show()
-
-    # let a command run to have content appear in the console log
-    # uncomment for demo
-    thread = MyThread().start()
-
     sys.exit(qtapp.exec())
