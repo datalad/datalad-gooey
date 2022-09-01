@@ -3,7 +3,9 @@ from pathlib import Path
 from PySide6.QtWidgets import (
     QApplication,
     QPlainTextEdit,
+    QScrollArea,
     QTreeView,
+    QWidget,
 )
 from PySide6.QtCore import (
     QObject,
@@ -25,6 +27,7 @@ from .fsview_model import (
 from .utils import load_ui
 from .datalad_ui import GooeyUI
 from .dataladcmd_exec import GooeyDataladCmdExec
+from .dataladcmd_ui import GooeyDataladCmdUI
 
 
 class GooeyApp(QObject):
@@ -32,12 +35,15 @@ class GooeyApp(QObject):
     # classes.  This mapping is used (and needs to be kept up-to-date) to look
     # up widget (e.g. to connect their signals/slots)
     _main_window_widgets = {
+        'actionsTabScrollArea': QScrollArea,
         'actionRun_stuff': QAction,
+        'actionConfigure_stuff': QAction,
         'filesystemViewer': QTreeView,
         'logViewer': QPlainTextEdit,
     }
 
     execute_dataladcmd = Signal(str, tuple, dict)
+    configure_dataladcmd = Signal(str, dict)
 
     def __init__(self, path: Path = None):
         super().__init__()
@@ -52,6 +58,7 @@ class GooeyApp(QObject):
         self._path = path
         self._main_window = None
         self._cmdexec = GooeyDataladCmdExec()
+        self._cmdui = GooeyDataladCmdUI(self.get_widget('actionsTabScrollArea'))
 
         # setup UI
         dbrowser = self.get_widget('filesystemViewer')
@@ -79,8 +86,15 @@ class GooeyApp(QObject):
 
         # connect the generic cmd execution signal to the handler
         self.execute_dataladcmd.connect(self._cmdexec.execute)
-        # demo action to execute things for dev-purposes
+        # connect the generic cmd configuration signal to the handler
+        self.configure_dataladcmd.connect(self._cmdui.configure)
+        # when a command was configured, pass it to the executor
+        self._cmdui.configured_dataladcmd.connect(self._cmdexec.execute)
+
+        # demo actions to execute things for dev-purposes
         self.get_widget('actionRun_stuff').triggered.connect(self.run_stuff)
+        self.get_widget('actionConfigure_stuff').triggered.connect(
+            self.configure_stuff)
 
     def deinit(self):
         dlui.ui.set_backend(self._prev_ui_backend)
@@ -109,6 +123,10 @@ class GooeyApp(QObject):
         print('BAMM')
         self._cmdexec.result_received.connect(self.achieved_stuff)
         self.execute_dataladcmd.emit('wtf', tuple(), dict(sections=['python']))
+
+    @Slot(bool)
+    def configure_stuff(self, *args, **kwargs):
+        self.configure_dataladcmd.emit('wtf', dict())
 
     @Slot(dict)
     def achieved_stuff(self, result):

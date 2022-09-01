@@ -61,7 +61,7 @@
          <bool>true</bool>
         </property>
         <property name="currentIndex">
-         <number>1</number>
+         <number>0</number>
         </property>
         <widget class="QWidget" name="actionsTab">
          <attribute name="title">
@@ -69,10 +69,20 @@
          </attribute>
          <layout class="QVBoxLayout" name="verticalLayout_4">
           <item>
-           <widget class="QTextBrowser" name="textBrowser_3">
-            <property name="enabled">
-             <bool>false</bool>
+           <widget class="QScrollArea" name="actionsTabScrollArea">
+            <property name="widgetResizable">
+             <bool>true</bool>
             </property>
+            <widget class="QWidget" name="scrollAreaWidgetContents">
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>0</y>
+               <width>381</width>
+               <height>219</height>
+              </rect>
+             </property>
+            </widget>
            </widget>
           </item>
          </layout>
@@ -163,6 +173,7 @@
     </property>
     <addaction name="actionCheck_for_new_version"/>
     <addaction name="actionRun_stuff"/>
+    <addaction name="actionConfigure_stuff"/>
    </widget>
    <addaction name="menuUtilities"/>
   </widget>
@@ -178,6 +189,11 @@
   <action name="actionRun_stuff">
    <property name="text">
     <string>Run stuff</string>
+   </property>
+  </action>
+  <action name="actionConfigure_stuff">
+   <property name="text">
+    <string>Configure stuff</string>
    </property>
   </action>
  </widget>
