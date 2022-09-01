@@ -24,7 +24,7 @@ from .fsview_model import (
 )
 from .utils import load_ui
 from .datalad_ui import GooeyUI
-from .datalad_cmd import GooeyDataladCmdExec
+from .dataladcmd_exec import GooeyDataladCmdExec
 
 
 class GooeyApp(QObject):
