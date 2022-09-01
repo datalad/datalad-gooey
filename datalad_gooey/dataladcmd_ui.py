@@ -17,9 +17,7 @@ from .utils import load_ui
 
 class GooeyDataladCmdUI(QObject):
 
-    # TODO align execute_dataladcmd, configure_dataladcmd, and this one
-    # likely go kwarg-only
-    configured_dataladcmd = Signal(str, tuple, dict)
+    configured_dataladcmd = Signal(str, dict)
 
     def __init__(self, ui_parent: QScrollArea):
         super().__init__()
@@ -84,7 +82,6 @@ class GooeyDataladCmdUI(QObject):
 
         self.configured_dataladcmd.emit(
             self.pform.datalad_cmd_name,
-            tuple(),
             params,
         )
         self.disable()

@@ -42,7 +42,7 @@ class GooeyApp(QObject):
         'logViewer': QPlainTextEdit,
     }
 
-    execute_dataladcmd = Signal(str, tuple, dict)
+    execute_dataladcmd = Signal(str, dict)
     configure_dataladcmd = Signal(str, dict)
 
     def __init__(self, path: Path = None):
@@ -122,7 +122,7 @@ class GooeyApp(QObject):
     def run_stuff(self, *args, **kwargs):
         print('BAMM')
         self._cmdexec.result_received.connect(self.achieved_stuff)
-        self.execute_dataladcmd.emit('wtf', tuple(), dict(sections=['python']))
+        self.execute_dataladcmd.emit('wtf', dict(sections=['python']))
 
     @Slot(bool)
     def configure_stuff(self, *args, **kwargs):

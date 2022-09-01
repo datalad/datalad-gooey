@@ -2,7 +2,6 @@ from concurrent.futures import ThreadPoolExecutor
 import threading
 from typing import (
     Dict,
-    Tuple,
 )
 
 from PySide6.QtCore import (
@@ -20,8 +19,8 @@ class GooeyDataladCmdExec(QObject):
     and Qt-signal result reporting
     """
     # thread_id, cmdname, cmdargs/kwargs
-    execution_started = Signal(str, str, tuple, dict)
-    execution_finished = Signal(str, str, tuple, dict)
+    execution_started = Signal(str, str, dict)
+    execution_finished = Signal(str, str, dict)
     result_received = Signal(dict)
 
     def __init__(self):
@@ -36,12 +35,9 @@ class GooeyDataladCmdExec(QObject):
         )
         self._futures = set()
 
-    @Slot(str, tuple, dict)
+    @Slot(str, dict)
     def execute(self, cmd: str,
-                args: Tuple or None = None,
                 kwargs: Dict or None = None):
-        if args is None:
-            args = tuple()
         if kwargs is None:
             kwargs = dict()
 
@@ -54,13 +50,12 @@ class GooeyDataladCmdExec(QObject):
         self._threadpool.submit(
             self._cmdexec_thread,
             cmd,
-            *args,
             **kwargs
         )
 
-    def _cmdexec_thread(self, cmd, *args, **kwargs):
+    def _cmdexec_thread(self, cmd, **kwargs):
         """The code is executed in a worker thread"""
-        print('EXECINTHREAD', cmd, args, kwargs)
+        print('EXECINTHREAD', cmd, kwargs)
         # get_ident() is an int, but in the future we might want to move
         # to PY3.8+ native thread IDs, so let's go with a string identifier
         # right away
@@ -68,7 +63,6 @@ class GooeyDataladCmdExec(QObject):
         self.execution_started.emit(
             thread_id,
             cmd,
-            args,
             kwargs,
         )
         # get functor to execute, resolve name against full API
@@ -77,14 +71,11 @@ class GooeyDataladCmdExec(QObject):
         # enforce return_type='generator' to get the most responsive
         # any command could be
         kwargs['return_type'] = 'generator'
-        for res in cmd(*args, **kwargs):
+        for res in cmd(**kwargs):
             self.result_received.emit(res)
 
         self.execution_finished.emit(
             thread_id,
             cmd,
-            args,
             kwargs,
         )
-
-
