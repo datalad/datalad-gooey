@@ -6,14 +6,14 @@ from PySide6.QtCore import (
 )
 
 
-def load_ui(name):
+def load_ui(name, parent=None):
     ui_file_name = Path(__file__).parent / 'resources' / 'ui' / f"{name}.ui"
     ui_file = QFile(ui_file_name)
     if not ui_file.open(QIODevice.ReadOnly):
         raise RuntimeError(
             f"Cannot open {ui_file_name}: {ui_file.errorString()}")
     loader = QUiLoader()
-    ui = loader.load(ui_file)
+    ui = loader.load(ui_file, parentWidget=parent)
     ui_file.close()
     if not ui:
         raise RuntimeError(
