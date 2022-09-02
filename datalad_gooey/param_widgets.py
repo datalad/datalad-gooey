@@ -1,5 +1,6 @@
 from collections.abc import Callable
 import functools
+from itertools import zip_longest
 import sys
 from typing import (
     Any,
@@ -9,6 +10,7 @@ from typing import (
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
+    QComboBox,
     QFormLayout,
     QLineEdit,
     QSpinBox,
@@ -16,6 +18,11 @@ from PySide6.QtWidgets import (
 )
 
 from datalad.interface.base import Interface
+from datalad.support.constraints import EnsureChoice
+from datalad.utils import (
+    getargspec,
+    get_wrapped_class,
+)
 
 
 def populate_w_params(formlayout: QFormLayout,
@@ -23,7 +30,7 @@ def populate_w_params(formlayout: QFormLayout,
                       cmdkwargs: Dict) -> None:
     """Populate a given QLayout with data entry widgets for a DataLad command
     """
-    from datalad.utils import get_wrapped_class
+    # localize to potentially delay heavy import
     from datalad import api as dlapi
 
     # deposit the command name in the widget, to be retrieved later by
@@ -94,17 +101,66 @@ def get_parameter_widget(
 
 
 def get_parameter_widget_factory(name, default, constraints, argparse_spec):
+    """Translate DataLad command parameter specs into Gooey input widgets"""
     # for now just one to play with
     # TODO each factory must provide a standard widget method
     # to return the final value, ready to pass onto the respective
     # parameter of the command call
     argparse_action = argparse_spec.get('action')
+    # we must consider the following action specs for widget selection
+    # - 'store_const'
+    # - 'store_true' and 'store_false'
+    # - 'append'
+    # - 'append_const'
+    # - 'count'
+    # - 'extend'
     if argparse_action in ('store_true', 'store_false'):
         return get_bool_widget
+    # we must consider the following nargs spec for widget selection
+    # - N
+    # - '*'
+    # - '+'
+    elif isinstance(constraints, EnsureChoice) and argparse_action is None:
+        return functools.partial(
+            get_choice_widget,
+            choices=constraints._allowed,
+        )
     elif name == 'recursion_limit':
         return functools.partial(get_posint_widget, allow_none=True)
     else:
         return get_single_str_widget
+
+
+def get_choice_widget(
+        parent: QWidget,
+        name: str,
+        value: Any = _NoValue,
+        default: Any = _NoValue,
+        validator: Callable or None = None,
+        choices=None):
+    cb = QComboBox(parent=parent)
+    cb.setInsertPolicy(QComboBox.NoInsert)
+
+    def _map_val2label(val):
+        return '--none--' if val is None else str(val)
+
+    if choices:
+        for c in choices:
+            # we add items, and we stick their real values in too
+            # to avoid tricky conversion via str
+            cb.addItem(_map_val2label(c), userData=c)
+    if value is not _NoValue:
+        cb.setCurrentText(_map_val2label(value))
+        cb.setDisabled(True)
+    elif default is not _NoValue:
+        cb.setCurrentText(_map_val2label(default))
+
+    def _get_spec():
+        val = cb.currentData()
+        return {name: val} if val != default else {}
+
+    cb._get_datalad_param_spec = _get_spec
+    return cb
 
 
 def get_posint_widget(
@@ -212,8 +268,6 @@ def _get_params(cmd) -> List:
     Parameter names and defaults are returned as 2-tuples. If a parameter has
     no default, the special value `_NoValue` is used.
     """
-    from itertools import zip_longest
-    from datalad.utils import getargspec
     # lifted from setup_parser_for_interface()
     args, varargs, varkw, defaults = getargspec(cmd, include_kwonlyargs=True)
     return list(
