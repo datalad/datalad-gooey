@@ -1,5 +1,8 @@
+from collections.abc import Callable
 from typing import (
+    Any,
     Dict,
+    List,
 )
 from PySide6.QtCore import (
     QObject,
@@ -11,7 +14,10 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QFormLayout,
     QScrollArea,
+    QWidget,
 )
+
+from datalad.interface.base import Interface
 
 from .utils import load_ui
 
@@ -59,7 +65,9 @@ class GooeyDataladCmdUI(QObject):
     def configure(
             self,
             cmdname: str = None,
-            kwargs: Dict or None = None):
+            cmdkwargs: Dict or None = None):
+        if cmdkwargs is None:
+            cmdkwargs = dict()
 
         # figure out the object that emitted the signal triggering
         # this slot execution. Will be None for a regular method call.
@@ -68,14 +76,24 @@ class GooeyDataladCmdUI(QObject):
         sender = self.sender()
         if sender is not None:
             if cmdname is None and isinstance(sender, QAction):
-                cmdname = sender.data().get('cmd_name')
+                cmdname = sender.data().get('__cmd_name__')
+                # pull in any signal-provided kwargs for the command
+                # unless they have been also specified directly to the method
+                cmdkwargs = {
+                    k: v for k, v in sender.data().items()
+                    if k != '__cmd_name__' and k not in cmdkwargs
+                }
 
         assert cmdname is not None, \
             "GooeyDataladCmdUI.configure() called without command name"
 
         self._empty_form()
         # TODO make it accept parameter default overrides from kwargs
-        populate_w_params(self.pform, cmdname)
+        populate_w_params(
+            self.pform,
+            cmdname,
+            cmdkwargs,
+        )
         # make sure the UI is visible
         self.pwidget.setEnabled(True)
         self.pwidget.show()
@@ -86,8 +104,10 @@ class GooeyDataladCmdUI(QObject):
         for i in range(self.pform.rowCount()):
             # the things is wrapped into a QWidgetItem layout class, hence .wid
             field_widget = self.pform.itemAt(i, QFormLayout.FieldRole).wid
-            params[field_widget.datalad_param_name] = \
-                field_widget.get_datalad_param_value()
+            # _get_datalad_param_spec() is our custom private adhoc method
+            # expected to return a dict with a parameter setting, or an
+            # empty dict, when the default shall be used.
+            params.update(field_widget._get_datalad_param_spec())
 
         # take a peek, TODO remove
         from pprint import pprint
@@ -112,7 +132,9 @@ class GooeyDataladCmdUI(QObject):
             self.pform.removeRow(i)
 
 
-def populate_w_params(formlayout: QFormLayout, cmdname) -> None:
+def populate_w_params(formlayout: QFormLayout,
+                      cmdname: str,
+                      cmdkwargs: Dict) -> None:
     """Populate a given QLayout with data entry widgets for a DataLad command
     """
     from datalad.utils import get_wrapped_class
@@ -132,6 +154,9 @@ def populate_w_params(formlayout: QFormLayout, cmdname) -> None:
             formlayout.parentWidget(),
             cmd_cls,
             pname,
+            # pass a given value, or indicate that there was none
+            cmdkwargs.get(pname, _NoValue),
+            # will also be _NoValue, if there was none
             pdefault,
         )
         formlayout.addRow(pname, pwidget)
@@ -141,8 +166,28 @@ def populate_w_params(formlayout: QFormLayout, cmdname) -> None:
     # add standard widget set for those we want to support
 
 
-def get_parameter_widget(parent, cmd_cls, name, default):
+class _NoValue:
+    """Type to annotate the absence of a value
+
+    For example in a list of parameter defaults. In general `None` cannot
+    be used, as it may be an actual value, hence we use a local, private
+    type.
+    """
+    pass
+
+
+def get_parameter_widget(
+        parent: QWidget,
+        cmd_cls: Interface,
+        name: str,
+        value: Any = _NoValue,
+        default: Any = _NoValue) -> QWidget:
     """Populate a given layout with a data entry widget for a command parameter
+
+    `value` is an explicit setting requested by the caller. A value of
+    `_NoValue` indicates that there was no specific value given. `default` is a
+    command's default parameter value, with `_NoValue` indicating that the
+    command has no default for a parameter.
     """
     p = cmd_cls._params_[name]
     # guess the best widget-type based on the argparse setup and configured
@@ -151,6 +196,7 @@ def get_parameter_widget(parent, cmd_cls, name, default):
     widget = factory(
         parent,
         name,
+        value,
         default,
         p.constraints,
     )
@@ -169,20 +215,40 @@ def get_parameter_widget_factory(constraints, argparse_spec):
     return get_dummy_widget
 
 
-def get_dummy_widget(parent, name, default, validator):
+def get_dummy_widget(
+        parent: QWidget,
+        name: str,
+        value: Any = _NoValue,
+        default: Any = _NoValue,
+        validator: Callable or None = None):
     # for now something to play with
     from PySide6.QtWidgets import QLineEdit
-    widget = QLineEdit(f"{default}", parent)
-    widget.datalad_param_name = name
-    widget.get_datalad_param_value = widget.text
-    return widget
+    edit = QLineEdit(parent=parent)
+    if value is not _NoValue:
+        edit.setText(str(value))
+        # no further edits, the caller wanted it to be this
+        edit.setDisabled(True)
+    elif default is not _NoValue:
+        edit.setPlaceholderText(str(default))
+
+    def _get_spec():
+        # return the value if it was set be the caller, or modified
+        # by the user -- otherwise stay silent and let the command
+        # use its default
+        return {name: edit.text()} \
+            if edit.isModified() or not edit.isEnabled() \
+            else {}
+
+    edit._get_datalad_param_spec = _get_spec
+    return edit
 
 
-class _NoParameterDefault:
-    pass
+def _get_params(cmd) -> List:
+    """Take a callable and return a list of parameter names, and their defaults
 
-
-def _get_params(cmd):
+    Parameter names and defaults are returned as 2-tuples. If a parameter has
+    no default, the special value `_NoValue` is used.
+    """
     from itertools import zip_longest
     from datalad.utils import getargspec
     # lifted from setup_parser_for_interface()
@@ -195,6 +261,6 @@ def _get_params(cmd):
             defaults[::-1],
             # pad with a dedicate type, to be able to tell if there was a
             # default or not
-            fillvalue=_NoParameterDefault)
+            fillvalue=_NoValue)
     # reverse the order again to match the original order in the signature
     )[::-1]
