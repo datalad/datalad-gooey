@@ -175,6 +175,12 @@
     <addaction name="actionRun_stuff"/>
     <addaction name="actionConfigure_stuff"/>
    </widget>
+   <widget class="QMenu" name="menuDataset">
+    <property name="title">
+     <string>Dataset</string>
+    </property>
+   </widget>
+   <addaction name="menuDataset"/>
    <addaction name="menuUtilities"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>

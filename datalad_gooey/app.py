@@ -2,10 +2,10 @@ import sys
 from pathlib import Path
 from PySide6.QtWidgets import (
     QApplication,
+    QMenu,
     QPlainTextEdit,
     QScrollArea,
     QTreeView,
-    QWidget,
 )
 from PySide6.QtCore import (
     QObject,
@@ -18,7 +18,9 @@ from PySide6.QtGui import (
 )
 
 from datalad import cfg as dlcfg
+from datalad.interface.base import Interface
 import datalad.ui as dlui
+from datalad.utils import get_wrapped_class
 
 from .fsview_model import (
     DataladTree,
@@ -40,6 +42,7 @@ class GooeyApp(QObject):
         'actionConfigure_stuff': QAction,
         'filesystemViewer': QTreeView,
         'logViewer': QPlainTextEdit,
+        'menuDataset': QMenu,
     }
 
     execute_dataladcmd = Signal(str, dict)
@@ -55,6 +58,7 @@ class GooeyApp(QObject):
         if not path:
             path = Path.cwd()
 
+        self._dlapi = None
         self._path = path
         self._main_window = None
         self._cmdexec = GooeyDataladCmdExec()
@@ -93,8 +97,11 @@ class GooeyApp(QObject):
 
         # demo actions to execute things for dev-purposes
         self.get_widget('actionRun_stuff').triggered.connect(self.run_stuff)
-        self.get_widget('actionConfigure_stuff').triggered.connect(
-            self.configure_stuff)
+
+        # arrange for the dataset menu to populate itself lazily once
+        # necessary
+        self.get_widget('menuDataset').aboutToShow.connect(
+            self._populate_dataset_menu)
 
     def deinit(self):
         dlui.ui.set_backend(self._prev_ui_backend)
@@ -124,10 +131,6 @@ class GooeyApp(QObject):
         self._cmdexec.result_received.connect(self.achieved_stuff)
         self.execute_dataladcmd.emit('wtf', dict(sections=['python']))
 
-    @Slot(bool)
-    def configure_stuff(self, *args, **kwargs):
-        self.configure_dataladcmd.emit('wtf', dict())
-
     @Slot(dict)
     def achieved_stuff(self, result):
         print('HOORAY', result)
@@ -141,6 +144,53 @@ class GooeyApp(QObject):
     @property
     def rootpath(self):
         return self._path
+
+    @property
+    def datalad_api(self):
+        """Centralized lazy import of the full DataLad API"""
+        if self._dlapi is None:
+            from datalad import api
+            self._dlapi = api
+        return self._dlapi
+
+    def _populate_dataset_menu(self):
+        """Private slot to populate connected QMenus with dataset actions
+
+        Typical usage is to connect a QMenu's aboutToShow signal to this
+        slot, in order to lazily populate the menu with items, before they
+        are needed.
+
+        The sender is expected to be a QMenu.
+        """
+        menu = self.sender()
+
+        # iterate over all members of the Dataset class and find the
+        # methods that are command interface callables
+        Dataset = self.datalad_api.Dataset
+        for mname in dir(Dataset):
+            m = getattr(Dataset, mname)
+            try:
+                # if either of the following tests fails, this member is not
+                # a dataset method
+                cls = get_wrapped_class(m)
+                assert issubclass(cls, Interface)
+            except Exception:
+                continue
+            # we create a dedicated action for each command
+            action = QAction(mname, parent=self)
+            # the name of the command is injected into the action
+            # as user data. We wrap it in a dict to enable future
+            # additional payload
+            action.setData(dict(cmd_name=mname))
+            # all actions connect to the command configuration
+            # UI handler, such that clicking on the menu item
+            # brings up the config UI
+            action.triggered.connect(self._cmdui.configure)
+            # add to menu
+            # TODO sort and group actions by some semantics
+            # e.g. all commands from one extension together
+            # to avoid a monster menu
+            menu.addAction(action)
 
 
 def clicked(*args, **kwargs):

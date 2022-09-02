@@ -6,6 +6,7 @@ from PySide6.QtCore import (
     Signal,
     Slot,
 )
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QDialogButtonBox,
     QFormLayout,
@@ -57,8 +58,20 @@ class GooeyDataladCmdUI(QObject):
     @Slot(str, dict)
     def configure(
             self,
-            cmdname: str,
+            cmdname: str = None,
             kwargs: Dict or None = None):
+
+        # figure out the object that emitted the signal triggering
+        # this slot execution. Will be None for a regular method call.
+        # we can use this to update the method parameter values
+        # with information from menu-items, or tree nodes clicked
+        sender = self.sender()
+        if sender is not None:
+            if cmdname is None and isinstance(sender, QAction):
+                cmdname = sender.data().get('cmd_name')
+
+        assert cmdname is not None, \
+            "GooeyDataladCmdUI.configure() called without command name"
 
         self._empty_form()
         # TODO make it accept parameter default overrides from kwargs
