@@ -6,13 +6,16 @@ from typing import (
 )
 from PySide6.QtCore import (
     QObject,
+    Qt,
     Signal,
     Slot,
 )
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
+    QCheckBox,
     QDialogButtonBox,
     QFormLayout,
+    QLineEdit,
     QScrollArea,
     QWidget,
 )
@@ -212,17 +215,59 @@ def get_parameter_widget_factory(constraints, argparse_spec):
     # TODO each factory must provide a standard widget method
     # to return the final value, ready to pass onto the respective
     # parameter of the command call
-    return get_dummy_widget
+    argparse_action = argparse_spec.get('action')
+    if argparse_action in ('store_true', 'store_false'):
+        return get_bool_widget
+    else:
+        return get_single_str_widget
 
 
-def get_dummy_widget(
+def get_bool_widget(
         parent: QWidget,
         name: str,
         value: Any = _NoValue,
         default: Any = _NoValue,
         validator: Callable or None = None):
-    # for now something to play with
-    from PySide6.QtWidgets import QLineEdit
+    cb = QCheckBox(parent=parent)
+    if default not in (True, False):
+        # if the default value is not representable by a checkbox
+        # leave it in "partiallychecked". In cases where the
+        # default is something like `None`, we can distinguish
+        # a user not having set anything different from the default,
+        # even if the default is not a bool
+        cb.setTristate(True)
+        cb.setCheckState(Qt.PartiallyChecked)
+    else:
+        # otherwise flip the switch accordingly
+        cb.setChecked(default)
+    if value is not _NoValue:
+        # assumed to be boolean
+        cb.setChecked(value)
+        # no further edits, the caller wanted it to be this
+        cb.setDisabled(True)
+
+    def _get_spec():
+        state = cb.checkState()
+        if state == Qt.PartiallyChecked:
+            # TODO error if partiallychecked still (means a
+            # value with no default was not set)
+            # a default `validator` could handle that
+            return {}
+        # convert to bool
+        state = cb.checkState() == Qt.Checked
+        # report when different from default
+        return {name: state} if state != default else {}
+
+    cb._get_datalad_param_spec = _get_spec
+    return cb
+
+
+def get_single_str_widget(
+        parent: QWidget,
+        name: str,
+        value: Any = _NoValue,
+        default: Any = _NoValue,
+        validator: Callable or None = None):
     edit = QLineEdit(parent=parent)
     if value is not _NoValue:
         edit.setText(str(value))
