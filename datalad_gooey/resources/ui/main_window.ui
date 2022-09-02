@@ -41,7 +41,7 @@
        </property>
        <widget class="QTreeView" name="filesystemViewer">
         <property name="contextMenuPolicy">
-         <enum>Qt::ActionsContextMenu</enum>
+         <enum>Qt::CustomContextMenu</enum>
         </property>
         <property name="dragEnabled">
          <bool>false</bool>

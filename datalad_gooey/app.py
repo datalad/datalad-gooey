@@ -78,7 +78,9 @@ class GooeyApp(QObject):
         dbrowser.doubleClicked.connect(doubleclicked)
         dbrowser.activated.connect(activated)
         dbrowser.pressed.connect(pressed)
-        dbrowser.customContextMenuRequested.connect(contextrequest)
+        dbrowser.customContextMenuRequested.connect(
+            self.dbrowser_custom_context_menu)
+        self._dbrowser = dbrowser
 
         # remember what backend was in use
         self._prev_ui_backend = dlui.ui.backend
@@ -153,16 +155,17 @@ class GooeyApp(QObject):
             self._dlapi = api
         return self._dlapi
 
-    def _populate_dataset_menu(self):
+    def _populate_dataset_menu(self, menu=None, dataset=None):
         """Private slot to populate connected QMenus with dataset actions
 
         Typical usage is to connect a QMenu's aboutToShow signal to this
         slot, in order to lazily populate the menu with items, before they
         are needed.
 
-        The sender is expected to be a QMenu.
+        If `menu` is `None`, the sender is expected to be a QMenu.
         """
-        menu = self.sender()
+        if menu is None:
+            menu = self.sender()
 
         # iterate over all members of the Dataset class and find the
         # methods that are command interface callables
@@ -181,7 +184,12 @@ class GooeyApp(QObject):
             # the name of the command is injected into the action
             # as user data. We wrap it in a dict to enable future
             # additional payload
-            action.setData(dict(cmd_name=mname))
+            adata = dict(__cmd_name__=mname)
+            # put on record, if we are generating actions for a specific
+            # dataset
+            if dataset is not None:
+                adata['dataset'] = dataset
+            action.setData(adata)
             # all actions connect to the command configuration
             # UI handler, such that clicking on the menu item
             # brings up the config UI
@@ -191,6 +199,37 @@ class GooeyApp(QObject):
             # e.g. all commands from one extension together
             # to avoid a monster menu
             menu.addAction(action)
+
+    def dbrowser_custom_context_menu(self, onpoint):
+        """Present a context menu for the item click in the directory browser
+        """
+        # get the tree view index for the coordinate that received the
+        # context menu request
+        index = self._dbrowser.indexAt(onpoint)
+        if not index.isValid():
+            # prevent context menus when the request did not actually
+            # land on an item
+            return
+        # retrieve the DataladTreeNode instance that corresponds to this
+        # item
+        node = self._dbrowser.model()._tree[index.internalPointer()]
+        node_type = node.get_property('type')
+        if node_type is None:
+            # we don't know what to do with this (but it also is not expected
+            # to happen)
+            return
+        context = QMenu(parent=self._dbrowser)
+        if node_type == 'dataset':
+            # we are not reusing the generic dataset actions menu
+            #context.addMenu(self.get_widget('menuDataset'))
+            # instead we generic a new one, with actions prepopulated
+            # with the specific dataset path argument
+            dsmenu = context.addMenu('Dataset actions')
+            self._populate_dataset_menu(dsmenu, dataset=node.path)
+
+        if not context.isEmpty():
+            # present the menu at the clicked point
+            context.exec(self._dbrowser.viewport().mapToGlobal(onpoint))
 
 
 def clicked(*args, **kwargs):
@@ -207,10 +246,6 @@ def activated(*args, **kwargs):
 
 def pressed(*args, **kwargs):
     print(f'pressed {args!r} {kwargs!r}')
-
-
-def contextrequest(*args, **kwargs):
-    print(f'contextrequest {args!r} {kwargs!r}')
 
 
 def main():

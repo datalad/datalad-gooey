@@ -39,10 +39,17 @@ class DataladTreeNode:
             if sort_children_by is None \
             else (sort_children_by, sort_descending)
 
+    def __str__(self):
+        return f'DataladTreeNode({self.path})'
+
+    def __repr__(self):
+        return f'DataladTreeNode({self.path}, **{self._props})'
+
     @property
     def path(self) -> Path:
         return self._path
 
+    # TODO maybe a more standard __getitem__?
     def get_property(self, name):
         if name == 'path':
             return self._path
