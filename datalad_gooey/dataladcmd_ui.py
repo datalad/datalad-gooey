@@ -1,4 +1,6 @@
 from collections.abc import Callable
+import functools
+import sys
 from typing import (
     Any,
     Dict,
@@ -17,6 +19,7 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QLineEdit,
     QScrollArea,
+    QSpinBox,
     QWidget,
 )
 
@@ -195,7 +198,8 @@ def get_parameter_widget(
     p = cmd_cls._params_[name]
     # guess the best widget-type based on the argparse setup and configured
     # constraints
-    factory = get_parameter_widget_factory(p.constraints, p.cmd_kwargs)
+    factory = get_parameter_widget_factory(
+        name, default, p.constraints, p.cmd_kwargs)
     widget = factory(
         parent,
         name,
@@ -209,7 +213,7 @@ def get_parameter_widget(
     return widget
 
 
-def get_parameter_widget_factory(constraints, argparse_spec):
+def get_parameter_widget_factory(name, default, constraints, argparse_spec):
     # for now just one to play with
     # TODO factories could be returned as functools.partial too
     # TODO each factory must provide a standard widget method
@@ -218,8 +222,43 @@ def get_parameter_widget_factory(constraints, argparse_spec):
     argparse_action = argparse_spec.get('action')
     if argparse_action in ('store_true', 'store_false'):
         return get_bool_widget
+    elif name == 'recursion_limit':
+        return functools.partial(get_posint_widget, allow_none=True)
     else:
         return get_single_str_widget
+
+
+def get_posint_widget(
+        parent: QWidget,
+        name: str,
+        value: Any = _NoValue,
+        default: Any = _NoValue,
+        validator: Callable or None = None,
+        allow_none=False):
+    sb = QSpinBox(parent=parent)
+    if allow_none:
+        sb.setMinimum(-1)
+        sb.setSpecialValueText('none')
+    else:
+        # this is not entirely correct, but large enough for any practical
+        # purpose
+        sb.setMaximum(sys.maxsize)
+    if value is not _NoValue:
+        # assumed to be int and fit in the range
+        sb.setValue(value)
+        # no further edits, the caller wanted it to be this
+        sb.setDisabled(True)
+    elif default is not _NoValue:
+        sb.setValue(-1 if default is None and allow_none else default)
+
+    def _get_spec():
+        val = sb.value()
+        # convert special value -1 back to None
+        val = None if val == -1 and allow_none else val
+        return {name: val} if val != default else {}
+
+    sb._get_datalad_param_spec = _get_spec
+    return sb
 
 
 def get_bool_widget(
