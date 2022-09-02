@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import (
     QObject,
-    Qt,
     Signal,
     Slot,
 )
@@ -18,18 +17,14 @@ from PySide6.QtGui import (
 )
 
 from datalad import cfg as dlcfg
-from datalad.interface.base import Interface
 import datalad.ui as dlui
-from datalad.utils import get_wrapped_class
 
-from .fsview_model import (
-    DataladTree,
-    DataladTreeModel,
-)
 from .utils import load_ui
 from .datalad_ui import GooeyUI
 from .dataladcmd_exec import GooeyDataladCmdExec
 from .dataladcmd_ui import GooeyDataladCmdUI
+from .dataset_actions import add_dataset_actions_to_menu
+from .fsbrowser import GooeyFilesystemBrowser
 
 
 class GooeyApp(QObject):
@@ -65,22 +60,11 @@ class GooeyApp(QObject):
         self._cmdui = GooeyDataladCmdUI(self.get_widget('actionsTabScrollArea'))
 
         # setup UI
-        dbrowser = self.get_widget('filesystemViewer')
-        dmodel = DataladTreeModel()
-        dmodel.set_tree(DataladTree(path))
-        dbrowser.setModel(dmodel)
-        # established defined sorting order of the tree, and sync it
-        # with the widget sorting indicator state
-        dbrowser.sortByColumn(1, Qt.AscendingOrder)
-
-        # demo signal/slot connctions
-        dbrowser.clicked.connect(clicked)
-        dbrowser.doubleClicked.connect(doubleclicked)
-        dbrowser.activated.connect(activated)
-        dbrowser.pressed.connect(pressed)
-        dbrowser.customContextMenuRequested.connect(
-            self.dbrowser_custom_context_menu)
-        self._dbrowser = dbrowser
+        self._fsbrowser = GooeyFilesystemBrowser(
+            self,
+            path,
+            self.get_widget('filesystemViewer'),
+        )
 
         # remember what backend was in use
         self._prev_ui_backend = dlui.ui.backend
@@ -102,8 +86,7 @@ class GooeyApp(QObject):
 
         # arrange for the dataset menu to populate itself lazily once
         # necessary
-        self.get_widget('menuDataset').aboutToShow.connect(
-            self._populate_dataset_menu)
+        self.get_widget('menuDataset').aboutToShow.connect(self._populate_dataset_menu)
 
     def deinit(self):
         dlui.ui.set_backend(self._prev_ui_backend)
@@ -147,105 +130,9 @@ class GooeyApp(QObject):
     def rootpath(self):
         return self._path
 
-    @property
-    def datalad_api(self):
-        """Centralized lazy import of the full DataLad API"""
-        if self._dlapi is None:
-            from datalad import api
-            self._dlapi = api
-        return self._dlapi
-
-    def _populate_dataset_menu(self, menu=None, dataset=None):
-        """Private slot to populate connected QMenus with dataset actions
-
-        Typical usage is to connect a QMenu's aboutToShow signal to this
-        slot, in order to lazily populate the menu with items, before they
-        are needed.
-
-        If `menu` is `None`, the sender is expected to be a QMenu.
-        """
-        if menu is None:
-            menu = self.sender()
-
-        # iterate over all members of the Dataset class and find the
-        # methods that are command interface callables
-        Dataset = self.datalad_api.Dataset
-        for mname in dir(Dataset):
-            m = getattr(Dataset, mname)
-            try:
-                # if either of the following tests fails, this member is not
-                # a dataset method
-                cls = get_wrapped_class(m)
-                assert issubclass(cls, Interface)
-            except Exception:
-                continue
-            # we create a dedicated action for each command
-            action = QAction(mname, parent=self)
-            # the name of the command is injected into the action
-            # as user data. We wrap it in a dict to enable future
-            # additional payload
-            adata = dict(__cmd_name__=mname)
-            # put on record, if we are generating actions for a specific
-            # dataset
-            if dataset is not None:
-                adata['dataset'] = dataset
-            action.setData(adata)
-            # all actions connect to the command configuration
-            # UI handler, such that clicking on the menu item
-            # brings up the config UI
-            action.triggered.connect(self._cmdui.configure)
-            # add to menu
-            # TODO sort and group actions by some semantics
-            # e.g. all commands from one extension together
-            # to avoid a monster menu
-            menu.addAction(action)
-
-    def dbrowser_custom_context_menu(self, onpoint):
-        """Present a context menu for the item click in the directory browser
-        """
-        # get the tree view index for the coordinate that received the
-        # context menu request
-        index = self._dbrowser.indexAt(onpoint)
-        if not index.isValid():
-            # prevent context menus when the request did not actually
-            # land on an item
-            return
-        # retrieve the DataladTreeNode instance that corresponds to this
-        # item
-        node = self._dbrowser.model()._tree[index.internalPointer()]
-        node_type = node.get_property('type')
-        if node_type is None:
-            # we don't know what to do with this (but it also is not expected
-            # to happen)
-            return
-        context = QMenu(parent=self._dbrowser)
-        if node_type == 'dataset':
-            # we are not reusing the generic dataset actions menu
-            #context.addMenu(self.get_widget('menuDataset'))
-            # instead we generic a new one, with actions prepopulated
-            # with the specific dataset path argument
-            dsmenu = context.addMenu('Dataset actions')
-            self._populate_dataset_menu(dsmenu, dataset=node.path)
-
-        if not context.isEmpty():
-            # present the menu at the clicked point
-            context.exec(self._dbrowser.viewport().mapToGlobal(onpoint))
-
-
-def clicked(*args, **kwargs):
-    print(f'clicked {args!r} {kwargs!r}')
-
-
-def doubleclicked(*args, **kwargs):
-    print(f'doubleclicked {args!r} {kwargs!r}')
-
-
-def activated(*args, **kwargs):
-    print(f'activated {args!r} {kwargs!r}')
-
-
-def pressed(*args, **kwargs):
-    print(f'pressed {args!r} {kwargs!r}')
+    def _populate_dataset_menu(self):
+        """Private slot to populate connected QMenus with dataset actions"""
+        add_dataset_actions_to_menu(self, self._cmdui.configure, self.sender())
 
 
 def main():
