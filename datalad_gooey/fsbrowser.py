@@ -84,27 +84,7 @@ class GooeyFilesystemBrowser(QObject):
         #    - we need to remove the tree node and all underneath it
         if not pathobj.exists():
             if idx.parent().isValid():
-                # this treeview node has a parent, so the tree node
-                # also has one, and we need to unregister this child
-                # from it
-                # get the parent tree node and remove the child
-                parent_node = tvm._tree[pathobj.parent]
-                # inform treeview connectees that its underlying data
-                # structure will change
-                # TODO or should it be the parent of the node that will
-                # change (i.e. idx.parent())?
-                # TODO this signal and layoutChanged should accept a
-                # an argument to constraint the update to a specific
-                # list of parent (according to the docs), but it is
-                # not possible to pass it here and below
-                tvm.layoutAboutToBeChanged.emit()
-                # there should be no other reference of the node than
-                # in the children property, so deleting that should be
-                # sufficient to get everything underneath it garbage
-                # collected
-                del parent_node.children[pathobj.name]
-                # and inform the connectees that the change now happened
-                tvm.layoutChanged.emit()
+                tvm.removeRows(idx.row(), 1, idx.parent())
                 lgr.log(9, "_inspect_changed_dir() -> removed node")
             else:
                 # TODO we could have lost the root dir -> special action

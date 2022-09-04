@@ -322,6 +322,19 @@ class DataladTreeModel(QAbstractItemModel):
         self.layoutChanged.emit()
         lgr.log(8, "sort() -> done")
 
+    def removeRows(self,
+                   row: int,
+                   count: int,
+                   parent: QModelIndex = QModelIndex()) -> bool:
+        # convert to first-last
+        first, last = row, row + count - 1
+        self.beginRemoveRows(parent, first, last)
+        pnode = self._tree[parent.internalPointer()]
+        childnode_names = list(pnode.children.keys())[first:last + 1]
+        for c in childnode_names:
+            del pnode.children[c]
+        self.endRemoveRows()
+
     def match_child_by_pathname(
             self, name: str, parent: QModelIndex) -> QModelIndex:
         # the standard QAbstractItemModel.match() implementation only searches
