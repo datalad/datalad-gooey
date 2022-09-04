@@ -321,3 +321,25 @@ class DataladTreeModel(QAbstractItemModel):
         self._tree.sort(*sort_by)
         self.layoutChanged.emit()
         lgr.log(8, "sort() -> done")
+
+    def match_child_by_pathname(
+            self, name: str, parent: QModelIndex) -> QModelIndex:
+        # the standard QAbstractItemModel.match() implementation only searches
+        # columns, but we also need to be able to discover children in rows
+        parent_path = parent.internalPointer()
+        children = self._tree[parent_path].children
+        # determine the "row" index this child has in the parent, which
+        # is the index in current dict order
+        try:
+            row = list(children.keys()).index(name)
+        except ValueError:
+            # no child with such a name. this can happen when, e.g. a parent
+            # dir was also removed and caused a cleanup of pieces of the tree
+            # branch this child was/is located at.
+            # return an invalid index
+            return QModelIndex()
+
+        # return the index
+        # note, that we cannot use 'parent_path / name' as the internal
+        # pointer, because it needs to be a persistent object
+        return self.createIndex(row, 0, children[name].path)
