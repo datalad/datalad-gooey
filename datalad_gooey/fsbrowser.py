@@ -77,6 +77,7 @@ class GooeyFilesystemBrowser(QObject):
             self._fswatcher.removePath(path)
             lgr.log(9, "_inspect_changed_dir() -> not in view (anymore), "
                        "removed from watcher")
+            return
 
         tvm = self._treeview.model()
         # there are two things that could bring us here
