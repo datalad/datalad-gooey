@@ -1,6 +1,9 @@
 import logging
 from pathlib import Path
-from typing import Tuple
+from typing import (
+    Dict,
+    Tuple,
+)
 from PySide6.QtCore import (
     QAbstractItemModel,
     QModelIndex,
@@ -43,6 +46,8 @@ class DataladTreeNode:
                  sort_descending: bool = False,
                  **props) -> None:
         self._path = Path(path)
+        # really treat a symlink like a dir?
+        # https://github.com/datalad/datalad-gooey/issues/23
         self._children = \
             None \
             if type in ('dataset', 'directory') \
@@ -71,11 +76,49 @@ class DataladTreeNode:
         else:
             return self._props[name]
 
+    def update_properties_from_node(self, source) -> bool:
+        """Return whether any property value changed"""
+        # was anything updated
+        updated = False
+        # look for props to be deleted, because the source does not have them
+        for name in self._props:
+            if name not in source._props:
+                del self._props[name]
+                updated = True
+        # now looks for updates and additions in source
+        for name, value in source._props.items():
+            if name not in self._props:
+                # a new property
+                self._props[name] = value
+                updated = True
+            else:
+                updated = updated or self._props[name] != value
+                self._props[name] = value
+
+        return updated
+
     @property
     def may_have_children(self):
         # rather than trying to actually load the children and
         # count them, we report on the potential to have children
         return self._props.get('type') in ('dataset', 'directory')
+
+    @property
+    def has_known_children(self):
+        """Returns whether any children where already discovered
+
+        Returns False if no children where discovered yet, or if there
+        can never be children (e.g. a type-file node)
+        """
+        return self._children not in (None, False) and self._children
+
+    def count_known_children(self) -> int:
+        """Returns the number of known children
+
+        Returns 0 if there are no children, or children discovery did not
+        yet run (i.e., calling this method will not trigger discovery).
+        """
+        return 0 if not self.has_known_children else len(self._children)
 
     @property
     def children(self) -> dict:
@@ -127,7 +170,11 @@ class DataladTreeNode:
         }
 
     @staticmethod
-    def from_tree_result(res):
+    def from_tree_result(res: Dict):
+        # TODO support
+        #sort_children_by: str or None = None,
+        #sort_descending: bool = False,
+        # https://github.com/datalad/datalad-gooey/issues/30
         return DataladTreeNode(
             res['path'],
             type=res['type'],
@@ -137,6 +184,26 @@ class DataladTreeNode:
                 if k in ("is_broken_symlink", "symlink_target")
             }
         )
+
+    @staticmethod
+    def from_path(path: Path):
+        # TODO support
+        #sort_children_by: str or None = None,
+        #sort_descending: bool = False,
+        # https://github.com/datalad/datalad-gooey/issues/30
+        new_node = None
+        children = {}
+        for r in _parse_dir(path):
+            tn = DataladTreeNode.from_tree_result(r)
+            if tn.path == path:
+                new_node = tn
+            else:
+                # DataladTreeNode.children produces plain str
+                # key, we must match this here!
+                children[str(tn.path.relative_to(path))] = tn
+        if new_node.may_have_children:
+            new_node._children = children
+        return new_node
 
 
 class DataladTree:
