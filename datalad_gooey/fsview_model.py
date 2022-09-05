@@ -224,15 +224,15 @@ class DataladTreeModel(QAbstractItemModel):
         # this method is implemented, because it allows connected
         # views to inspect the model more efficiently (sparse), as
         # if they would only have `rowCount()`
-        parent_path = parent.internalPointer()
-        lgr.log(8, "hasChildren(%s)", parent_path)
+        pnode = parent.internalPointer()
+        lgr.log(8, "hasChildren(%s)", pnode)
         res = False
-        if parent_path is None:
+        if pnode is None:
             # this is the root, we always have the root path/dir as
             # an initial child
             res = True
-        elif self._tree is not None:
-            res = self._tree[parent_path].may_have_children
+        else:
+            res = pnode.may_have_children
         lgr.log(8, "hasChildren() -> %s", res)
         return res
 
@@ -243,34 +243,33 @@ class DataladTreeModel(QAbstractItemModel):
         return 2
 
     def rowCount(self, parent: QModelIndex) -> int:
-        parent_path = parent.internalPointer()
-        lgr.log(8, "rowCount(%s)", parent_path)
-        if not parent_path:
+        pnode = parent.internalPointer()
+        lgr.log(8, "rowCount(%s)", pnode)
+        if pnode is None:
             # no parent? this is the tree root
             res = 1
         else:
-            res = len(self._tree[parent_path].children)
+            res = len(pnode.children)
         lgr.log(8, "rowCount() -> %s", res)
         return res
 
     def index(self, row: int, column: int, parent: QModelIndex) -> QModelIndex:
-        parent_path = parent.internalPointer()
-        lgr.log(8, "index(%i, %i, %s)", row, column, parent_path)
-        if not parent_path:
+        pnode = parent.internalPointer()
+        lgr.log(8, "index(%i, %i, %s)", row, column, pnode)
+        if pnode is None:
             # no parent? this is the tree root
             node = self._tree.root
         else:
-            pnode = self._tree[parent_path]
             node = pnode.children[list(pnode.children.keys())[row]]
-        res = self.createIndex(row, column, node.path)
-        lgr.log(8, "index() -> %s", node.path)
+        res = self.createIndex(row, column, node)
+        lgr.log(8, "index() -> %s", node)
         return res
 
     def parent(self, child: QModelIndex) -> QModelIndex:
-        child_path = child.internalPointer()
-        lgr.log(8, "parent(%s)", child_path)
+        child_node = child.internalPointer()
+        lgr.log(8, "parent(%s)", child_node)
         try:
-            pnode = self._tree[child_path.parent]
+            pnode = self._tree[child_node.path.parent]
         except ValueError:
             # we have no entry for this thing -> no parent
             lgr.log(8, "parent() -> None")
@@ -279,24 +278,24 @@ class DataladTreeModel(QAbstractItemModel):
         # now determine the (row) index of the child within its immediate
         # parent
         res = self.createIndex(
-            list(pnode.children.keys()).index(child_path.name),
+            list(pnode.children.keys()).index(child_node.path.name),
             0,
-            pnode.path)
+            pnode)
         lgr.log(8, "parent() -> %s", res)
         return res
 
     def data(self, index: QModelIndex,
              role: Qt.ItemDataRole = Qt.DisplayRole) -> QModelIndex:
         loglevel = 8 if role == Qt.DisplayRole else 5
-        target_path = index.internalPointer()
-        lgr.log(loglevel, "data(%s, role=%r)", target_path, role)
+        target_node = index.internalPointer()
+        lgr.log(loglevel, "data(%s, role=%r)", target_node, role)
         # If you do not have a value to return, return None
         res = None
         if role == Qt.DisplayRole:
             if index.column() == 0:
-                res = target_path.name
+                res = target_node.path.name
             elif index.column() == 1:
-                res = self._tree[target_path]._props.get('type', 'UNDEF')
+                res = target_node._props.get('type', 'UNDEF')
         lgr.log(loglevel, "data() -> %r", res)
         return res
 
@@ -335,7 +334,7 @@ class DataladTreeModel(QAbstractItemModel):
         # convert to first-last
         first, last = row, row + count - 1
         self.beginRemoveRows(parent, first, last)
-        pnode = self._tree[parent.internalPointer()]
+        pnode = parent.internalPointer()
         childnode_names = list(pnode.children.keys())[first:last + 1]
         for c in childnode_names:
             del pnode.children[c]
@@ -345,8 +344,8 @@ class DataladTreeModel(QAbstractItemModel):
             self, name: str, parent: QModelIndex) -> QModelIndex:
         # the standard QAbstractItemModel.match() implementation only searches
         # columns, but we also need to be able to discover children in rows
-        parent_path = parent.internalPointer()
-        children = self._tree[parent_path].children
+        pnode = parent.internalPointer()
+        children = pnode.children
         # determine the "row" index this child has in the parent, which
         # is the index in current dict order
         try:
@@ -361,7 +360,7 @@ class DataladTreeModel(QAbstractItemModel):
         # return the index
         # note, that we cannot use 'parent_path / name' as the internal
         # pointer, because it needs to be a persistent object
-        return self.createIndex(row, 0, children[name].path)
+        return self.createIndex(row, 0, children[name])
 
     def match_by_path(self, path: Path) -> QModelIndex:
         # we need to find the index of the FS model item matching the given

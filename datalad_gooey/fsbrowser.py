@@ -47,7 +47,7 @@ class GooeyFilesystemBrowser(QObject):
         self._fswatcher.directoryChanged.connect(self._inspect_changed_dir)
 
     def _watch_dir(self, index):
-        path = index.internalPointer()
+        path = index.internalPointer().path
         lgr.log(
             9,
             "GooeyFilesystemBrowser._watch_dir(%r) -> %r",
@@ -56,7 +56,7 @@ class GooeyFilesystemBrowser(QObject):
         )
 
     def _unwatch_dir(self, index):
-        path = index.internalPointer()
+        path = index.internalPointer().path
         lgr.log(
             9,
             "GooeyFilesystemBrowser._unwatch_dir(%r) -> %r",
@@ -135,7 +135,7 @@ class GooeyFilesystemBrowser(QObject):
             return
         # retrieve the DataladTreeNode instance that corresponds to this
         # item
-        node = tv.model()._tree[index.internalPointer()]
+        node = index.internalPointer()
         node_type = node.get_property('type')
         if node_type is None:
             # we don't know what to do with this (but it also is not expected
