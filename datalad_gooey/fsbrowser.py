@@ -47,21 +47,21 @@ class GooeyFilesystemBrowser(QObject):
         self._fswatcher.directoryChanged.connect(self._inspect_changed_dir)
 
     def _watch_dir(self, index):
-        path = index.internalPointer().path
+        path = str(index.internalPointer().path)
         lgr.log(
             9,
             "GooeyFilesystemBrowser._watch_dir(%r) -> %r",
             path,
-            self._fswatcher.addPath(str(path)),
+            self._fswatcher.addPath(path),
         )
 
     def _unwatch_dir(self, index):
-        path = index.internalPointer().path
+        path = str(index.internalPointer().path)
         lgr.log(
             9,
             "GooeyFilesystemBrowser._unwatch_dir(%r) -> %r",
             path,
-            self._fswatcher.removePath(str(path)),
+            self._fswatcher.removePath(path),
         )
 
     def _inspect_changed_dir(self, path: str):
