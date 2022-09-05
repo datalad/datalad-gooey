@@ -12,6 +12,21 @@ from datalad_next.tree import TreeCommand
 lgr = logging.getLogger('datalad.gooey.fsview_model')
 
 
+def _parse_dir(path):
+    """Yield results on the target directory properties and its content"""
+    # we use `tree()` and limit to immediate children of this node
+    yield from TreeCommand.__call__(
+        # start parsing in symlink target, if there is any
+        path,
+        depth=1, include_files=True,
+        result_renderer='disabled',
+        return_type='generator',
+        # permission issues may error, but we do not want to fail
+        # TODO we would rather annotate the nodes with this info
+        on_failure='ignore',
+    )
+
+
 class DataladTreeNode:
     """Representation of a filesystem tree node
 
@@ -78,16 +93,7 @@ class DataladTreeNode:
                     # example property
                     DataladTreeNode.from_tree_result(r)
                 # we use `tree()` and limit to immediate children of this node
-                for r in TreeCommand.__call__(
-                    # start parsing in symlink target, if there is any
-                    refpath,
-                    depth=1, include_files=True,
-                    result_renderer='disabled',
-                    return_type='generator',
-                    # permission issues may error, but we do not want to fail
-                    # TODO we would rather annotate the nodes with this info
-                    on_failure='ignore',
-                )
+                for r in _parse_dir(refpath)
                 # tree would also return the root, which we are not interested
                 # in
                 if Path(r['path']) != self._path
