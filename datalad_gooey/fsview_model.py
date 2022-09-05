@@ -407,28 +407,6 @@ class DataladTreeModel(QAbstractItemModel):
             del pnode.children[c]
         self.endRemoveRows()
 
-    def match_child_by_pathname(
-            self, name: str, parent: QModelIndex) -> QModelIndex:
-        # the standard QAbstractItemModel.match() implementation only searches
-        # columns, but we also need to be able to discover children in rows
-        pnode = parent.internalPointer()
-        children = pnode.children
-        # determine the "row" index this child has in the parent, which
-        # is the index in current dict order
-        try:
-            row = list(children.keys()).index(name)
-        except ValueError:
-            # no child with such a name. this can happen when, e.g. a parent
-            # dir was also removed and caused a cleanup of pieces of the tree
-            # branch this child was/is located at.
-            # return an invalid index
-            return QModelIndex()
-
-        # return the index
-        # note, that we cannot use 'parent_path / name' as the internal
-        # pointer, because it needs to be a persistent object
-        return self.createIndex(row, 0, children[name])
-
     def match_by_path(self, path: Path) -> QModelIndex:
         # we need to find the index of the FS model item matching the given
         # path
@@ -451,7 +429,7 @@ class DataladTreeModel(QAbstractItemModel):
         currnode_idx = root_node_idx
         # for loop over match() calls
         for name in rpath.parts:
-            currnode_idx = self.match_child_by_pathname(name, currnode_idx)
+            currnode_idx = self._match_child_by_pathname(name, currnode_idx)
             # we must have gotten a hit, because of all the things stated above
             # otherwise tree and model have gone out of sync
             if not currnode_idx.isValid():
@@ -459,3 +437,197 @@ class DataladTreeModel(QAbstractItemModel):
                 # is no longer around
                 break
         return currnode_idx
+
+    def update_directory_item(self, index: QModelIndex):
+        """Perform inspection and update of a directory-like tree item
+
+        This method can be called to make adjustments to the tree, based on
+        an unspecific "directory modified" event, where the modification
+        could be a change in the directory properties, or in any item of
+        the directory content.
+
+        Change signals for connected views are emitted accordingly.
+        """
+        # this method works for directory items only, because below it would
+        # run a `datalad tree` command, which only works on directories
+
+        node = index.internalPointer()
+
+        lgr.log(8, "DataladTreeModel.update_directory_item(%r)", index)
+
+        if not node.path.exists():
+            # the path corresponding to the item is no longer around
+            # clean up within its parent item, if that is still around
+            if index.parent().isValid():
+                self.removeRows(index.row(), 1, index.parent())
+            else:
+                # TODO we could have lost the root dir -> special action
+                raise NotImplementedError
+            # nothing else to do here
+            lgr.log(8, "-> update_directory_item() -> item removed")
+            return
+        # in order to keep the internal pointers within the model intact
+        # we must carefully update the underlying node without replacing
+
+        # get a new TreeNode with its immediate child nodes, in order
+        # to than compare the present to the new one(s): remove/add
+        # as needed, update the existing node instances for the rest
+        new_node = DataladTreeNode.from_path(node.path)
+
+        # apply any updates
+        self._update_item(index, new_node)
+        lgr.log(8, "-> update_directory_item() -> item updated")
+
+    def _match_child_by_pathname(
+            self, name: str, parent: QModelIndex) -> QModelIndex:
+        # the standard QAbstractItemModel.match() implementation only searches
+        # columns, but we also need to be able to discover children in rows
+        pnode = parent.internalPointer()
+        children = pnode.children
+        # determine the "row" index this child has in the parent, which
+        # is the index in current dict order
+        try:
+            row = list(children.keys()).index(name)
+        except ValueError:
+            # no child with such a name. this can happen when, e.g. a parent
+            # dir was also removed and caused a cleanup of pieces of the tree
+            # branch this child was/is located at.
+            # return an invalid index
+            return QModelIndex()
+
+        # return the index
+        # note, that we cannot use 'parent_path / name' as the internal
+        # pointer, because it needs to be a persistent object
+        return self.createIndex(row, 0, children[name])
+
+    def _update_item(self,
+                     index: QModelIndex,
+                     source: DataladTreeNode) -> None:
+        """Private utility to update a tree item/node from a another one
+
+        This other `source` node would typically be one that was generated
+        based on a more recent inspection of the file system state.
+        """
+        lgr.log(8, "DataladTreeModel.update_item(%r)", index)
+
+        # 1. we can have a type change in the root
+        # 2. we can have a property change in the root
+        # 3. we can have new children
+        # 4. we can have vanished children
+        # 5. we can have modified children
+
+        if source._children is not None:
+            # only do this, if the source node has children already discovered.
+            # This could mean that the source node cannot have any children.
+            self._update_item_children(index, source._children)
+
+        #
+        # update the properties of the node
+        #
+        node = index.internalPointer()
+        # the path must never change
+        #node._path = source._path
+        assert node._path == source._path
+
+        # update properties and emit signal of any such update happened
+        if node.update_properties_from_node(source):
+            lgr.log(8, "-> update_item() -> %r data changed", index)
+            self.dataChanged.emit(
+                self.index(0, 0, index.parent()),
+                self.index(0, self.columnCount(index), index.parent()),
+            )
+        else:
+            lgr.log(8, "-> update_item() -> %r data unchanged", index)
+
+    def _update_item_children(self,
+                              index: QModelIndex,
+                              children: bool or Dict):
+        """Private utility to update a tree item/node's children from a source
+
+        This source typically the return value of DataladTreeNode.children.
+        """
+        lgr.log(8, "DataladTreeModel.update_item_children(%r)", index)
+        node = index.internalPointer()
+
+        # we need to inform about tree changes ASAP,
+        # keep track of whether we did that
+        layout_about_to_be_changes_emitted = False
+
+        if (children is False or not children):
+            lgr.log(8, "update_item_children() -> no children (anymore)")
+            # either the updated state cannot have children, or is known
+            # to have none
+            # -> drop existing ones from the model
+            if node.has_known_children:
+                lgr.log(
+                    8,
+                    "update_item_children() -> delete existing children")
+                # structure change: must inform connected views
+                if not layout_about_to_be_changes_emitted:
+                    self.layoutAboutToBeChanged.emit()
+                    layout_about_to_be_changes_emitted = True
+                # wipe out all child items
+                self.removeRows(0, node.count_known_children(), index)
+            # update children container in existing node
+            node._children = children
+        else:
+            assert isinstance(children, dict)
+            # there are incoming children
+            if not node.has_known_children:
+                lgr.log(
+                    8,
+                    "update_item_children() -> no present children, "
+                    "take incoming")
+                # nothing to replace, just accept the incoming ones.
+                # structure change: must inform connected views
+                if not layout_about_to_be_changes_emitted:
+                    self.layoutAboutToBeChanged.emit()
+                    layout_about_to_be_changes_emitted = True
+                node._children = children
+            else:
+                lgr.log(
+                    8,
+                    "update_item_children() -> "
+                    "merge with incoming children")
+                # we must compare all children (union of both states)
+                for cname in set(node.children).union(children):
+                    lgr.log(
+                        8,
+                        "update_item_children() -> process %r (%r)",
+                        cname, children)
+                    if cname in node.children:
+                        # we had the child, hence we have a model index
+                        cindex = self._match_child_by_pathname(cname, index)
+                        if cname in children:
+                            # child exists in both -> update
+                            lgr.log(
+                                8,
+                                "update_item_children() -> update %r with %r",
+                                cindex, cname)
+                            self._update_item(cindex, children[cname])
+                        else:
+                            # child existed, but is no longer -> remove
+                            lgr.log(8, "update_item_children() -> remove %r",
+                                    cindex)
+                            self.removeRows(cindex.row(), 1, index)
+                    else:
+                        # we did not have the child, but now there is a new one
+                        # add it
+                        if not layout_about_to_be_changes_emitted:
+                            self.layoutAboutToBeChanged.emit()
+                            layout_about_to_be_changes_emitted = True
+                        lgr.log(
+                            8,
+                            "update_item_children() -> "
+                            "no child to inspect, take incoming")
+                        node.children[cname] = children[cname]
+        if layout_about_to_be_changes_emitted:
+            lgr.log(8, "-> update_item_children() -> %r layout changed",
+                    index)
+            # resort children according to the current order
+            node.sort_children(*self._tree.sorted_by)
+            # we had an update: inform connect views to take it in
+            self.layoutChanged.emit()
+        else:
+            lgr.log(8, "-> update_item_children() -> %r layout unchanged",
+                    index)

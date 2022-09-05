@@ -80,47 +80,8 @@ class GooeyFilesystemBrowser(QObject):
                        "removed from watcher")
             return
 
-        # there are two things that could bring us here
-        # 1. the directory is gone
-        #    - we need to remove the tree node and all underneath it
-        if not pathobj.exists():
-            if idx.parent().isValid():
-                tvm.removeRows(idx.row(), 1, idx.parent())
-                lgr.log(9, "_inspect_changed_dir() -> removed node")
-            else:
-                # TODO we could have lost the root dir -> special action
-                raise NotImplementedError
-        # 2. the directory (content) has changes
-        #    - we need to inspect the IMMEDIATE children for changes
-        #      wrt to their properties (as far as we care0, and reset
-        #      possibly invalid annotations (git status, etc).
-        #    - there is no need for any recursive inspection, because
-        #      a directory modification would also be detected for
-        #      immediate children
-        #    - the only exception is the removal of a subdirectory, which
-        #      can be implemented as shown above
-        #    - we can also get here for a simple mtime update of the
-        #      watched directory with no change of any children whatsoever
-        #
-        else:
-            # TODO what about an "in-place" replacement of the watched
-            # dir with another?
-            tvm.layoutAboutToBeChanged.emit()
-            node = tvm._tree[pathobj]
-            # for now a blunt wiping out of any and all children,
-            # to be rediscovered by the view requesting a traversal
-            # TODO this will be unnecessary in many cases
-            # - only properties (of children) changed (mtime, etc)
-            #   -> dataChanged signal
-            # - addition of children rather than removal
-            # improve implementation to compare recorded children
-            # with newly discovered children, and rescue anything that
-            # we can reuse, and issue the cheapest signal (dataChanged
-            # vs layoutChanged)
-            node._children = None
-            # for now a blunt and expensive traversal request
-            tvm.layoutChanged.emit()
-            lgr.log(9, "_inspect_changed_dir() -> updated node children")
+        tvm.update_directory_item(idx)
+        lgr.log(9, "_inspect_changed_dir() -> updated tree items")
 
     def _custom_context_menu(self, onpoint):
         """Present a context menu for the item click in the directory browser
