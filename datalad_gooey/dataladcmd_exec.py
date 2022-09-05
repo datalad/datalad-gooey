@@ -53,20 +53,20 @@ class GooeyDataladCmdExec(QObject):
             **kwargs
         )
 
-    def _cmdexec_thread(self, cmd, **kwargs):
+    def _cmdexec_thread(self, cmdname, **kwargs):
         """The code is executed in a worker thread"""
-        print('EXECINTHREAD', cmd, kwargs)
+        print('EXECINTHREAD', cmdname, kwargs)
         # get_ident() is an int, but in the future we might want to move
         # to PY3.8+ native thread IDs, so let's go with a string identifier
         # right away
         thread_id = str(threading.get_ident())
         self.execution_started.emit(
             thread_id,
-            cmd,
+            cmdname,
             kwargs,
         )
         # get functor to execute, resolve name against full API
-        cmd = getattr(dlapi, cmd)
+        cmd = getattr(dlapi, cmdname)
 
         # enforce return_type='generator' to get the most responsive
         # any command could be
@@ -76,6 +76,6 @@ class GooeyDataladCmdExec(QObject):
 
         self.execution_finished.emit(
             thread_id,
-            cmd,
+            cmdname,
             kwargs,
         )

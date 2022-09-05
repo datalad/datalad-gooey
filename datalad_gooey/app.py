@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QPlainTextEdit,
     QScrollArea,
+    QStatusBar,
     QTreeView,
 )
 from PySide6.QtCore import (
@@ -38,6 +39,7 @@ class GooeyApp(QObject):
         'filesystemViewer': QTreeView,
         'logViewer': QPlainTextEdit,
         'menuDataset': QMenu,
+        'statusbar': QStatusBar,
     }
 
     execute_dataladcmd = Signal(str, dict)
@@ -80,6 +82,14 @@ class GooeyApp(QObject):
         self.configure_dataladcmd.connect(self._cmdui.configure)
         # when a command was configured, pass it to the executor
         self._cmdui.configured_dataladcmd.connect(self._cmdexec.execute)
+
+        self._cmdexec.execution_started.connect(
+            lambda i, cmd, args: self.get_widget('statusbar').showMessage(
+                f'Started `{cmd}`'))
+
+        self._cmdexec.execution_finished.connect(
+            lambda i, cmd, args: self.get_widget('statusbar').showMessage(
+                f'Finished `{cmd}`'))
 
         # demo actions to execute things for dev-purposes
         self.get_widget('actionRun_stuff').triggered.connect(self.run_stuff)
