@@ -7,6 +7,7 @@ from typing import (
 from PySide6.QtCore import (
     QAbstractItemModel,
     QModelIndex,
+    Signal,
     Qt,
 )
 from datalad_next.tree import TreeCommand
@@ -271,6 +272,9 @@ class DataladTreeModel(QAbstractItemModel):
     Inline comments in the method bodies provide additional information
     on particular choices made here.
     """
+    # directory path
+    directory_content_requires_annotation = Signal(Path)
+
     def __init__(self):
         super().__init__()
         self._tree = None
@@ -306,8 +310,8 @@ class DataladTreeModel(QAbstractItemModel):
     def columnCount(self, parent: QModelIndex) -> int:
         # Basically how many 2nd-axis items exist for a parent.
         # here, columns are property columns in a tree view
-        # (i.e. Name, Type)
-        return 2
+        # (i.e. Name, Type, State)
+        return 3
 
     def rowCount(self, parent: QModelIndex) -> int:
         pnode = parent.internalPointer()
@@ -316,7 +320,12 @@ class DataladTreeModel(QAbstractItemModel):
             # no parent? this is the tree root
             res = 1
         else:
+            had_known_children = pnode.has_known_children
             res = len(pnode.children)
+            if not had_known_children and res:
+                # we did not know children before, and now we have some.
+                # request an annotation of this directory's content
+                self.directory_content_requires_annotation.emit(pnode.path)
         lgr.log(8, "rowCount() -> %s", res)
         return res
 
@@ -363,6 +372,8 @@ class DataladTreeModel(QAbstractItemModel):
                 res = target_node.path.name
             elif index.column() == 1:
                 res = target_node._props.get('type', 'UNDEF')
+            elif index.column() == 2:
+                res = target_node._props.get('state', '')
         lgr.log(loglevel, "data() -> %r", res)
         return res
 
@@ -372,7 +383,7 @@ class DataladTreeModel(QAbstractItemModel):
         lgr.log(loglevel, "headerData(%s, role=%r)", section, role)
         res = None
         if role == Qt.DisplayRole:
-            res = {0: 'Name', 1: 'Type'}[section]
+            res = {0: 'Name', 1: 'Type', 2: 'State'}[section]
         lgr.log(loglevel, "headerData() -> %r", res)
         return res
 
@@ -382,7 +393,7 @@ class DataladTreeModel(QAbstractItemModel):
         lgr.log(8, "sort(%i, order=%i)", column, order)
         # map column index to tree node attribute to sort by
         sort_by = (
-            {0: 'path', 1: 'type'}[column],
+                {0: 'path', 1: 'type', 2: 'state'}[column],
             order == Qt.DescendingOrder,
         )
         if not self._tree or sort_by == self._tree.sorted_by:
@@ -631,3 +642,16 @@ class DataladTreeModel(QAbstractItemModel):
         else:
             lgr.log(8, "-> update_item_children() -> %r layout unchanged",
                     index)
+
+    def annotate_path_item(self, path, props):
+        idx = self.match_by_path(path)
+        if not idx.isValid():
+            return
+        node = idx.internalPointer()
+        if 'state' in props:
+            state_changed = node._props.get('state') != props['state']
+            node._props['state'] = props['state']
+            if state_changed:
+                # index for the "state" column of the item row
+                state_idx = self.createIndex(idx.row(), 2, node)
+                self.dataChanged.emit(state_idx, state_idx)
