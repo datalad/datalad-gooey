@@ -81,7 +81,7 @@ class DataladTreeNode:
         # was anything updated
         updated = False
         # look for props to be deleted, because the source does not have them
-        for name in self._props:
+        for name in list(self._props.keys()):
             if name not in source._props:
                 del self._props[name]
                 updated = True
