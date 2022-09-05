@@ -49,7 +49,7 @@ class GooeyFilesystemBrowser(QObject):
             return
         # retrieve the DataladTreeNode instance that corresponds to this
         # item
-        node = tv.model()._tree[index.internalPointer()]
+        node = index.internalPointer()
         node_type = node.get_property('type')
         if node_type is None:
             # we don't know what to do with this (but it also is not expected
