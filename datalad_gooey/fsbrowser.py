@@ -69,7 +69,8 @@ class GooeyFilesystemBrowser(QObject):
         lgr.log(9, "GooeyFilesystemBrowser._inspect_changed_dir(%r)", pathobj)
         # we need to know the index of the tree view item corresponding
         # to the changed directory
-        idx = self._get_tree_index(pathobj)
+        tvm = self._treeview.model()
+        idx = tvm.match_by_path(pathobj)
 
         if not idx.isValid():
             # the changed dir has no (longer) a matching entry in the
@@ -79,7 +80,6 @@ class GooeyFilesystemBrowser(QObject):
                        "removed from watcher")
             return
 
-        tvm = self._treeview.model()
         # there are two things that could bring us here
         # 1. the directory is gone
         #    - we need to remove the tree node and all underneath it
@@ -121,38 +121,6 @@ class GooeyFilesystemBrowser(QObject):
             # for now a blunt and expensive traversal request
             tvm.layoutChanged.emit()
             lgr.log(9, "_inspect_changed_dir() -> updated node children")
-
-    def _get_tree_index(self, path: Path) -> QModelIndex:
-        # we need to find the index of the FS model item matching the given
-        # path
-        tvm = self._treeview.model()
-
-        # turn incoming path into a relative one, in order to be able to
-        # traverse the tree nodes
-        tree_rootpath = tvm._tree.root.path
-        root_node_idx = tvm.index(0, 0, QModelIndex())
-        if path == tree_rootpath:
-            # this is the tree root, return the root node index
-            return root_node_idx
-        # everything else is iterating over the nodes in the tree, and
-        # look for the items that match each part of the path.
-        # we are only ever watch directories that where expanded in the
-        # treeview, hence they all must have existed (on FS and in the tree),
-        # hence they all need to have an corresponding node in the tree
-        rpath = path.relative_to(tree_rootpath)
-        # because we have already addressed the case of path == tree_rootpath
-        # rpath must now be a name other than '.'
-        currnode_idx = root_node_idx
-        # for loop over match() calls
-        for name in rpath.parts:
-            currnode_idx = tvm.match_child_by_pathname(name, currnode_idx)
-            # we must have gotten a hit, because of all the things stated above
-            # otherwise tree and model have gone out of sync
-            if not currnode_idx.isValid():
-                # we cannot continue, the leaf node, or an intermediate
-                # is no longer around
-                break
-        return currnode_idx
 
     def _custom_context_menu(self, onpoint):
         """Present a context menu for the item click in the directory browser

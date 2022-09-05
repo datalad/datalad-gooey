@@ -356,3 +356,34 @@ class DataladTreeModel(QAbstractItemModel):
         # note, that we cannot use 'parent_path / name' as the internal
         # pointer, because it needs to be a persistent object
         return self.createIndex(row, 0, children[name].path)
+
+    def match_by_path(self, path: Path) -> QModelIndex:
+        # we need to find the index of the FS model item matching the given
+        # path
+
+        # turn incoming path into a relative one, in order to be able to
+        # traverse the tree nodes
+        tree_rootpath = self._tree.root.path
+        root_node_idx = self.index(0, 0, QModelIndex())
+        if path == tree_rootpath:
+            # this is the tree root, return the root node index
+            return root_node_idx
+        # everything else is iterating over the nodes in the tree, and
+        # look for the items that match each part of the path.
+        # we are only ever watch directories that where expanded in the
+        # treeview, hence they all must have existed (on FS and in the tree),
+        # hence they all need to have an corresponding node in the tree
+        rpath = path.relative_to(tree_rootpath)
+        # because we have already addressed the case of path == tree_rootpath
+        # rpath must now be a name other than '.'
+        currnode_idx = root_node_idx
+        # for loop over match() calls
+        for name in rpath.parts:
+            currnode_idx = self.match_child_by_pathname(name, currnode_idx)
+            # we must have gotten a hit, because of all the things stated above
+            # otherwise tree and model have gone out of sync
+            if not currnode_idx.isValid():
+                # we cannot continue, the leaf node, or an intermediate
+                # is no longer around
+                break
+        return currnode_idx
