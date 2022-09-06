@@ -75,7 +75,7 @@ class DataladTreeNode:
         if name == 'path':
             return self._path
         else:
-            return self._props[name]
+            return self._props.get(name)
 
     def update_properties_from_node(self, source) -> bool:
         """Return whether any property value changed"""
