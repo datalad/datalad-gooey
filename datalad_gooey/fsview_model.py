@@ -129,13 +129,21 @@ class DataladTreeNode:
         elif self._children is None:
             refpath = self._path.resolve() \
                 if 'symlink_target' in self._props else self._path
+            if self._sort_by is not None:
+                sort_args = {
+                    'sort_children_by': self._sort_by[0],
+                    'sort_descending': self._sort_by[1]
+                }
+            else:
+                sort_args = dict()
+
             children = {
                 # keys are plain strings of the 1st-level directory/dataset
                 # content, rather than full paths, to make things leaner
                 str(Path(r['path']).relative_to(refpath)):
                     # for now just the path (mandatory) and `type` as an
                     # example property
-                    DataladTreeNode.from_tree_result(r)
+                    DataladTreeNode.from_tree_result(r, **sort_args)
                 # we use `tree()` and limit to immediate children of this node
                 for r in _parse_dir(refpath)
                 # tree would also return the root, which we are not interested
@@ -171,14 +179,15 @@ class DataladTreeNode:
         }
 
     @staticmethod
-    def from_tree_result(res: Dict):
-        # TODO support
-        #sort_children_by: str or None = None,
-        #sort_descending: bool = False,
-        # https://github.com/datalad/datalad-gooey/issues/30
+    def from_tree_result(res: Dict,
+                         sort_children_by: str or None = None,
+                         sort_descending: bool = False,
+                         ):
         return DataladTreeNode(
             res['path'],
             type=res['type'],
+            sort_children_by=sort_children_by,
+            sort_descending=sort_descending,
             **{
                 k: v
                 for k, v in res.items()
@@ -187,15 +196,18 @@ class DataladTreeNode:
         )
 
     @staticmethod
-    def from_path(path: Path):
-        # TODO support
-        #sort_children_by: str or None = None,
-        #sort_descending: bool = False,
-        # https://github.com/datalad/datalad-gooey/issues/30
+    def from_path(path: Path,
+                  sort_children_by: str or None = None,
+                  sort_descending: bool = False,
+                  ):
         new_node = None
         children = {}
         for r in _parse_dir(path):
-            tn = DataladTreeNode.from_tree_result(r)
+            tn = DataladTreeNode.from_tree_result(
+                r,
+                sort_children_by=sort_children_by,
+                sort_descending=sort_descending
+            )
             if tn.path == path:
                 new_node = tn
             else:
@@ -483,7 +495,14 @@ class DataladTreeModel(QAbstractItemModel):
         # get a new TreeNode with its immediate child nodes, in order
         # to than compare the present to the new one(s): remove/add
         # as needed, update the existing node instances for the rest
-        new_node = DataladTreeNode.from_path(node.path)
+        if self._tree.sorted_by is not None:
+            sort_args = {
+                'sort_children_by': self._tree.sorted_by[0],
+                'sort_descending': self._tree.sorted_by[1]
+            }
+        else:
+            sort_args = dict()
+        new_node = DataladTreeNode.from_path(node.path, **sort_args)
 
         # apply any updates
         self._update_item(index, new_node)
