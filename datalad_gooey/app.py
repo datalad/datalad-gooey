@@ -143,6 +143,10 @@ class GooeyApp(QObject):
     def _populate_dataset_menu(self):
         """Private slot to populate connected QMenus with dataset actions"""
         add_dataset_actions_to_menu(self, self._cmdui.configure, self.sender())
+        # immediately sever the connection to avoid repopulating the menu
+        # over and over
+        self.get_widget('menuDataset').aboutToShow.disconnect(
+            self._populate_dataset_menu)
 
 
 def main():
