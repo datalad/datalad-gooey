@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
 )
 
+from datalad.ui.dialog import DialogUI
 
 class _DataladQtUIBridge(QObject):
     """Private class handling the DataladUI->QtUI bridging
@@ -102,8 +103,12 @@ class _DataladQtUIBridge(QObject):
         )
 
 
-#class GooeyUI(DialogUI):
-class GooeyUI:
+class GooeyUI(DialogUI):
+# It may be possible to not derive from datalad class here, but for datalad
+# commands to not fail to talk to the UI (specially progressbars),
+# need to figure a bit more details of what to implement here. So, just derive
+# to not have most commands fail with AttributeError etc.
+#class GooeyUI:
     """Adapter between the Gooey Qt UI and DataLad's UI API"""
     _singleton = None
     _threadlock = threading.Lock()
@@ -116,8 +121,7 @@ class GooeyUI:
         return cls._singleton
 
     def __init__(self):
-        # TODO I think we can bypass all datalad-implementations entirely
-        #super().__init__(out=<file-like>)
+        super().__init__()
         self._app = None
 
     def set_app(self, gooey_app) -> None:
