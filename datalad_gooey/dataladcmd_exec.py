@@ -80,6 +80,11 @@ class GooeyDataladCmdExec(QObject):
         # for example.
         if 'result_xfm' not in kwargs:
             kwargs['result_xfm'] = None
+
+        if 'dataset' in kwargs:
+            # Pass actual instance, to have path arguments resolved against it
+            # instead of Gooey's CWD.
+            kwargs['dataset'] = dlapi.Dataset(kwargs['dataset'])
         try:
             for res in cmd(**kwargs):
                 self.result_received.emit(res)
