@@ -51,6 +51,12 @@ def populate_w_params(formlayout: QFormLayout,
             cmdkwargs.get(pname, _NoValue),
             # will also be _NoValue, if there was none
             pdefault,
+            # pass the full argspec too, to make it possible for
+            # some widget to act clever based on other parameter
+            # settings that are already known at setup stage
+            # (e.g. setting the base dir of a file selector based
+            # on a `dataset` argument)
+            allargs=cmdkwargs,
         )
         formlayout.addRow(pname, pwidget)
 
@@ -74,7 +80,8 @@ def get_parameter_widget(
         cmd_cls: Interface,
         name: str,
         value: Any = _NoValue,
-        default: Any = _NoValue) -> QWidget:
+        default: Any = _NoValue,
+        allargs: Dict or None = None) -> QWidget:
     """Populate a given layout with a data entry widget for a command parameter
 
     `value` is an explicit setting requested by the caller. A value of
@@ -93,6 +100,7 @@ def get_parameter_widget(
         value,
         default,
         p.constraints,
+        allargs,
     )
     # recycle the docs as widget tooltip, this is more compact than
     # having to integrate potentially lengthy text into the layout
@@ -131,11 +139,64 @@ def get_parameter_widget_factory(name, default, constraints, argparse_spec):
         return get_single_str_widget
 
 
+def get_pathselection_widget(
+        parent: QWidget,
+        name: str,
+        value: Any = _NoValue,
+        default: Any = _NoValue,
+        allargs: Dict or None = None,
+        validator: Callable or None = None):
+    wid = QWidget(parent)
+    layout = QHBoxLayout(wid)
+    wid.setLayout(layout)
+    select_button = QPushButton('Select', parent=parent)
+    selection_info = QLabel(parent=parent)
+    reset_button = QPushButton('Reset', parent=parent)
+    layout.addWidget(selection_info)
+    for b in (select_button, reset_button):
+        layout.addWidget(b)
+
+    def _select_paths():
+        pass
+
+    def _reset_paths():
+        # we cannot/want not handle non-defaults
+        wid._datalad_selected_paths = None \
+            if default is _NoValue else default
+        _update_selection_info()
+
+    def _update_selection_info():
+        selection_info.setText(
+            'nothing selected'
+            if not wid._datalad_selected_paths \
+            else f'{len(ensure_list(wid._datalad_selected_paths))} '
+                 'path(s) selected'
+        )
+
+    if value is not _NoValue:
+        wid._datalad_selected_paths = value
+        wid.setDisabled(True)
+    else:
+        _reset_paths()
+
+    def _get_spec():
+        return wid._datalad_selected_paths
+
+    if wid.isEnabled():
+        # wire up the slots
+        select_button.clicked.connect(_select_paths)
+        reset_button.clicked.connect(_reset_paths)
+
+    wid._get_datalad_param_spec = _get_spec
+    return wid
+
+
 def get_choice_widget(
         parent: QWidget,
         name: str,
         value: Any = _NoValue,
         default: Any = _NoValue,
+        allargs: Dict or None = None,
         validator: Callable or None = None,
         choices=None):
     cb = QComboBox(parent=parent)
@@ -168,6 +229,7 @@ def get_posint_widget(
         name: str,
         value: Any = _NoValue,
         default: Any = _NoValue,
+        allargs: Dict or None = None,
         validator: Callable or None = None,
         allow_none=False):
     sb = QSpinBox(parent=parent)
@@ -201,6 +263,7 @@ def get_bool_widget(
         name: str,
         value: Any = _NoValue,
         default: Any = _NoValue,
+        allargs: Dict or None = None,
         validator: Callable or None = None):
     cb = QCheckBox(parent=parent)
     if default not in (True, False):
@@ -241,6 +304,7 @@ def get_single_str_widget(
         name: str,
         value: Any = _NoValue,
         default: Any = _NoValue,
+        allargs: Dict or None = None,
         validator: Callable or None = None):
     edit = QLineEdit(parent=parent)
     if value is not _NoValue:
