@@ -9,6 +9,8 @@ from PySide6.QtCore import (
     Signal,
     Slot,
 )
+
+from datalad.support.exceptions import CapturedException
 # lazy import
 dlapi = None
 
@@ -21,6 +23,8 @@ class GooeyDataladCmdExec(QObject):
     # thread_id, cmdname, cmdargs/kwargs
     execution_started = Signal(str, str, dict)
     execution_finished = Signal(str, str, dict)
+    # thread_id, cmdname, cmdargs/kwargs, CapturedException
+    execution_failed = Signal(str, str, dict, CapturedException)
     result_received = Signal(dict)
 
     def __init__(self):
@@ -71,11 +75,20 @@ class GooeyDataladCmdExec(QObject):
         # enforce return_type='generator' to get the most responsive
         # any command could be
         kwargs['return_type'] = 'generator'
-        for res in cmd(**kwargs):
-            self.result_received.emit(res)
-
-        self.execution_finished.emit(
-            thread_id,
-            cmdname,
-            kwargs,
-        )
+        try:
+            for res in cmd(**kwargs):
+                self.result_received.emit(res)
+        except Exception as e:
+            ce = CapturedException(e)
+            self.execution_failed.emit(
+                thread_id,
+                cmdname,
+                kwargs,
+                ce
+            )
+        else:
+            self.execution_finished.emit(
+                thread_id,
+                cmdname,
+                kwargs,
+            )
