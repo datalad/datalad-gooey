@@ -75,6 +75,11 @@ class GooeyDataladCmdExec(QObject):
         # enforce return_type='generator' to get the most responsive
         # any command could be
         kwargs['return_type'] = 'generator'
+        # Unless explicitly specified, force result records instead of the
+        # command's default transformation which might give Dataset instances
+        # for example.
+        if 'result_xfm' not in kwargs:
+            kwargs['result_xfm'] = None
         try:
             for res in cmd(**kwargs):
                 self.result_received.emit(res)
