@@ -15,6 +15,7 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import (
     QAction,
+    QIcon,
 )
 
 from datalad import cfg as dlcfg
@@ -153,8 +154,19 @@ class GooeyApp(QObject):
             self._populate_dataset_menu)
 
 
+class QtApp(QApplication):
+    # A wrapper around QApplication to provide a single (i.e. deduplicated)
+    # point for setting Qapplication-level properties, such as icons.
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set application icon using base file path as reference
+        package_path = Path(__file__).resolve().parent
+        self.setWindowIcon(QIcon(str(package_path / \
+            'resources/icons/app_icon_32.svg')))
+
+
 def main():
-    qtapp = QApplication(sys.argv)
+    qtapp = QtApp(sys.argv)
     gooey = GooeyApp()
     gooey.main_window.show()
     sys.exit(qtapp.exec())
