@@ -143,6 +143,13 @@
            </property>
           </widget>
          </item>
+         <item alignment="Qt::AlignRight|Qt::AlignTop">
+          <widget class="QPushButton" name="clearLogPB">
+           <property name="text">
+            <string>Clear Log</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
        <widget class="QWidget" name="tab_2">
