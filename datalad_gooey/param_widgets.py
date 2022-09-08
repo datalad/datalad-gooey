@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFormLayout,
+    QLabel,
     QLineEdit,
     QSpinBox,
     QWidget,
@@ -27,12 +28,14 @@ from datalad.utils import (
 
 def populate_w_params(formlayout: QFormLayout,
                       cmdname: str,
+                      cmdname_label: QLabel,
                       cmdkwargs: Dict) -> None:
     """Populate a given QLayout with data entry widgets for a DataLad command
     """
     # localize to potentially delay heavy import
     from datalad import api as dlapi
-
+    
+    cmdname_label.setText(cmdname)
     # deposit the command name in the widget, to be retrieved later by
     # retrieve_parameters()
     formlayout.datalad_cmd_name = cmdname
