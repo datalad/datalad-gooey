@@ -10,6 +10,7 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QDialogButtonBox,
     QFormLayout,
+    QLabel,
     QScrollArea,
 )
 
@@ -26,6 +27,7 @@ class GooeyDataladCmdUI(QObject):
         self._ui_parent = ui_parent
         self._pwidget = None
         self._pform = None
+        self._cmd_label = None
 
     @property
     def pwidget(self):
@@ -41,7 +43,9 @@ class GooeyDataladCmdUI(QObject):
             buttonbox.accepted.connect(self._retrieve_input)
             # we disable the UI (however that might look like) on cancel
             buttonbox.rejected.connect(self.disable)
-
+            # access the QLabel field to set command name upon configuration
+            self._cmd_label = dlg.findChild(
+                QLabel, name='commandName')
             self._pwidget = dlg
         return self._pwidget
 
@@ -86,6 +90,7 @@ class GooeyDataladCmdUI(QObject):
         populate_w_params(
             self.pform,
             cmdname,
+            self._cmd_label,
             cmdkwargs,
         )
         # make sure the UI is visible
