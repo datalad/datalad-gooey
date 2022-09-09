@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QMenu,
     QPlainTextEdit,
+    QPushButton,
     QScrollArea,
     QStatusBar,
     QTreeView,
@@ -15,6 +16,7 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import (
     QAction,
+    QIcon,
 )
 
 from datalad import cfg as dlcfg
@@ -36,6 +38,7 @@ class GooeyApp(QObject):
         'actionsTabScrollArea': QScrollArea,
         'actionRun_stuff': QAction,
         'actionConfigure_stuff': QAction,
+        'clearLogPB': QPushButton,
         'filesystemViewer': QTreeView,
         'logViewer': QPlainTextEdit,
         'menuDataset': QMenu,
@@ -102,6 +105,10 @@ class GooeyApp(QObject):
         # necessary
         self.get_widget('menuDataset').aboutToShow.connect(self._populate_dataset_menu)
 
+        # connect pushbutton clicked signal to clear slot of logViewer
+        self.get_widget('clearLogPB').clicked.connect(self.get_widget('logViewer').clear)
+
+
     def deinit(self):
         dlui.ui.set_backend(self._prev_ui_backend)
 
@@ -153,8 +160,19 @@ class GooeyApp(QObject):
             self._populate_dataset_menu)
 
 
+class QtApp(QApplication):
+    # A wrapper around QApplication to provide a single (i.e. deduplicated)
+    # point for setting Qapplication-level properties, such as icons.
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set application icon using base file path as reference
+        package_path = Path(__file__).resolve().parent
+        self.setWindowIcon(QIcon(str(package_path / \
+            'resources/icons/app_icon_32.svg')))
+
+
 def main():
-    qtapp = QApplication(sys.argv)
+    qtapp = QtApp(sys.argv)
     gooey = GooeyApp()
     gooey.main_window.show()
     sys.exit(qtapp.exec())
