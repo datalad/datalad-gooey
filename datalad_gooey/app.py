@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QMenu,
     QPlainTextEdit,
+    QPushButton,
     QScrollArea,
     QStatusBar,
     QTreeView,
@@ -37,6 +38,7 @@ class GooeyApp(QObject):
         'actionsTabScrollArea': QScrollArea,
         'actionRun_stuff': QAction,
         'actionConfigure_stuff': QAction,
+        'clearLogPB': QPushButton,
         'filesystemViewer': QTreeView,
         'logViewer': QPlainTextEdit,
         'menuDataset': QMenu,
@@ -102,6 +104,10 @@ class GooeyApp(QObject):
         # arrange for the dataset menu to populate itself lazily once
         # necessary
         self.get_widget('menuDataset').aboutToShow.connect(self._populate_dataset_menu)
+
+        # connect pushbutton clicked signal to clear slot of logViewer
+        self.get_widget('clearLogPB').clicked.connect(self.get_widget('logViewer').clear)
+
 
     def deinit(self):
         dlui.ui.set_backend(self._prev_ui_backend)
