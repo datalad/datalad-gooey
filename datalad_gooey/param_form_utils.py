@@ -23,6 +23,7 @@ from datalad.utils import (
 
 
 from . import param_widgets as pw
+from .param_multival_widget import MultiValueInputWidget
 
 __all__ = ['populate_form_w_params']
 
@@ -114,15 +115,16 @@ def _get_parameter_widget(
     # constraints
     pwid_factory = _get_parameter_widget_factory(
         name, default, p.constraints, p.cmd_kwargs, allargs)
-    pwid = pwid_factory(parent=parent)
-    pwid.set_gooey_param_spec(name, value, default)
-    if p.constraints:
-        pwid.set_gooey_param_validator(p.constraints)
-    pwid.set_gooey_cmdkwargs(allargs)
-    # recycle the docs as widget tooltip, this is more compact than
-    # having to integrate potentially lengthy text into the layout
-    pwid.set_gooey_param_docs(p._doc)
-    return pwid
+    return pw.load_parameter_widget(
+        parent,
+        pwid_factory,
+        name=name,
+        docs=p._doc,
+        value=value,
+        default=default,
+        validator=p.constraints,
+        allargs=allargs,
+    )
 
 
 def _get_parameter_widget_factory(
@@ -168,8 +170,15 @@ def _get_parameter_widget_factory(
         type_widget = functools.partial(pw.PosIntParamWidget, allow_none=True)
 
     # we must consider the following nargs spec for widget selection
-    # - N
-    # - '*'
-    # - '+'
-    # TODO wrap in MultiValueInputWidget if indicated by action/nargs
+    # (int, '*', '+'), plus action=append
+    # in all these cases, we need to expect multiple instances of the data type
+    # for which we have selected the input widget above
+    argparse_nargs = argparse_spec.get('nargs')
+    if (argparse_action == 'append'
+            or argparse_nargs in ('+', '*')
+            or isinstance(argparse_nargs, int)):
+        type_widget = functools.partial(
+            # TODO give a fixed N as a parameter too
+            MultiValueInputWidget, type_widget)
+
     return type_widget

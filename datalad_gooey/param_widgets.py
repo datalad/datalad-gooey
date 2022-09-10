@@ -3,23 +3,17 @@ from typing import (
     Any,
     Dict,
 )
+
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFileDialog,
     QHBoxLayout,
-    QLabel,
     QLineEdit,
-    QPushButton,
     QSpinBox,
     QToolButton,
     QWidget,
-)
-
-from datalad.distribution.dataset import Dataset
-from datalad.utils import (
-    ensure_list,
 )
 
 
@@ -73,6 +67,7 @@ class GooeyParamWidgetMixin:
         This implementation uses `set_gooey_param_value()` to perform
         this operation. Reimplement as necessary.
         """
+        self._gooey_param_value = value
         self.set_gooey_param_value(value)
 
     def set_gooey_param_spec(
@@ -81,13 +76,14 @@ class GooeyParamWidgetMixin:
         name, a fixed preset value, and an editable default.
         """
         self._gooey_param_name = name
+        # store for later inspection by get_gooey_param_spec()
         self._gooey_param_default = default
         if value is not _NoValue:
             self.set_gooey_param_value(value)
             # no further edits, the caller wanted it to be this
             self.setDisabled(True)
         elif default is not _NoValue:
-            self.set_gooey_param_value(default)
+            self.set_gooey_param_default(default)
 
     def get_gooey_param_spec(self) -> Dict:
         """Called by the command UI generator to get a parameter specification
@@ -128,7 +124,28 @@ class GooeyParamWidgetMixin:
         The default implementation assigns the documentation to a widget-wide
         tooltip.
         """
+        # recycle the docs as widget tooltip, this is more compact than
+        # having to integrate potentially lengthy text into the layout
         self.setToolTip(docs)
+
+
+def load_parameter_widget(
+        parent: QWidget,
+        pwid_factory: Callable,
+        name: str,
+        docs: str,
+        value: Any = _NoValue,
+        default: Any = _NoValue,
+        validator: Callable or None = None,
+        allargs: Dict or None = None) -> QWidget:
+    """ """
+    pwid = pwid_factory(parent=parent)
+    pwid.set_gooey_param_spec(name, value, default)
+    if validator:
+        pwid.set_gooey_param_validator(validator)
+    pwid.set_gooey_cmdkwargs(allargs)
+    pwid.set_gooey_param_docs(docs)
+    return pwid
 
 
 #
@@ -219,7 +236,7 @@ class StrParamWidget(QLineEdit, GooeyParamWidgetMixin):
         # by the user -- otherwise stay silent and let the command
         # use its default
         if self.isEnabled() and not self.isModified() :
-            raise ValueError
+            raise ValueError('Present value was not modified')
         return self.text()
 
 
@@ -305,6 +322,7 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
                 # ignores any multi-selection
                 # TODO prevent or support specifically
                 self.set_gooey_param_value(paths[0])
+                self._edit.setModified(True)
 
     def _select_dir(self):
         path = QFileDialog.getExistingDirectory(
@@ -314,3 +332,4 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
         )
         if path:
             self.set_gooey_param_value(path)
+            self._edit.setModified(True)
