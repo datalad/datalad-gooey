@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from .utils import load_ui
-from .param_widgets import populate_w_params
+from .param_form_utils import populate_form_w_params
 
 
 class GooeyDataladCmdUI(QObject):
@@ -87,7 +87,7 @@ class GooeyDataladCmdUI(QObject):
             "GooeyDataladCmdUI.configure() called without command name"
 
         self._empty_form()
-        populate_w_params(
+        populate_form_w_params(
             self.pform,
             cmdname,
             self._cmd_label,
@@ -106,7 +106,7 @@ class GooeyDataladCmdUI(QObject):
             # _get_datalad_param_spec() is our custom private adhoc method
             # expected to return a dict with a parameter setting, or an
             # empty dict, when the default shall be used.
-            params.update(field_widget._get_datalad_param_spec())
+            params.update(field_widget.get_gooey_param_spec())
 
         # take a peek, TODO remove
         from pprint import pprint

@@ -1,71 +1,26 @@
 from collections.abc import Callable
-import functools
-from itertools import zip_longest
-import sys
 from typing import (
     Any,
     Dict,
-    List,
 )
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
-    QFormLayout,
+    QFileDialog,
+    QHBoxLayout,
     QLabel,
     QLineEdit,
+    QPushButton,
     QSpinBox,
+    QToolButton,
     QWidget,
 )
 
-from datalad.interface.base import Interface
-from datalad.support.constraints import EnsureChoice
+from datalad.distribution.dataset import Dataset
 from datalad.utils import (
-    getargspec,
-    get_wrapped_class,
+    ensure_list,
 )
-
-
-def populate_w_params(formlayout: QFormLayout,
-                      cmdname: str,
-                      cmdname_label: QLabel,
-                      cmdkwargs: Dict) -> None:
-    """Populate a given QLayout with data entry widgets for a DataLad command
-    """
-    # localize to potentially delay heavy import
-    from datalad import api as dlapi
-    
-    cmdname_label.setText(cmdname)
-    # deposit the command name in the widget, to be retrieved later by
-    # retrieve_parameters()
-    formlayout.datalad_cmd_name = cmdname
-    # get the matching callable from the DataLad API
-    cmd = getattr(dlapi, cmdname)
-    # resolve to the interface class that has all the specification
-    cmd_cls = get_wrapped_class(cmd)
-    # loop over all parameters of the command (with their defaults)
-    for pname, pdefault in _get_params(cmd):
-        # populate the layout with widgets for each of them
-        pwidget = get_parameter_widget(
-            formlayout.parentWidget(),
-            cmd_cls,
-            pname,
-            # pass a given value, or indicate that there was none
-            cmdkwargs.get(pname, _NoValue),
-            # will also be _NoValue, if there was none
-            pdefault,
-            # pass the full argspec too, to make it possible for
-            # some widget to act clever based on other parameter
-            # settings that are already known at setup stage
-            # (e.g. setting the base dir of a file selector based
-            # on a `dataset` argument)
-            allargs=cmdkwargs,
-        )
-        formlayout.addRow(pname, pwidget)
-
-    # TODO the above will not cover standard parameters like
-    # result_renderer=
-    # add standard widget set for those we want to support
 
 
 class _NoValue:
@@ -78,273 +33,284 @@ class _NoValue:
     pass
 
 
-def get_parameter_widget(
-        parent: QWidget,
-        cmd_cls: Interface,
-        name: str,
-        value: Any = _NoValue,
-        default: Any = _NoValue,
-        allargs: Dict or None = None) -> QWidget:
-    """Populate a given layout with a data entry widget for a command parameter
+class GooeyParamWidgetMixin:
+    """API mixin for QWidget to get/set parameter specifications
 
-    `value` is an explicit setting requested by the caller. A value of
-    `_NoValue` indicates that there was no specific value given. `default` is a
-    command's default parameter value, with `_NoValue` indicating that the
-    command has no default for a parameter.
+    Any parameter widget implementation should also derive from the class,
+    and implement, at minimum, `set_gooey_param_value()` and
+    `get_gooey_param_value()` for compatibility with the command parameter
+    UI generator.
+
+    The main API used by the GUI generator are `set_gooey_param_spec()`
+    and `get_gooey_param_spec()`. The take care of providing a standard
+    widget behavior across all widget types, such as, disabling a widget
+    when a specific value is already set, and not returning values if
+    they do not deviate from the default.
     """
-    p = cmd_cls._params_[name]
-    # guess the best widget-type based on the argparse setup and configured
-    # constraints
-    factory = get_parameter_widget_factory(
-        name, default, p.constraints, p.cmd_kwargs)
-    widget = factory(
-        parent,
-        name,
-        value,
-        default,
-        p.constraints,
-        allargs,
-    )
-    # recycle the docs as widget tooltip, this is more compact than
-    # having to integrate potentially lengthy text into the layout
-    widget.setToolTip(p._doc)
-    return widget
+    def set_gooey_param_value(self, value):
+        """Implement to set a particular value in the target widget.
+
+        By default, this method is also used to set a default value.
+        If that is not desirable for a particular widget type,
+        override `set_gooey_param_default()`.
+        """
+        raise NotImplementedError
+
+    def get_gooey_param_value(self):
+        """Implement to get the parameter value from the widget.
+
+        Raises
+        ------
+        ValueError
+          The implementation must raise this exception, when no value
+          has been entered/is available.
+        """
+        raise NotImplementedError
+
+    def set_gooey_param_default(self, value):
+        """Set a parameter default value in the widget
+
+        This implementation uses `set_gooey_param_value()` to perform
+        this operation. Reimplement as necessary.
+        """
+        self.set_gooey_param_value(value)
+
+    def set_gooey_param_spec(
+            self, name: str, value=_NoValue, default=_NoValue):
+        """Called by the command UI generator to set parameter
+        name, a fixed preset value, and an editable default.
+        """
+        self._gooey_param_name = name
+        self._gooey_param_default = default
+        if value is not _NoValue:
+            self.set_gooey_param_value(value)
+            # no further edits, the caller wanted it to be this
+            self.setDisabled(True)
+        elif default is not _NoValue:
+            self.set_gooey_param_value(default)
+
+    def get_gooey_param_spec(self) -> Dict:
+        """Called by the command UI generator to get a parameter specification
+
+        Return a dict that is either empty (when no value was gathered,
+        or the gather value is not different from the default), or
+        is a mapping of parameter name to the gather value.
+        """
+        try:
+            val = self.get_gooey_param_value()
+        except ValueError:
+            # class signals that no value was set
+            return {}
+        return {self._gooey_param_name: val} \
+            if val != self._gooey_param_default \
+            else {}
+
+    def set_gooey_param_validator(self, validator: Callable) -> None:
+        """Set a validator callable that can be used by the widget
+        for input validation
+        """
+        self._gooey_param_validator = validator
+
+    def set_gooey_cmdkwargs(self, kwargs: Dict) -> None:
+        """Set a mapping of preset parameters for the to-be-configured command
+
+        A widget can use this information to tailor its own presets based
+        on what is known about the command execution prior configuration. For
+        example, a set `dataset` argument could be used to preset the base
+        directory for "file-open" dialogs to avoid unnecessary user actions
+        for traversing manually to a likely starting point.
+        """
+        self._gooey_cmdkwargs = kwargs
+
+    def set_gooey_param_docs(self, docs: str) -> None:
+        """Present documentation on the parameter in the widget
+
+        The default implementation assigns the documentation to a widget-wide
+        tooltip.
+        """
+        self.setToolTip(docs)
 
 
-def get_parameter_widget_factory(name, default, constraints, argparse_spec):
-    """Translate DataLad command parameter specs into Gooey input widgets"""
-    # for now just one to play with
-    # TODO each factory must provide a standard widget method
-    # to return the final value, ready to pass onto the respective
-    # parameter of the command call
-    argparse_action = argparse_spec.get('action')
-    # we must consider the following action specs for widget selection
-    # - 'store_const'
-    # - 'store_true' and 'store_false'
-    # - 'append'
-    # - 'append_const'
-    # - 'count'
-    # - 'extend'
-    if argparse_action in ('store_true', 'store_false'):
-        return get_bool_widget
-    # we must consider the following nargs spec for widget selection
-    # - N
-    # - '*'
-    # - '+'
-    elif isinstance(constraints, EnsureChoice) and argparse_action is None:
-        return functools.partial(
-            get_choice_widget,
-            choices=constraints._allowed,
-        )
-    elif name == 'recursion_limit':
-        return functools.partial(get_posint_widget, allow_none=True)
-    else:
-        return get_single_str_widget
+#
+# Parameter widget implementations
+#
 
+class ChoiceParamWidget(QComboBox, GooeyParamWidgetMixin):
+    def __init__(self, choices=None, parent=None):
+        super().__init__(parent)
+        self.setInsertPolicy(QComboBox.NoInsert)
+        if choices:
+            for c in choices:
+                # we add items, and we stick their real values in too
+                # to avoid tricky conversion via str
+                self.addItem(self._gooey_map_val2label(c), userData=c)
 
-def get_pathselection_widget(
-        parent: QWidget,
-        name: str,
-        value: Any = _NoValue,
-        default: Any = _NoValue,
-        allargs: Dict or None = None,
-        validator: Callable or None = None):
-    wid = QWidget(parent)
-    layout = QHBoxLayout(wid)
-    wid.setLayout(layout)
-    select_button = QPushButton('Select', parent=parent)
-    selection_info = QLabel(parent=parent)
-    reset_button = QPushButton('Reset', parent=parent)
-    layout.addWidget(selection_info)
-    for b in (select_button, reset_button):
-        layout.addWidget(b)
+    def set_gooey_param_value(self, value):
+        self.setCurrentText(self._gooey_map_val2label(value))
 
-    def _select_paths():
-        pass
+    def get_gooey_param_value(self):
+        return self.currentData()
 
-    def _reset_paths():
-        # we cannot/want not handle non-defaults
-        wid._datalad_selected_paths = None \
-            if default is _NoValue else default
-        _update_selection_info()
-
-    def _update_selection_info():
-        selection_info.setText(
-            'nothing selected'
-            if not wid._datalad_selected_paths \
-            else f'{len(ensure_list(wid._datalad_selected_paths))} '
-                 'path(s) selected'
-        )
-
-    if value is not _NoValue:
-        wid._datalad_selected_paths = value
-        wid.setDisabled(True)
-    else:
-        _reset_paths()
-
-    def _get_spec():
-        return wid._datalad_selected_paths
-
-    if wid.isEnabled():
-        # wire up the slots
-        select_button.clicked.connect(_select_paths)
-        reset_button.clicked.connect(_reset_paths)
-
-    wid._get_datalad_param_spec = _get_spec
-    return wid
-
-
-def get_choice_widget(
-        parent: QWidget,
-        name: str,
-        value: Any = _NoValue,
-        default: Any = _NoValue,
-        allargs: Dict or None = None,
-        validator: Callable or None = None,
-        choices=None):
-    cb = QComboBox(parent=parent)
-    cb.setInsertPolicy(QComboBox.NoInsert)
-
-    def _map_val2label(val):
+    def _gooey_map_val2label(self, val):
         return '--none--' if val is None else str(val)
 
-    if choices:
-        for c in choices:
-            # we add items, and we stick their real values in too
-            # to avoid tricky conversion via str
-            cb.addItem(_map_val2label(c), userData=c)
-    if value is not _NoValue:
-        cb.setCurrentText(_map_val2label(value))
-        cb.setDisabled(True)
-    elif default is not _NoValue:
-        cb.setCurrentText(_map_val2label(default))
 
-    def _get_spec():
-        val = cb.currentData()
-        return {name: val} if val != default else {}
+class PosIntParamWidget(QSpinBox, GooeyParamWidgetMixin):
+    def __init__(self, allow_none=False, parent=None):
+        super().__init__(parent)
+        if allow_none:
+            self.setMinimum(-1)
+            self.setSpecialValueText('none')
+        else:
+            # this is not entirely correct, but large enough for any practical
+            # purpose
+            # TODO libshiboken: Overflow: Value 9223372036854775807 exceedsi
+            # limits of type  [signed] "i" (4bytes).
+            # Do we need to set a maximum value at all?
+            #self.setMaximum(sys.maxsize)
+            pass
+        self._allow_none = allow_none
 
-    cb._get_datalad_param_spec = _get_spec
-    return cb
+    def set_gooey_param_value(self, value):
+        # generally assumed to be int and fit in the range
+        self.setValue(-1 if value is None and self._allow_none else value)
 
-
-def get_posint_widget(
-        parent: QWidget,
-        name: str,
-        value: Any = _NoValue,
-        default: Any = _NoValue,
-        allargs: Dict or None = None,
-        validator: Callable or None = None,
-        allow_none=False):
-    sb = QSpinBox(parent=parent)
-    if allow_none:
-        sb.setMinimum(-1)
-        sb.setSpecialValueText('none')
-    else:
-        # this is not entirely correct, but large enough for any practical
-        # purpose
-        sb.setMaximum(sys.maxsize)
-    if value is not _NoValue:
-        # assumed to be int and fit in the range
-        sb.setValue(value)
-        # no further edits, the caller wanted it to be this
-        sb.setDisabled(True)
-    elif default is not _NoValue:
-        sb.setValue(-1 if default is None and allow_none else default)
-
-    def _get_spec():
-        val = sb.value()
+    def get_gooey_param_value(self):
+        val = self.value()
         # convert special value -1 back to None
-        val = None if val == -1 and allow_none else val
-        return {name: val} if val != default else {}
-
-    sb._get_datalad_param_spec = _get_spec
-    return sb
+        return None if val == -1 and self._allow_none else val
 
 
-def get_bool_widget(
-        parent: QWidget,
-        name: str,
-        value: Any = _NoValue,
-        default: Any = _NoValue,
-        allargs: Dict or None = None,
-        validator: Callable or None = None):
-    cb = QCheckBox(parent=parent)
-    if default not in (True, False):
-        # if the default value is not representable by a checkbox
-        # leave it in "partiallychecked". In cases where the
-        # default is something like `None`, we can distinguish
-        # a user not having set anything different from the default,
-        # even if the default is not a bool
-        cb.setTristate(True)
-        cb.setCheckState(Qt.PartiallyChecked)
-    else:
-        # otherwise flip the switch accordingly
-        cb.setChecked(default)
-    if value is not _NoValue:
-        # assumed to be boolean
-        cb.setChecked(value)
-        # no further edits, the caller wanted it to be this
-        cb.setDisabled(True)
+class BoolParamWidget(QCheckBox, GooeyParamWidgetMixin):
+    def set_gooey_param_value(self, value):
+        if value not in (True, False):
+            # if the value is not representable by a checkbox
+            # leave it in "partiallychecked". In cases where the
+            # default is something like `None`, we can distinguish
+            # a user not having set anything different from the default,
+            # even if the default is not a bool
+            self.setTristate(True)
+            self.setCheckState(Qt.PartiallyChecked)
+        else:
+            # otherwise flip the switch accordingly
+            self.setChecked(value)
 
-    def _get_spec():
-        state = cb.checkState()
+    def get_gooey_param_value(self):
+        state = self.checkState()
         if state == Qt.PartiallyChecked:
             # TODO error if partiallychecked still (means a
             # value with no default was not set)
             # a default `validator` could handle that
-            return {}
+            # Mixin pics this up and communicates: nothing was set
+            raise ValueError
         # convert to bool
-        state = cb.checkState() == Qt.Checked
-        # report when different from default
-        return {name: state} if state != default else {}
-
-    cb._get_datalad_param_spec = _get_spec
-    return cb
+        return state == Qt.Checked
 
 
-def get_single_str_widget(
-        parent: QWidget,
-        name: str,
-        value: Any = _NoValue,
-        default: Any = _NoValue,
-        allargs: Dict or None = None,
-        validator: Callable or None = None):
-    edit = QLineEdit(parent=parent)
-    if value is not _NoValue:
-        edit.setText(str(value))
-        # no further edits, the caller wanted it to be this
-        edit.setDisabled(True)
-    elif default is not _NoValue:
-        edit.setPlaceholderText(str(default))
+class StrParamWidget(QLineEdit, GooeyParamWidgetMixin):
+    def set_gooey_param_value(self, value):
+        self.setText(str(value))
 
-    def _get_spec():
+    def set_gooey_param_default(self, value):
+        self.setPlaceholderText(str(value))
+
+    def get_gooey_param_value(self):
         # return the value if it was set be the caller, or modified
         # by the user -- otherwise stay silent and let the command
         # use its default
-        return {name: edit.text()} \
-            if edit.isModified() or not edit.isEnabled() \
-            else {}
-
-    edit._get_datalad_param_spec = _get_spec
-    return edit
+        if self.isEnabled() and not self.isModified() :
+            raise ValueError
+        return self.text()
 
 
-def _get_params(cmd) -> List:
-    """Take a callable and return a list of parameter names, and their defaults
+class PathParamWidget(QWidget, GooeyParamWidgetMixin):
+    def __init__(self, basedir=None,
+                 pathtype: QFileDialog.FileMode = QFileDialog.AnyFile,
+                 parent=None):
+        """Supported `pathtype` values are
 
-    Parameter names and defaults are returned as 2-tuples. If a parameter has
-    no default, the special value `_NoValue` is used.
-    """
-    # lifted from setup_parser_for_interface()
-    args, varargs, varkw, defaults = getargspec(cmd, include_kwonlyargs=True)
-    return list(
-        zip_longest(
-            # fuse parameters from the back, to match with their respective
-            # defaults -- if soem have no defaults, they would be the first
-            args[::-1],
-            defaults[::-1],
-            # pad with a dedicate type, to be able to tell if there was a
-            # default or not
-            fillvalue=_NoValue)
-    # reverse the order again to match the original order in the signature
-    )[::-1]
+        - `QFileDialog.AnyFile`
+        - `QFileDialog.ExistingFile`
+        - `QFileDialog.Directory`
+        """
+        super().__init__(parent)
+        self._basedir = basedir
+        self._pathtype = pathtype
+
+        hl = QHBoxLayout()
+        # squash the margins to fit into a list widget item as much as possible
+        margins = hl.contentsMargins()
+        # we stay with the default left/right, but minimize vertically
+        hl.setContentsMargins(margins.left(), 0, margins.right(), 0)
+        self.setLayout(hl)
+
+        # the main widget is a simple line edit
+        self._edit = QLineEdit(self)
+        hl.addWidget(self._edit)
+
+        # next to the line edit, we place to small button to facilitate
+        # selection of file/directory paths by a browser dialog.
+        if pathtype == QFileDialog.AnyFile:
+            # we use two separate ones, because we cannot know which type is
+            # needed, and on some platforms the respected native
+            # dialogs are different... so we go with two for the best "native"
+            # experience
+            dir_button = QToolButton(self)
+            dir_button.setToolTip('Choose directory')
+            # TODO use icon
+            dir_button.setArrowType(Qt.LeftArrow)
+            hl.addWidget(dir_button)
+            dir_button.clicked.connect(self._select_dir)
+
+        file_button = QToolButton(self)
+        file_button.setToolTip('Select path')
+        # TODO use icon
+        file_button.setArrowType(Qt.UpArrow)
+        hl.addWidget(file_button)
+
+        # wire up the slots
+        file_button.clicked.connect(self._select_path)
+
+    def set_gooey_param_value(self, value):
+        self._edit.setText(str(value))
+
+    def set_gooey_param_default(self, value):
+        self._edit.setPlaceholderText(str(value))
+
+    def get_gooey_param_value(self):
+        # return the value if it was set be the caller, or modified
+        # by the user -- otherwise stay silent and let the command
+        # use its default
+        edit = self._edit
+        if edit.isEnabled() and not edit.isModified() :
+            raise ValueError
+        return edit.text()
+
+    def set_gooey_param_docs(self, docs: str) -> None:
+        # only use edit tooltip for the docs, and let the buttons
+        # have their own
+        self._edit.setToolTip(docs)
+
+    def _select_path(self):
+        dialog = QFileDialog(self)
+        dialog.setFileMode(self._pathtype)
+        dialog.setOption(QFileDialog.DontResolveSymlinks)
+        if self._basedir:
+            # we have a basedir, so we can be clever
+            dialog.setDirectory(str(self.basedir))
+        paths = None
+        if dialog.exec():
+            paths = dialog.selectedFiles()
+            if paths:
+                # ignores any multi-selection
+                # TODO prevent or support specifically
+                self.set_gooey_param_value(paths[0])
+
+    def _select_dir(self):
+        path = QFileDialog.getExistingDirectory(
+            parent=self,
+            caption='Gimme some!',
+            dir=self._basedir,
+        )
+        if path:
+            self.set_gooey_param_value(path)
