@@ -317,7 +317,7 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
         dialog.setOption(QFileDialog.DontResolveSymlinks)
         if self._basedir:
             # we have a basedir, so we can be clever
-            dialog.setDirectory(str(self.basedir))
+            dialog.setDirectory(str(self._basedir))
         paths = None
         if dialog.exec():
             paths = dialog.selectedFiles()
