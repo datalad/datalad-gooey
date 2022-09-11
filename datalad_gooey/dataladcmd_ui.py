@@ -12,9 +12,9 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QLabel,
     QScrollArea,
+    QWidget,
 )
 
-from .utils import load_ui
 from .param_form_utils import populate_form_w_params
 
 
@@ -22,42 +22,44 @@ class GooeyDataladCmdUI(QObject):
 
     configured_dataladcmd = Signal(str, dict)
 
-    def __init__(self, ui_parent: QScrollArea):
+    def __init__(self, ui_parent: QWidget):
         super().__init__()
         self._ui_parent = ui_parent
+        # start out disabled, there will be no populated form
+        self._ui_parent.setDisabled(True)
         self._pwidget = None
         self._pform = None
-        self._cmd_label = None
+        self._cmd_title = None
 
     @property
     def pwidget(self):
         if self._pwidget is None:
-            # load the scaffold of the UI from declaration
-            dlg = load_ui('cmdparam_widget', self._ui_parent)
-            # place into scrollarea
-            self._ui_parent.setWidget(dlg)
+            parent = self._ui_parent
+            # make sure all expected UI blocks are present
+            self._cmd_label = parent.findChild(QLabel, 'cmdTabTitle')
+            scrollarea_content = parent.findChild(QScrollArea).widget()
+            buttonbox = parent.findChild(QDialogButtonBox, 'cmdTabButtonBox')
+            for w in (self._cmd_label, scrollarea_content, buttonbox):
+                assert w
+            # create main form layout for the parameters to appear in
+            form_layout = QFormLayout(scrollarea_content)
+            form_layout.setObjectName('cmdTabFormLayout')
+            self._pform = form_layout
+
             # connect the dialog interaction with slots in this instance
-            buttonbox = dlg.findChild(
-                QDialogButtonBox, name='runButtonBox')
             # we run the retrieval helper on ok/run
             buttonbox.accepted.connect(self._retrieve_input)
             # we disable the UI (however that might look like) on cancel
             buttonbox.rejected.connect(self.disable)
-            # access the QLabel field to set command name upon configuration
-            self._cmd_label = dlg.findChild(
-                QLabel, name='commandName')
-            self._pwidget = dlg
+
+            self._pwidget = parent
         return self._pwidget
 
     @property
     def pform(self):
         if self._pform is None:
-            # locate the prepared form layout, this will be the destination
-            # of all generated widgets
-            self._pform = self.pwidget.findChild(
-                QFormLayout,
-                name='parameterFormLayout',
-            )
+            # trigger widget setup
+            self.pwidget
         return self._pform
 
     @Slot(str, dict)

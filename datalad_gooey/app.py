@@ -5,9 +5,9 @@ from PySide6.QtWidgets import (
     QMenu,
     QPlainTextEdit,
     QPushButton,
-    QScrollArea,
     QStatusBar,
     QTreeView,
+    QWidget,
 )
 from PySide6.QtCore import (
     QObject,
@@ -35,7 +35,7 @@ class GooeyApp(QObject):
     # classes.  This mapping is used (and needs to be kept up-to-date) to look
     # up widget (e.g. to connect their signals/slots)
     _main_window_widgets = {
-        'actionsTabScrollArea': QScrollArea,
+        'cmdTab': QWidget,
         'actionRun_stuff': QAction,
         'actionConfigure_stuff': QAction,
         'clearLogPB': QPushButton,
@@ -62,7 +62,7 @@ class GooeyApp(QObject):
         self._path = path
         self._main_window = None
         self._cmdexec = GooeyDataladCmdExec()
-        self._cmdui = GooeyDataladCmdUI(self.get_widget('actionsTabScrollArea'))
+        self._cmdui = GooeyDataladCmdUI(self.get_widget('cmdTab'))
 
         # setup UI
         self._fsbrowser = GooeyFilesystemBrowser(

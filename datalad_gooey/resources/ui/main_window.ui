@@ -63,26 +63,43 @@
         <property name="currentIndex">
          <number>0</number>
         </property>
-        <widget class="QWidget" name="actionsTab">
+        <widget class="QWidget" name="cmdTab">
          <attribute name="title">
-          <string>Actions</string>
+          <string>Command</string>
          </attribute>
-         <layout class="QVBoxLayout" name="verticalLayout_4">
+         <layout class="QVBoxLayout" name="cmdTabLayout">
           <item>
-           <widget class="QScrollArea" name="actionsTabScrollArea">
+           <widget class="QLabel" name="cmdTabTitle">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QScrollArea" name="cmdTabScrollArea">
             <property name="widgetResizable">
              <bool>true</bool>
             </property>
-            <widget class="QWidget" name="scrollAreaWidgetContents">
+            <widget class="QWidget" name="cmdTabScrollAreaWidgetContents">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
              <property name="geometry">
               <rect>
                <x>0</x>
                <y>0</y>
                <width>381</width>
-               <height>219</height>
+               <height>152</height>
               </rect>
              </property>
             </widget>
+           </widget>
+          </item>
+          <item>
+           <widget class="QDialogButtonBox" name="cmdTabButtonBox">
+            <property name="standardButtons">
+             <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+            </property>
            </widget>
           </item>
          </layout>
