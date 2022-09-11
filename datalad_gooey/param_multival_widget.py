@@ -90,18 +90,17 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
         # the main list for inputting multiple values
-        self.lw = QListWidget()
-        self.lw.setAlternatingRowColors(True)
+        self._lw = QListWidget()
+        self._lw.setAlternatingRowColors(True)
         # we assing the editor factory
-        self.lw.setItemDelegate(MyItemDelegate(self))
-        layout.addWidget(self.lw)
+        self._lw.setItemDelegate(MyItemDelegate(self))
+        layout.addWidget(self._lw)
+
         # now the buttons
         additem_button = QPushButton('+')
         additem_button.clicked.connect(self._add_item)
         removeitem_button = QPushButton('-')
         removeitem_button.clicked.connect(self._remove_item)
-        # empty by default, nothing to remove
-        removeitem_button.setDisabled(True)
         button_layout = QHBoxLayout()
         button_layout.addWidget(additem_button)
         button_layout.addWidget(removeitem_button)
@@ -109,7 +108,15 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
 
         self._removeitem_button = removeitem_button
 
-    def _add_item(self):
+        # define initial widget state
+        # empty by default, nothing to remove
+        removeitem_button.setDisabled(True)
+        # with no item present, we can hide everything other than
+        # the add button to save on space
+        removeitem_button.hide()
+        self._lw.hide()
+
+    def _add_item(self) -> QListWidgetItem:
         newitem = QListWidgetItem(
             # must give custom type
             type=QListWidgetItem.UserType + 234,
@@ -123,12 +130,18 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
         # edit mode, right away TODO unless value specified
         self.lw.editItem(newitem)
         self._removeitem_button.setDisabled(False)
+        self._removeitem_button.show()
+        self._lw.show()
+
+        return newitem
 
     def _remove_item(self):
         for i in self.lw.selectedItems():
             self.lw.takeItem(self.lw.row(i))
         if not self.lw.count():
             self._removeitem_button.setDisabled(True)
+            self._removeitem_button.hide()
+            self._lw.hide()
 
     def set_gooey_param_value(self, value):
         self._editor_param_value = value
