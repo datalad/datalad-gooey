@@ -201,7 +201,7 @@ class GooeyFilesystemBrowser(QObject):
             #context.addMenu(self.get_widget('menuDataset'))
             # instead we generic a new one, with actions prepopulated
             # with the specific dataset path argument
-            dsmenu = context.addMenu('Dataset actions')
+            dsmenu = context.addMenu('Dataset commands')
             add_dataset_actions_to_menu(
                 tv, self._app._cmdui.configure, dsmenu, dataset=node.path)
 
