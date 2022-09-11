@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 
+from datalad.utils import ensure_list
 from .param_widgets import (
     GooeyParamWidgetMixin,
     load_parameter_widget,
@@ -144,12 +145,22 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
             self._lw.hide()
 
     def set_gooey_param_value(self, value):
-        self._editor_param_value = value
+        # we want to support multi-value setting
+        for val in ensure_list(value):
+            item = self._add_item()
+            # TODO another place where we need to think about the underlying
+            # role specification
+            item.setData(Qt.EditRole, val)
 
     def set_gooey_param_default(self, value):
         self._editor_param_default = value
 
     def get_gooey_param_value(self):
+        if not self._lw.count():
+            # do not report an empty list, when no items have been added.
+            # setting a value, even by API would have added one
+            raise ValueError("No items added")
+
         return [
             # TODO consider using a different role, here and in setModelData()
             self._lw.item(row).data(Qt.EditRole)
