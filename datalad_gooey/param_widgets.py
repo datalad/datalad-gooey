@@ -140,11 +140,14 @@ def load_parameter_widget(
         allargs: Dict or None = None) -> QWidget:
     """ """
     pwid = pwid_factory(parent=parent)
-    pwid.set_gooey_param_spec(name, value, default)
     if validator:
         pwid.set_gooey_param_validator(validator)
     pwid.set_gooey_cmdkwargs(allargs)
     pwid.set_gooey_param_docs(docs)
+    # set any default or value last, as they might need a validator,
+    # docs, and all other bits in place already for an editor or
+    # validation to work
+    pwid.set_gooey_param_spec(name, value, default)
     return pwid
 
 
