@@ -27,18 +27,21 @@ class GooeyDataladCmdUI(QObject):
         self._ui_parent = ui_parent
         # start out disabled, there will be no populated form
         self._ui_parent.setDisabled(True)
-        self._pwidget = None
         self._pform = None
         self._cmd_title = None
 
     @property
     def pwidget(self):
-        if self._pwidget is None:
-            parent = self._ui_parent
+        return self._ui_parent
+
+    @property
+    def pform(self):
+        if self._pform is None:
+            pw = self.pwidget
             # make sure all expected UI blocks are present
-            self._cmd_title = parent.findChild(QLabel, 'cmdTabTitle')
-            scrollarea_content = parent.findChild(QScrollArea).widget()
-            buttonbox = parent.findChild(QDialogButtonBox, 'cmdTabButtonBox')
+            self._cmd_title = pw.findChild(QLabel, 'cmdTabTitle')
+            scrollarea_content = pw.findChild(QScrollArea).widget()
+            buttonbox = pw.findChild(QDialogButtonBox, 'cmdTabButtonBox')
             for w in (self._cmd_title, scrollarea_content, buttonbox):
                 assert w
             # create main form layout for the parameters to appear in
@@ -51,15 +54,6 @@ class GooeyDataladCmdUI(QObject):
             buttonbox.accepted.connect(self._retrieve_input)
             # we disable the UI (however that might look like) on cancel
             buttonbox.rejected.connect(self.disable)
-
-            self._pwidget = parent
-        return self._pwidget
-
-    @property
-    def pform(self):
-        if self._pform is None:
-            # trigger widget setup
-            self.pwidget
         return self._pform
 
     @Slot(str, dict)
@@ -98,7 +92,6 @@ class GooeyDataladCmdUI(QObject):
         self._cmd_title.setText(cmdname)
         # make sure the UI is visible
         self.pwidget.setEnabled(True)
-        self.pwidget.show()
 
     @Slot()
     def _retrieve_input(self):
