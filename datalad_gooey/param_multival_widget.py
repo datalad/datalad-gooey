@@ -125,10 +125,10 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
         newitem.setFlags(newitem.flags() | Qt.ItemIsEditable)
 
         # put in list
-        self.lw.addItem(newitem)
-        self.lw.setCurrentItem(newitem)
+        self._lw.addItem(newitem)
+        self._lw.setCurrentItem(newitem)
         # edit mode, right away TODO unless value specified
-        self.lw.editItem(newitem)
+        self._lw.editItem(newitem)
         self._removeitem_button.setDisabled(False)
         self._removeitem_button.show()
         self._lw.show()
@@ -136,9 +136,9 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
         return newitem
 
     def _remove_item(self):
-        for i in self.lw.selectedItems():
-            self.lw.takeItem(self.lw.row(i))
-        if not self.lw.count():
+        for i in self._lw.selectedItems():
+            self._lw.takeItem(self._lw.row(i))
+        if not self._lw.count():
             self._removeitem_button.setDisabled(True)
             self._removeitem_button.hide()
             self._lw.hide()
@@ -152,8 +152,8 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
     def get_gooey_param_value(self):
         return [
             # TODO consider using a different role, here and in setModelData()
-            self.lw.item(row).data(Qt.EditRole)
-            for row in range(self.lw.count())
+            self._lw.item(row).data(Qt.EditRole)
+            for row in range(self._lw.count())
         ]
 
     def set_gooey_param_docs(self, docs: str) -> None:
