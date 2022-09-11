@@ -36,10 +36,10 @@ class GooeyDataladCmdUI(QObject):
         if self._pwidget is None:
             parent = self._ui_parent
             # make sure all expected UI blocks are present
-            self._cmd_label = parent.findChild(QLabel, 'cmdTabTitle')
+            self._cmd_title = parent.findChild(QLabel, 'cmdTabTitle')
             scrollarea_content = parent.findChild(QScrollArea).widget()
             buttonbox = parent.findChild(QDialogButtonBox, 'cmdTabButtonBox')
-            for w in (self._cmd_label, scrollarea_content, buttonbox):
+            for w in (self._cmd_title, scrollarea_content, buttonbox):
                 assert w
             # create main form layout for the parameters to appear in
             form_layout = QFormLayout(scrollarea_content)
@@ -92,9 +92,10 @@ class GooeyDataladCmdUI(QObject):
         populate_form_w_params(
             self.pform,
             cmdname,
-            self._cmd_label,
             cmdkwargs,
         )
+        # set title afterwards, form might just have been created first, lazily
+        self._cmd_title.setText(cmdname)
         # make sure the UI is visible
         self.pwidget.setEnabled(True)
         self.pwidget.show()

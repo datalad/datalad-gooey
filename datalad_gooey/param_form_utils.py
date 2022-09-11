@@ -31,14 +31,12 @@ __all__ = ['populate_form_w_params']
 def populate_form_w_params(
         formlayout: QFormLayout,
         cmdname: str,
-        cmdname_label: QLabel,
         cmdkwargs: Dict) -> None:
     """Populate a given QLayout with data entry widgets for a DataLad command
     """
     # localize to potentially delay heavy import
     from datalad import api as dlapi
 
-    cmdname_label.setText(cmdname)
     # deposit the command name in the widget, to be retrieved later by
     # retrieve_parameters()
     formlayout.datalad_cmd_name = cmdname
