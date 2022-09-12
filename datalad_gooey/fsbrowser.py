@@ -107,17 +107,19 @@ class GooeyFilesystemBrowser(QObject):
 
         ipath = Path(res['path'])
         try:
-            target_item = self._get_item_from_path(ipath)
-            target_item_parent = target_item.parent()
+            target_item_parent = self._get_item_from_path(ipath.parent)
+        except ValueError:
+            # ok, now we have no clue what this tree result is about
+            # its parent is no in the tree
+            return
+
+        try:
+            # give the parent as a starting item, to speed things up
+            target_item = self._get_item_from_path(ipath, target_item_parent)
         except ValueError:
             # it is quite possible that the item does not exist yet
             # so let's find the parent
             target_item = None
-            try:
-                target_item_parent = self._get_item_from_path(ipath.parent)
-            except ValueError:
-                # ok, now we have no clue what this tree result is about
-                return
 
         if target_item is None:
             # we don't have such an item yet -> make one
@@ -140,13 +142,16 @@ class GooeyFilesystemBrowser(QObject):
 
     # DONE
     @lru_cache
-    def _get_item_from_path(self, path: Path):
-        item = self._root_item
-        if path == item.pathobj:
+    def _get_item_from_path(self, path: Path, root: FSBrowserItem = None):
+        # this is a key function in terms of result UI snappiness
+        # it must be as fast as anyhow possible
+        item = self._root_item if root is None else root
+        ipath = item.pathobj
+        if path == ipath:
             return item
         # otherwise look for the item with the right name at the
         # respective level
-        for p in path.relative_to(item.pathobj).parts:
+        for p in path.relative_to(ipath).parts:
             found = False
             for ci in range(item.childCount()):
                 child = item.child(ci)
