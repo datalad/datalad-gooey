@@ -159,6 +159,7 @@ class FSBrowserItem(QTreeWidgetItem):
             'file': 'file',
             'untracked': 'untracked',
             'clean': 'clean',
+            'modified': 'modified',
         }
         icon_name = icon_mapping.get(item_type, None)
         if icon_name:
