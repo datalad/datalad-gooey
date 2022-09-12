@@ -167,8 +167,8 @@ class QtApp(QApplication):
         super().__init__(*args, **kwargs)
         # Set application icon using base file path as reference
         package_path = Path(__file__).resolve().parent
-        self.setWindowIcon(QIcon(str(package_path / \
-            'resources/icons/app_icon_32.svg')))
+        self.setWindowIcon(QIcon(str(
+            package_path / 'resources' / 'icons' / 'app_icon_32.svg')))
 
 
 def main():
