@@ -4,7 +4,10 @@ from typing import (
     Dict,
 )
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import (
+    QDir,
+    Qt,
+)
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -319,6 +322,9 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
             # we have a basedir, so we can be clever
             dialog.setDirectory(str(self._basedir))
         paths = None
+        # we need to turn on 'System' in order to get broken symlinks
+        # too
+        dialog.setFilter(dialog.filter() | QDir.System)
         if dialog.exec():
             paths = dialog.selectedFiles()
             if paths:
