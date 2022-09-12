@@ -39,6 +39,14 @@ class GooeyDataladCmdExec(QObject):
         )
         self._futures = set()
 
+        # connect maintenance slot to give us an accurate
+        # assessment of ongoing commands
+        self.execution_finished.connect(self._update_futures)
+        self.execution_failed.connect(self._update_futures)
+
+    def _update_futures(self):
+        self._futures = set(f for f in self._futures if f.running())
+
     @Slot(str, dict)
     def execute(self, cmd: str,
                 kwargs: Dict or None = None):
@@ -51,11 +59,11 @@ class GooeyDataladCmdExec(QObject):
             dlapi = dl
         # right now, we have no use for the returned future, because result
         # communication and thread finishing are handled by emitting Qt signals
-        self._threadpool.submit(
+        self._futures.add(self._threadpool.submit(
             self._cmdexec_thread,
             cmd,
             **kwargs
-        )
+        ))
 
     def _cmdexec_thread(self, cmdname, **kwargs):
         """The code is executed in a worker thread"""
@@ -102,3 +110,7 @@ class GooeyDataladCmdExec(QObject):
                 cmdname,
                 kwargs,
             )
+
+    @property
+    def n_running(self):
+        return len([f for f in self._futures if f.running()])
