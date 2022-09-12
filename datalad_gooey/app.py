@@ -38,8 +38,6 @@ class GooeyApp(QObject):
     # up widget (e.g. to connect their signals/slots)
     _main_window_widgets = {
         'cmdTab': QWidget,
-        'actionRun_stuff': QAction,
-        'actionConfigure_stuff': QAction,
         'clearLogPB': QPushButton,
         'fsBrowser': QTreeWidget,
         'logViewer': QPlainTextEdit,
@@ -93,9 +91,6 @@ class GooeyApp(QObject):
         self._cmdexec.execution_finished.connect(self._setup_stopped_cmdexec)
         self._cmdexec.execution_failed.connect(self._setup_stopped_cmdexec)
 
-        # demo actions to execute things for dev-purposes
-        self.get_widget('actionRun_stuff').triggered.connect(self.run_stuff)
-
         # arrange for the dataset menu to populate itself lazily once
         # necessary
         self.get_widget('menuDataset').aboutToShow.connect(self._populate_dataset_menu)
@@ -137,22 +132,6 @@ class GooeyApp(QObject):
             raise RuntimeError(
                 f"Could not locate widget {name} ({wgt_cls.__name__})")
         return wgt
-
-    @Slot(bool)
-    def run_stuff(self, *args, **kwargs):
-        print('BAMM')
-        self._cmdexec.result_received.connect(self.achieved_stuff)
-        self.execute_dataladcmd.emit('wtf', dict(sections=['python']))
-
-    @Slot(dict)
-    def achieved_stuff(self, result):
-        print('HOORAY', result)
-        # TODO think about concurrency issues: maybe two senders connected this
-        # signal to this slot, before any of the two finished...
-        # we might need to use a Semaphore to per recieving slot to determine
-        # when we can actually disconnect
-        # Wait with this complexity until necessary
-        self._cmdexec.result_received.disconnect(self.achieved_stuff)
 
     @property
     def rootpath(self):
