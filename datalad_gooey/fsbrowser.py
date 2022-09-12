@@ -1,3 +1,4 @@
+from functools import lru_cache
 import logging
 from pathlib import Path
 
@@ -80,15 +81,65 @@ class GooeyFilesystemBrowser(QObject):
 
     # DONE
     def _populate_item(self, item):
-        if not item.childCount():
-            # only parse, if there are no children yet
-            FSBrowserItem.from_path(
-                item.pathobj, root=False, children=True, include_files=True,
-                parent=item)
-            self._queue_item_for_annotation(item)
+        if item.childCount():
+            return
 
-    # TODO consider @lru_cache
+        self._app._cmdexec.result_received.connect(
+            self._tree_result_receiver)
+        # only parse, if there are no children yet
+        # kick off tree command in the background
+        self._app.execute_dataladcmd.emit(
+            'tree',
+            dict(
+                path=item.pathobj,
+                depth=1,
+                include_files=True,
+                result_renderer='disabled',
+                on_failure='ignore',
+                return_type='generator',
+            )
+        )
+
+    def _tree_result_receiver(self, res):
+        if res.get('action') != 'tree':
+            # no what we are looking for
+            return
+
+        ipath = Path(res['path'])
+        try:
+            target_item = self._get_item_from_path(ipath)
+            target_item_parent = target_item.parent()
+        except ValueError:
+            # it is quite possible that the item does not exist yet
+            # so let's find the parent
+            target_item = None
+            try:
+                target_item_parent = self._get_item_from_path(ipath.parent)
+            except ValueError:
+                # ok, now we have no clue what this tree result is about
+                return
+
+        if target_item is None:
+            # we don't have such an item yet -> make one
+            target_item = FSBrowserItem.from_tree_result(
+                res, target_item_parent)
+        else:
+            # we do have this already, good occasion to update it?
+            other_item = FSBrowserItem.from_tree_result(res)
+            target_item.update_data_from(other_item)
+
+        # for now we register the parent for an annotation update
+        # but we could also report the specific path and let the
+        # annotation code figure out the optimal way.
+        # at present however, we get here for items of a whole dir
+        # being reported at once.
+        if target_item_parent is not None:
+            # unless we would go beyond the root item, annotate the
+            # full parent directory
+            self._queue_item_for_annotation(target_item_parent)
+
     # DONE
+    @lru_cache
     def _get_item_from_path(self, path: Path):
         item = self._root_item
         if path == item.pathobj:
@@ -108,9 +159,16 @@ class GooeyFilesystemBrowser(QObject):
         return item
 
     def _queue_item_for_annotation(self, item):
-        """This is not thread-safe"""
+        """This is not thread-safe
+
+        `item` should be of type 'directory' or 'dataset' for meaningful
+        behavior.
+        """
+        # wait for at least half a sec longer after a new request came in
+        # to avoid DDOS'ing the facility?
+        if self._annotation_timer.remainingTime() < 500:
+            self._annotation_timer.start(500)
         self._annotation_queue.add(item)
-        print('QUEUEDIR', item)
 
     def _process_item_annotation_queue(self):
         if not self._annotation_queue:
