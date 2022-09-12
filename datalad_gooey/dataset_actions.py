@@ -31,8 +31,6 @@ def add_dataset_actions_to_menu(parent, receiver, menu=None, dataset=None):
 
     menu_lookup = _generate_submenus(menu)
 
-    # prevent reinclusion of the main menu by including it here right away
-    submenus_added = set([menu])
     # iterate over all members of the Dataset class and find the
     # methods that are command interface callables
     for mname in dir(Dataset):
@@ -71,9 +69,19 @@ def add_dataset_actions_to_menu(parent, receiver, menu=None, dataset=None):
         # instead of the main menu
         target_menu = menu_lookup.get(cls, menu)
         target_menu.addAction(action)
-        if target_menu not in submenus_added:
-            menu.insertMenu(group_separator, target_menu)
-            submenus_added.add(target_menu)
+    # add submenus in the order they are included in the lookup to ensure
+    # consistent and sensible sorting. First, find all unique submenus in order
+    unique_submenus = {}
+    for cmdname, cmdgroup in [(cmd, menu_lookup[cmd]) for cmd in menu_lookup]:
+        if cmdgroup in unique_submenus:
+            continue
+        unique_submenus[cmdgroup] = cmdname
+    # then add all possible submenues
+    for subm in unique_submenus.keys():
+        # skip menus without actions
+        if not subm.actions():
+            continue
+        menu.insertMenu(group_separator, subm)
 
 
 def _generate_submenus(menu: QMenu) -> dict:
