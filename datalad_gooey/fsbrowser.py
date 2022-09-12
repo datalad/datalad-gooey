@@ -188,6 +188,7 @@ class GooeyFilesystemBrowser(QObject):
             prev_state = item.data(2, Qt.EditRole)
             if state != prev_state:
                 item.setData(2, Qt.EditRole, state)
+                item.setIcon(2, item._getIcon(state))
                 item.emitDataChanged()
 
     # DONE

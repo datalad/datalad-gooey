@@ -157,6 +157,8 @@ class FSBrowserItem(QTreeWidgetItem):
             'dataset': 'dataset-closed',
             'directory': 'directory-closed',
             'file': 'file',
+            'untracked': 'untracked',
+            'clean': 'clean',
         }
         icon_name = icon_mapping.get(item_type, None)
         if icon_name:
