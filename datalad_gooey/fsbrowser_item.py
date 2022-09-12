@@ -148,7 +148,9 @@ class FSBrowserItem(QTreeWidgetItem):
 
     def _setItemIcons(self, res):
         # Set 'type' icon
-        self.setIcon(0, self._getIcon(res['type']))
+        item_type = res['type']
+        if item_type != 'file':
+            self.setIcon(0, self._getIcon(item_type))
         # Set other icon types: TODO
 
     def _getIcon(self, item_type):
@@ -157,12 +159,15 @@ class FSBrowserItem(QTreeWidgetItem):
             'dataset': 'dataset-closed',
             'directory': 'directory-closed',
             'file': 'file',
+            'file-annex': 'file-annex',
+            'file-git': 'file-git',
             'untracked': 'untracked',
             'clean': 'clean',
             'modified': 'modified',
         }
         icon_name = icon_mapping.get(item_type, None)
         if icon_name:
-            return QIcon(str(package_path / f'resources/icons/{icon_name}.svg'))
+            return QIcon(str(
+                package_path / 'resources' / 'icons' / f'{icon_name}.svg'))
         else:
             return None
