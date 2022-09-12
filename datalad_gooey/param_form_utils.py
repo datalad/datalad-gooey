@@ -15,7 +15,9 @@ from PySide6.QtWidgets import (
 )
 
 from datalad.interface.base import Interface
+from datalad.interface.common_opts import eval_params
 from datalad.support.constraints import EnsureChoice
+from datalad.support.param import Parameter
 from datalad.utils import (
     getargspec,
     get_wrapped_class,
@@ -49,7 +51,7 @@ def populate_form_w_params(
         # populate the layout with widgets for each of them
         pwidget = _get_parameter_widget(
             formlayout.parentWidget(),
-            cmd_cls,
+            cmd_cls._params_[pname],
             pname,
             # pass a given value, or indicate that there was none
             cmdkwargs.get(pname, pw._NoValue),
@@ -64,9 +66,23 @@ def populate_form_w_params(
         )
         formlayout.addRow(pname, pwidget)
 
-    # TODO the above will not cover standard parameters like
-    # result_renderer=
-    # add standard widget set for those we want to support
+    # Add widgets for standard options like result_renderer:
+    for pname, param in eval_params.items():
+        if pname not in ['result_renderer', 'on_failure']:
+            continue
+        pwidget = _get_parameter_widget(
+            formlayout.parentWidget(),
+            param,
+            pname,
+            # pass a given value, or indicate that there was none
+            cmdkwargs.get(pname, pw._NoValue),
+            # will also be _NoValue, if there was none
+            param.cmd_kwargs.get('default', pw._NoValue),
+            # The generic options are not command specific and have no relation
+            # to command specific ones. Hence, allargs shouldn't be needed.
+            allargs=None,
+        )
+        formlayout.addRow(pname, pwidget)
 
 
 #
@@ -96,7 +112,7 @@ def _get_params(cmd) -> List:
 
 def _get_parameter_widget(
         parent: QWidget,
-        cmd_cls: Interface,
+        param: Parameter,
         name: str,
         value: Any = pw._NoValue,
         default: Any = pw._NoValue,
@@ -108,19 +124,19 @@ def _get_parameter_widget(
     command's default parameter value, with `_NoValue` indicating that the
     command has no default for a parameter.
     """
-    p = cmd_cls._params_[name]
     # guess the best widget-type based on the argparse setup and configured
     # constraints
     pwid_factory = _get_parameter_widget_factory(
-        name, default, p.constraints, p.cmd_kwargs, allargs)
+        name, default, param.constraints, param.cmd_kwargs,
+        allargs if allargs else dict())
     return pw.load_parameter_widget(
         parent,
         pwid_factory,
         name=name,
-        docs=p._doc,
+        docs=param._doc,
         value=value,
         default=default,
-        validator=p.constraints,
+        validator=param.constraints,
         allargs=allargs,
     )
 
