@@ -3,7 +3,6 @@ from pathlib import Path
 
 from PySide6.QtCore import (
     QFileSystemWatcher,
-    QModelIndex,
     QObject,
     Qt,
     QTimer,
@@ -11,72 +10,109 @@ from PySide6.QtCore import (
 )
 from PySide6.QtWidgets import (
     QMenu,
-    QTreeView,
+    QTreeWidget,
 )
 
 from datalad.utils import get_dataset_root
 
 from .dataset_actions import add_dataset_actions_to_menu
-from .fsview_model import (
-    DataladTree,
-    DataladTreeModel,
-)
+from .fsbrowser_item import FSBrowserItem
 
 lgr = logging.getLogger('datalad.gooey.fsbrowser')
 
 
 class GooeyFilesystemBrowser(QObject):
+    # TODO Establish ENUM for columns
 
+    # FSBrowserItem
+    item_requires_annotation = Signal(FSBrowserItem)
     # what is annotated, and the properties
-    path_annotated = Signal(Path, dict)
+    item_annotation_available = Signal(FSBrowserItem, dict)
 
-    def __init__(self, app, path: Path, treeview: QTreeView):
+    # DONE
+    def __init__(self, app, path: Path, treewidget: QTreeWidget):
         super().__init__()
+
+        tw = treewidget
+        # TODO must setColumnNumber()
 
         self._app = app
         self._fswatcher = QFileSystemWatcher(parent=app)
-        dmodel = DataladTreeModel()
-        # connect slot before setting the root path to get it registered
-        # for annotation too
-        dmodel.directory_content_requires_annotation.connect(
-            self._queue_dir_for_annotation)
+        self.item_requires_annotation.connect(
+            self._queue_item_for_annotation)
         # and connect the receiver for an annotation of an item in the
         # model
-        self.path_annotated.connect(dmodel.annotate_path_item)
-        # fire up the model and connect the view
-        dmodel.set_tree(DataladTree(path))
-        treeview.setModel(dmodel)
+        # TODO
+        self.item_annotation_available.connect(self._annotate_item)
 
-        # established defined sorting order of the tree, and sync it
-        # with the widget sorting indicator state
-        treeview.sortByColumn(1, Qt.AscendingOrder)
+        tw.setHeaderLabels(['Name', 'Type', 'State'])
+        # established defined sorting order of the tree
+        tw.sortItems(1, Qt.AscendingOrder)
 
-        #treeview.clicked.connect(clicked)
-        treeview.customContextMenuRequested.connect(
+        # establish the root item
+        root = FSBrowserItem.from_path(path, children=False, parent=tw)
+        # set the tooltip to the full path, otherwise only names are shown
+        root.setToolTip(0, str(path))
+        tw.addTopLevelItem(root)
+        self._root_item = root
+
+        tw.customContextMenuRequested.connect(
             self._custom_context_menu)
 
-        self._treeview = treeview
+        self._tree = tw
 
         # whenever a treeview node is expanded, add the path to the fswatcher
-        treeview.expanded.connect(self._watch_dir)
-        treeview.collapsed.connect(self._unwatch_dir)
+        tw.itemExpanded.connect(self._watch_dir)
+        # and also populate it with items for contained paths
+        tw.itemExpanded.connect(self._populate_item)
+        tw.itemCollapsed.connect(self._unwatch_dir)
         self._fswatcher.directoryChanged.connect(self._inspect_changed_dir)
 
-        # list of paths of directories to be annotated, populated by
-        # _queue_dir_for_annotation()
-        self._annotation_queue = []
+        # items of directories to be annotated, populated by
+        # _queue_item_for_annotation()
+        self._annotation_queue = set()
         # msec
         self._annotation_timer_interval = 3000
         self._annotation_timer = QTimer(self)
-        self._annotation_timer.timeout.connect(self._directory_annotation)
+        self._annotation_timer.timeout.connect(
+            self._process_item_annotation_queue)
         self._annotation_timer.start(self._annotation_timer_interval)
 
-    def _queue_dir_for_annotation(self, path):
-        """This is not thread-safe"""
-        self._annotation_queue.append(path)
-        print('QUEUEDIR', path)
+    # DONE
+    def _populate_item(self, item):
+        if not item.childCount():
+            # only parse, if there are no children yet
+            FSBrowserItem.from_path(
+                item.pathobj, root=False, children=True, include_files=True,
+                parent=item)
+            self._queue_item_for_annotation(item)
 
-    def _directory_annotation(self):
+    # TODO consider @lru_cache
+    # DONE
+    def _get_item_from_path(self, path: Path):
+        item = self._root_item
+        if path == item.pathobj:
+            return item
+        # otherwise look for the item with the right name at the
+        # respective level
+        for p in path.relative_to(item.pathobj).parts:
+            found = False
+            for ci in range(item.childCount()):
+                child = item.child(ci)
+                if p == child.data(0, Qt.EditRole):
+                    item = child
+                    found = True
+                    break
+            if not found:
+                raise ValueError(f'Cannot find item for {path}')
+        return item
+
+    def _queue_item_for_annotation(self, item):
+        """This is not thread-safe"""
+        self._annotation_queue.add(item)
+        print('QUEUEDIR', item)
+
+    def _process_item_annotation_queue(self):
         if not self._annotation_queue:
             return
         # there is stuff to annotate, make sure we do not trigger more
@@ -92,12 +128,16 @@ class GooeyFilesystemBrowser(QObject):
             # (i.e., assumption is: expanding tree nodes one after
             # another, attention would be on the last expanded one, not the
             # first)
-            d = self._annotation_queue.pop()
-            dsroot = get_dataset_root(d)
+            item = self._annotation_queue.pop()
+            ipath = item.pathobj
+            dsroot = get_dataset_root(ipath)
             if dsroot is None:
                 # no containing dataset, by definition everything is untracked
-                for dc in d.iterdir():
-                    self.path_annotated.emit(dc, dict(state='untracked'))
+                for child in item.children_():
+                    # get type, only annotate non-directory items
+                    if child.datalad_type != 'directory':
+                        self.item_annotation_available.emit(
+                            child, dict(state='untracked'))
             else:
                 # with have a containing dataset, run a datalad-status.
                 # attach to the execution handler's result received signal
@@ -111,7 +151,15 @@ class GooeyFilesystemBrowser(QObject):
                 # giving the target directory as a `path` argument should
                 # avoid undesired recursion into subDIRECTORIES
                 self._app.execute_dataladcmd.emit(
-                    'status', dict(dataset=dsroot, path=d))
+                    'status',
+                    dict(
+                        dataset=dsroot,
+                        path=[
+                            c.pathobj.relative_to(dsroot)
+                            for c in item.children_()
+                            if c.datalad_type != 'directory'],
+                    )
+                )
 
         # restart annotation watcher
         self._annotation_timer.start(self._annotation_timer_interval)
@@ -128,8 +176,20 @@ class GooeyFilesystemBrowser(QObject):
         if state is None:
             # nothing to show for
             return
-        self.path_annotated.emit(Path(path), dict(state=state))
+        self.item_annotation_available.emit(
+            self._get_item_from_path(Path(path)),
+            dict(state=state),
+        )
 
+    def _annotate_item(self, item, props):
+        if 'state' in props:
+            state = props['state']
+            prev_state = item.data(2, Qt.EditRole)
+            if state != prev_state:
+                item.setData(2, Qt.EditRole, state)
+                item.emitDataChanged()
+
+    # DONE
     def _disconnect_status_result_receiver(self, thread, cmdname, args):
         if cmdname != 'status':
             # no what we are looking for
@@ -139,8 +199,9 @@ class GooeyFilesystemBrowser(QObject):
         # some status processes could be running close to forever
         print("DISCONNECT?", cmdname)
 
-    def _watch_dir(self, index):
-        path = str(index.internalPointer().path)
+    # DONE
+    def _watch_dir(self, item):
+        path = str(item.pathobj)
         lgr.log(
             9,
             "GooeyFilesystemBrowser._watch_dir(%r) -> %r",
@@ -148,8 +209,10 @@ class GooeyFilesystemBrowser(QObject):
             self._fswatcher.addPath(path),
         )
 
-    def _unwatch_dir(self, index):
-        path = str(index.internalPointer().path)
+    # DONE
+    # https://github.com/datalad/datalad-gooey/issues/50
+    def _unwatch_dir(self, item):
+        path = str(item.pathobj)
         lgr.log(
             9,
             "GooeyFilesystemBrowser._unwatch_dir(%r) -> %r",
@@ -157,15 +220,15 @@ class GooeyFilesystemBrowser(QObject):
             self._fswatcher.removePath(path),
         )
 
+    # DONE
     def _inspect_changed_dir(self, path: str):
         pathobj = Path(path)
         lgr.log(9, "GooeyFilesystemBrowser._inspect_changed_dir(%r)", pathobj)
-        # we need to know the index of the tree view item corresponding
+        # we need to know the item in the tree corresponding
         # to the changed directory
-        tvm = self._treeview.model()
-        idx = tvm.match_by_path(pathobj)
-
-        if not idx.isValid():
+        try:
+            item = self._get_item_from_path(pathobj)
+        except ValueError:
             # the changed dir has no (longer) a matching entry in the
             # tree model. make sure to take it off the watch list
             self._fswatcher.removePath(path)
@@ -173,38 +236,53 @@ class GooeyFilesystemBrowser(QObject):
                        "removed from watcher")
             return
 
-        tvm.update_directory_item(idx)
+        parent = item.parent()
+        if not pathobj.exists():
+            if parent is None:
+                # TODO we could have lost the root dir -> special action
+                raise NotImplementedError
+            parent.removeChild(item)
+            lgr.log(8, "-> _inspect_changed_dir() -> item removed")
+
+        # the modification is not a deletion of the watched dir itself.
+        # get a new item with its immediate children, in order
+        # to than compare the present to the new one(s): remove/add
+        # as needed, update the existing node instances for the rest
+        newitem = FSBrowserItem.from_path(
+            pathobj, root=True, children=True, include_files=True,
+            parent=None)
+
+        item.update_from(newitem)
         lgr.log(9, "_inspect_changed_dir() -> updated tree items")
 
+    # DONE
     def _custom_context_menu(self, onpoint):
         """Present a context menu for the item click in the directory browser
         """
-        tv = self._treeview
-        # get the tree view index for the coordinate that received the
+        # get the tree item for the coordinate that received the
         # context menu request
-        index = tv.indexAt(onpoint)
-        if not index.isValid():
+        item = self._tree.itemAt(onpoint)
+        if not item:
             # prevent context menus when the request did not actually
             # land on an item
             return
-        # retrieve the DataladTreeNode instance that corresponds to this
-        # item
-        node = index.internalPointer()
-        node_type = node.get_property('type')
-        if node_type is None:
+        # what kind of path is this item representing
+        path_type = item.data(1, Qt.EditRole)
+        if path_type is None:
             # we don't know what to do with this (but it also is not expected
             # to happen)
             return
-        context = QMenu(parent=tv)
-        if node_type == 'dataset':
+        context = QMenu(parent=self._tree)
+        if path_type == 'dataset':
             # we are not reusing the generic dataset actions menu
             #context.addMenu(self.get_widget('menuDataset'))
             # instead we generic a new one, with actions prepopulated
             # with the specific dataset path argument
             dsmenu = context.addMenu('Dataset commands')
             add_dataset_actions_to_menu(
-                tv, self._app._cmdui.configure, dsmenu, dataset=node.path)
+                self._tree, self._app._cmdui.configure, dsmenu,
+                dataset=item.pathobj)
 
         if not context.isEmpty():
             # present the menu at the clicked point
-            context.exec(tv.viewport().mapToGlobal(onpoint))
+            context.exec(self._tree.viewport().mapToGlobal(onpoint))
