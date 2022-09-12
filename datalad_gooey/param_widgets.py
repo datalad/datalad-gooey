@@ -331,7 +331,7 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
         path = QFileDialog.getExistingDirectory(
             parent=self,
             caption='Gimme some!',
-            dir=self._basedir,
+            dir=str(self._basedir),
         )
         if path:
             self.set_gooey_param_value(path)
