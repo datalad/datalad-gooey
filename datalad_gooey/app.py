@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QPlainTextEdit,
     QPushButton,
     QStatusBar,
-    QTreeView,
+    QTreeWidget,
     QWidget,
 )
 from PySide6.QtCore import (
@@ -39,7 +39,7 @@ class GooeyApp(QObject):
         'actionRun_stuff': QAction,
         'actionConfigure_stuff': QAction,
         'clearLogPB': QPushButton,
-        'filesystemViewer': QTreeView,
+        'fsBrowser': QTreeWidget,
         'logViewer': QPlainTextEdit,
         'menuDataset': QMenu,
         'statusbar': QStatusBar,
@@ -68,7 +68,7 @@ class GooeyApp(QObject):
         self._fsbrowser = GooeyFilesystemBrowser(
             self,
             path,
-            self.get_widget('filesystemViewer'),
+            self.get_widget('fsBrowser'),
         )
 
         # remember what backend was in use

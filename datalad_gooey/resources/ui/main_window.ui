@@ -39,7 +39,7 @@
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
-       <widget class="QTreeView" name="filesystemViewer">
+       <widget class="QTreeWidget" name="fsBrowser">
         <property name="contextMenuPolicy">
          <enum>Qt::CustomContextMenu</enum>
         </property>
@@ -55,6 +55,11 @@
         <property name="sortingEnabled">
          <bool>true</bool>
         </property>
+        <column>
+         <property name="text">
+          <string notr="true">1</string>
+         </property>
+        </column>
        </widget>
        <widget class="QTabWidget" name="contextTabs">
         <property name="enabled">
@@ -88,7 +93,7 @@
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>381</width>
+               <width>308</width>
                <height>152</height>
               </rect>
              </property>
