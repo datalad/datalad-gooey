@@ -135,13 +135,9 @@ class GooeyFilesystemBrowser(QObject):
         # annotation code figure out the optimal way.
         # at present however, we get here for items of a whole dir
         # being reported at once.
-        if target_item_parent is not None:
-            # unless we would go beyond the root item, annotate the
-            # full parent directory
-            self._queue_item_for_annotation(target_item_parent)
+        self._queue_item_for_annotation(target_item_parent)
 
-    # DONE
-    @lru_cache
+    @lru_cache(maxsize=1000)
     def _get_item_from_path(self, path: Path, root: FSBrowserItem = None):
         # this is a key function in terms of result UI snappiness
         # it must be as fast as anyhow possible
