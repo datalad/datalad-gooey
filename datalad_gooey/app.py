@@ -96,7 +96,7 @@ class GooeyApp(QObject):
 
         self._cmdexec.execution_failed.connect(
             lambda i, cmd, args, ce: self.get_widget('statusbar').showMessage(
-                f'`{cmd}` failed: {ce.format_standard()}'))
+                f'`{cmd}` failed: {ce.format_short()}'))
 
         # demo actions to execute things for dev-purposes
         self.get_widget('actionRun_stuff').triggered.connect(self.run_stuff)
