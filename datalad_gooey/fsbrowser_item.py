@@ -4,12 +4,17 @@ from typing import Dict
 from PySide6.QtCore import (
     Qt,
 )
+from PySide6.QtGui import (
+    QIcon,
+)
 from PySide6.QtWidgets import (
     QTreeWidgetItem,
 )
 
 from .fsbrowser_utils import _parse_dir
 
+# package path
+package_path = Path(__file__).resolve().parent
 
 class FSBrowserItem(QTreeWidgetItem):
     PathObjRole = Qt.UserRole + 765
@@ -134,8 +139,27 @@ class FSBrowserItem(QTreeWidgetItem):
         item.setData(0, FSBrowserItem.PathObjRole, path)
         path_type = res['type']
         item.setData(1, Qt.EditRole, path_type)
+        item._setItemIcons(res)
         if path_type in ('directory', 'dataset'):
             # show an expansion indiciator, even when we do not have
             # children in the item yet
             item.setChildIndicatorPolicy(QTreeWidgetItem.ShowIndicator)
         return item
+
+    def _setItemIcons(self, res):
+        # Set 'type' icon
+        self.setIcon(0, self._getIcon(res['type']))
+        # Set other icon types: TODO
+
+    def _getIcon(self, item_type):
+        """Gets icon associated with item type"""
+        icon_mapping = {
+            'dataset': 'dataset-closed',
+            'directory': 'directory-closed',
+            'file': 'file',
+        }
+        icon_name = icon_mapping.get(item_type, None)
+        if icon_name:
+            return QIcon(str(package_path / f'resources/icons/{icon_name}.svg'))
+        else:
+            return None
