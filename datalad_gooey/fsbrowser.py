@@ -150,16 +150,17 @@ class GooeyFilesystemBrowser(QObject):
                 # trigger datalad-status execution
                 # giving the target directory as a `path` argument should
                 # avoid undesired recursion into subDIRECTORIES
-                self._app.execute_dataladcmd.emit(
-                    'status',
-                    dict(
-                        dataset=dsroot,
-                        path=[
-                            c.pathobj.relative_to(dsroot)
-                            for c in item.children_()
-                            if c.datalad_type != 'directory'],
+                paths_to_investigate = [
+                    c.pathobj.relative_to(dsroot)
+                    for c in item.children_()
+                    if c.datalad_type != 'directory'
+                ]
+                if paths_to_investigate:
+                    # do not run, if there are no relevant paths to inspect
+                    self._app.execute_dataladcmd.emit(
+                        'status',
+                        dict(dataset=dsroot, path=paths_to_investigate)
                     )
-                )
 
         # restart annotation watcher
         self._annotation_timer.start(self._annotation_timer_interval)
