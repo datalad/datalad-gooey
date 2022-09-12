@@ -11,11 +11,13 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import (
     QObject,
+    Qt,
     Signal,
     Slot,
 )
 from PySide6.QtGui import (
     QAction,
+    QCursor,
     QIcon,
 )
 
@@ -86,17 +88,10 @@ class GooeyApp(QObject):
         # when a command was configured, pass it to the executor
         self._cmdui.configured_dataladcmd.connect(self._cmdexec.execute)
 
-        self._cmdexec.execution_started.connect(
-            lambda i, cmd, args: self.get_widget('statusbar').showMessage(
-                f'Started `{cmd}`'))
-
-        self._cmdexec.execution_finished.connect(
-            lambda i, cmd, args: self.get_widget('statusbar').showMessage(
-                f'Finished `{cmd}`'))
-
-        self._cmdexec.execution_failed.connect(
-            lambda i, cmd, args, ce: self.get_widget('statusbar').showMessage(
-                f'`{cmd}` failed: {ce.format_short()}'))
+        # connect execution handler signals to the setup methods
+        self._cmdexec.execution_started.connect(self._setup_ongoing_cmdexec)
+        self._cmdexec.execution_finished.connect(self._setup_stopped_cmdexec)
+        self._cmdexec.execution_failed.connect(self._setup_stopped_cmdexec)
 
         # demo actions to execute things for dev-purposes
         self.get_widget('actionRun_stuff').triggered.connect(self.run_stuff)
@@ -108,6 +103,18 @@ class GooeyApp(QObject):
         # connect pushbutton clicked signal to clear slot of logViewer
         self.get_widget('clearLogPB').clicked.connect(self.get_widget('logViewer').clear)
 
+    def _setup_ongoing_cmdexec(self, thread_id, cmdname, cmdargs):
+        self.get_widget('statusbar').showMessage(f'Started `{cmdname}`')
+        self.main_window.setCursor(QCursor(Qt.BusyCursor))
+
+    def _setup_stopped_cmdexec(self, thread_id, cmdname, cmdargs, ce=None):
+        if ce is None:
+            self.get_widget('statusbar').showMessage(f'Finished `{cmdname}`')
+        else:
+            self.get_widget('statusbar').showMessage(
+                f'`{cmdname}` failed: {ce.format_short()}')
+        if not self._cmdexec.n_running:
+            self.main_window.setCursor(QCursor(Qt.ArrowCursor))
 
     def deinit(self):
         dlui.ui.set_backend(self._prev_ui_backend)
