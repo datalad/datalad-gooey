@@ -164,6 +164,9 @@ def _get_parameter_widget_factory(
     elif isinstance(constraints, EnsureChoice) and argparse_action is None:
         type_widget = functools.partial(
             pw.ChoiceParamWidget, choices=constraints._allowed)
+    elif argparse_spec.get('choices'):
+        type_widget = functools.partial(
+            pw.ChoiceParamWidget, choices=argparse_spec.get('choices'))
     elif name == 'recursion_limit':
         type_widget = functools.partial(pw.PosIntParamWidget, allow_none=True)
 
