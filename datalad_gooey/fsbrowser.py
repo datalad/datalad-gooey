@@ -218,7 +218,7 @@ class GooeyFilesystemBrowser(QObject):
                     # do not run, if there are no relevant paths to inspect
                     self._app.execute_dataladcmd.emit(
                         'status',
-                        dict(dataset=dsroot, path=paths_to_investigate)
+                        dict(dataset=dsroot, path=paths_to_investigate, annex='basic')
                     )
 
         # restart annotation watcher
@@ -236,9 +236,13 @@ class GooeyFilesystemBrowser(QObject):
         if state is None:
             # nothing to show for
             return
+        storage = 'file-annex'
+        annex_key = res.get('key')
+        if annex_key is None:
+            storage = 'file-git'
         self.item_annotation_available.emit(
             self._get_item_from_path(Path(path)),
-            dict(state=state),
+            dict(state=state, storage=storage),
         )
 
     def _annotate_item(self, item, props):
@@ -247,7 +251,14 @@ class GooeyFilesystemBrowser(QObject):
             prev_state = item.data(2, Qt.EditRole)
             if state != prev_state:
                 item.setData(2, Qt.EditRole, state)
+                item.setIcon(2, item._getIcon(state))
                 item.emitDataChanged()
+        if item.data(1, Qt.EditRole) == 'file':
+            if 'storage' in props:
+                item.setIcon(0, item._getIcon(props['storage']))
+            else: 
+                item.setIcon(0, item._getIcon('file'))
+            item.emitDataChanged()
 
     # DONE
     def _disconnect_status_result_receiver(self, thread, cmdname, args):
