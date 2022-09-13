@@ -32,8 +32,6 @@ class GooeyFilesystemBrowser(QObject):
 
     # FSBrowserItem
     item_requires_annotation = Signal(FSBrowserItem)
-    # what is annotated, and the properties
-    item_annotation_available = Signal(FSBrowserItem, dict)
 
     # DONE
     def __init__(self, app, path: Path, treewidget: QTreeWidget):
@@ -46,10 +44,6 @@ class GooeyFilesystemBrowser(QObject):
         self._fswatcher = QFileSystemWatcher(parent=app)
         self.item_requires_annotation.connect(
             self._queue_item_for_annotation)
-        # and connect the receiver for an annotation of an item in the
-        # model
-        # TODO
-        self.item_annotation_available.connect(self._annotate_item)
 
         tw.setHeaderLabels(['Name', 'Type', 'State'])
         # established defined sorting order of the tree
@@ -241,7 +235,7 @@ class GooeyFilesystemBrowser(QObject):
                 for child in item.children_():
                     # get type, only annotate non-directory items
                     if child.datalad_type != 'directory':
-                        self.item_annotation_available.emit(
+                        self._annotate_item(
                             child, dict(state='untracked'))
             else:
                 # trigger datalad-status execution
@@ -284,7 +278,7 @@ class GooeyFilesystemBrowser(QObject):
         annex_key = res.get('key')
         if annex_key is None:
             storage = 'file-git'
-        self.item_annotation_available.emit(
+        self._annotate_item(
             self._get_item_from_path(Path(path)),
             dict(state=state, storage=storage),
         )
@@ -300,7 +294,7 @@ class GooeyFilesystemBrowser(QObject):
         if item.data(1, Qt.EditRole) == 'file':
             if 'storage' in props:
                 item.setIcon(0, item._getIcon(props['storage']))
-            else: 
+            else:
                 item.setIcon(0, item._getIcon('file'))
             item.emitDataChanged()
 
