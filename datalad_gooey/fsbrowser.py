@@ -223,7 +223,8 @@ class GooeyFilesystemBrowser(QObject):
                             path=paths_to_investigate,
                             eval_subdataset_state='commit',
                             annex='basic',
-                        )
+                        ),
+                        dict(),
                     )
 
         # restart annotation watcher

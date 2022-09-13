@@ -49,7 +49,8 @@ class GooeyDataladCmdExec(QObject):
 
     @Slot(str, dict)
     def execute(self, cmd: str,
-                kwargs: Dict or None = None):
+                kwargs: Dict or None = None,
+                exec_params: Dict or None = None):
         if kwargs is None:
             kwargs = dict()
 
@@ -62,12 +63,13 @@ class GooeyDataladCmdExec(QObject):
         self._futures.add(self._threadpool.submit(
             self._cmdexec_thread,
             cmd,
-            **kwargs
+            kwargs,
+            exec_params,
         ))
 
-    def _cmdexec_thread(self, cmdname, **kwargs):
+    def _cmdexec_thread(self, cmdname, cmdkwargs, exec_params):
         """The code is executed in a worker thread"""
-        print('EXECINTHREAD', cmdname, kwargs)
+        print('EXECINTHREAD', cmdname, cmdkwargs, exec_params)
         # get_ident() is an int, but in the future we might want to move
         # to PY3.8+ native thread IDs, so let's go with a string identifier
         # right away
@@ -75,40 +77,40 @@ class GooeyDataladCmdExec(QObject):
         self.execution_started.emit(
             thread_id,
             cmdname,
-            kwargs,
+            cmdkwargs,
         )
         # get functor to execute, resolve name against full API
         cmd = getattr(dlapi, cmdname)
 
         # enforce return_type='generator' to get the most responsive
         # any command could be
-        kwargs['return_type'] = 'generator'
+        cmdkwargs['return_type'] = 'generator'
         # Unless explicitly specified, force result records instead of the
         # command's default transformation which might give Dataset instances
         # for example.
-        if 'result_xfm' not in kwargs:
-            kwargs['result_xfm'] = None
+        if 'result_xfm' not in cmdkwargs:
+            cmdkwargs['result_xfm'] = None
 
-        if 'dataset' in kwargs:
+        if 'dataset' in cmdkwargs:
             # Pass actual instance, to have path arguments resolved against it
             # instead of Gooey's CWD.
-            kwargs['dataset'] = dlapi.Dataset(kwargs['dataset'])
+            cmdkwargs['dataset'] = dlapi.Dataset(cmdkwargs['dataset'])
         try:
-            for res in cmd(**kwargs):
+            for res in cmd(**cmdkwargs):
                 self.result_received.emit(res)
         except Exception as e:
             ce = CapturedException(e)
             self.execution_failed.emit(
                 thread_id,
                 cmdname,
-                kwargs,
+                cmdkwargs,
                 ce
             )
         else:
             self.execution_finished.emit(
                 thread_id,
                 cmdname,
-                kwargs,
+                cmdkwargs,
             )
 
     @property

@@ -45,7 +45,7 @@ class GooeyApp(QObject):
         'statusbar': QStatusBar,
     }
 
-    execute_dataladcmd = Signal(str, dict)
+    execute_dataladcmd = Signal(str, dict, dict)
     configure_dataladcmd = Signal(str, dict)
 
     def __init__(self, path: Path = None):
