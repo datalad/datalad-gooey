@@ -218,7 +218,12 @@ class GooeyFilesystemBrowser(QObject):
                     # do not run, if there are no relevant paths to inspect
                     self._app.execute_dataladcmd.emit(
                         'status',
-                        dict(dataset=dsroot, path=paths_to_investigate, annex='basic')
+                        dict(
+                            dataset=dsroot,
+                            path=paths_to_investigate,
+                            eval_subdataset_state='commit',
+                            annex='basic',
+                        )
                     )
 
         # restart annotation watcher
