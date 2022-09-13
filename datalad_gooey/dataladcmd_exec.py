@@ -1,5 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 import threading
+from time import time
 from typing import (
     Dict,
 )
@@ -10,7 +11,10 @@ from PySide6.QtCore import (
     Slot,
 )
 
+from datalad.interface.base import Interface
 from datalad.support.exceptions import CapturedException
+from datalad.utils import get_wrapped_class
+
 # lazy import
 dlapi = None
 
@@ -25,7 +29,7 @@ class GooeyDataladCmdExec(QObject):
     execution_finished = Signal(str, str, dict)
     # thread_id, cmdname, cmdargs/kwargs, CapturedException
     execution_failed = Signal(str, str, dict, CapturedException)
-    result_received = Signal(dict)
+    results_received = Signal(Interface, list)
 
     def __init__(self):
         super().__init__()
@@ -49,7 +53,8 @@ class GooeyDataladCmdExec(QObject):
 
     @Slot(str, dict)
     def execute(self, cmd: str,
-                kwargs: Dict or None = None):
+                kwargs: Dict or None = None,
+                exec_params: Dict or None = None):
         if kwargs is None:
             kwargs = dict()
 
@@ -62,12 +67,17 @@ class GooeyDataladCmdExec(QObject):
         self._futures.add(self._threadpool.submit(
             self._cmdexec_thread,
             cmd,
-            **kwargs
+            kwargs,
+            exec_params,
         ))
 
-    def _cmdexec_thread(self, cmdname, **kwargs):
+    def _cmdexec_thread(self, cmdname, cmdkwargs, exec_params):
         """The code is executed in a worker thread"""
-        print('EXECINTHREAD', cmdname, kwargs)
+        print('EXECINTHREAD', cmdname, cmdkwargs, exec_params)
+        preferred_result_interval = exec_params.get(
+            'preferred_result_interval', 1.0)
+        res_override = exec_params.get(
+            'result_override', {})
         # get_ident() is an int, but in the future we might want to move
         # to PY3.8+ native thread IDs, so let's go with a string identifier
         # right away
@@ -75,40 +85,53 @@ class GooeyDataladCmdExec(QObject):
         self.execution_started.emit(
             thread_id,
             cmdname,
-            kwargs,
+            cmdkwargs,
         )
         # get functor to execute, resolve name against full API
         cmd = getattr(dlapi, cmdname)
+        cls = get_wrapped_class(cmd)
 
         # enforce return_type='generator' to get the most responsive
         # any command could be
-        kwargs['return_type'] = 'generator'
+        cmdkwargs['return_type'] = 'generator'
         # Unless explicitly specified, force result records instead of the
         # command's default transformation which might give Dataset instances
         # for example.
-        if 'result_xfm' not in kwargs:
-            kwargs['result_xfm'] = None
+        if 'result_xfm' not in cmdkwargs:
+            cmdkwargs['result_xfm'] = None
 
-        if 'dataset' in kwargs:
+        if 'dataset' in cmdkwargs:
             # Pass actual instance, to have path arguments resolved against it
             # instead of Gooey's CWD.
-            kwargs['dataset'] = dlapi.Dataset(kwargs['dataset'])
+            cmdkwargs['dataset'] = dlapi.Dataset(cmdkwargs['dataset'])
+        gathered_results = []
+        last_report_ts = time()
         try:
-            for res in cmd(**kwargs):
-                self.result_received.emit(res)
+            for res in cmd(**cmdkwargs):
+                t = time()
+                res.update(res_override)
+                gathered_results.append(res)
+                if (t - last_report_ts) > preferred_result_interval:
+                    self.results_received.emit(cls, gathered_results)
+                    gathered_results = []
+                    last_report_ts = t
         except Exception as e:
+            if gathered_results:
+                self.results_received.emit(cls, gathered_results)
             ce = CapturedException(e)
             self.execution_failed.emit(
                 thread_id,
                 cmdname,
-                kwargs,
+                cmdkwargs,
                 ce
             )
         else:
+            if gathered_results:
+                self.results_received.emit(cls, gathered_results)
             self.execution_finished.emit(
                 thread_id,
                 cmdname,
-                kwargs,
+                cmdkwargs,
             )
 
     @property

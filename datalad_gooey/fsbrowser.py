@@ -8,13 +8,18 @@ from PySide6.QtCore import (
     Qt,
     QTimer,
     Signal,
+    Slot,
 )
 from PySide6.QtWidgets import (
     QMenu,
     QTreeWidget,
 )
 
+from datalad.core.local.status import Status
+from datalad.interface.base import Interface
 from datalad.utils import get_dataset_root
+
+from datalad_next.tree import TreeCommand
 
 from .dataset_actions import add_dataset_actions_to_menu
 from .fsbrowser_item import FSBrowserItem
@@ -27,8 +32,6 @@ class GooeyFilesystemBrowser(QObject):
 
     # FSBrowserItem
     item_requires_annotation = Signal(FSBrowserItem)
-    # what is annotated, and the properties
-    item_annotation_available = Signal(FSBrowserItem, dict)
 
     # DONE
     def __init__(self, app, path: Path, treewidget: QTreeWidget):
@@ -41,10 +44,6 @@ class GooeyFilesystemBrowser(QObject):
         self._fswatcher = QFileSystemWatcher(parent=app)
         self.item_requires_annotation.connect(
             self._queue_item_for_annotation)
-        # and connect the receiver for an annotation of an item in the
-        # model
-        # TODO
-        self.item_annotation_available.connect(self._annotate_item)
 
         tw.setHeaderLabels(['Name', 'Type', 'State'])
         # established defined sorting order of the tree
@@ -79,13 +78,14 @@ class GooeyFilesystemBrowser(QObject):
             self._process_item_annotation_queue)
         self._annotation_timer.start(self._annotation_timer_interval)
 
+        self._app._cmdexec.results_received.connect(
+            self._cmdexec_results_handler)
+
     # DONE
     def _populate_item(self, item):
         if item.childCount():
             return
 
-        self._app._cmdexec.result_received.connect(
-            self._tree_result_receiver)
         # only parse, if there are no children yet
         # kick off tree command in the background
         self._app.execute_dataladcmd.emit(
@@ -97,29 +97,69 @@ class GooeyFilesystemBrowser(QObject):
                 result_renderer='disabled',
                 on_failure='ignore',
                 return_type='generator',
-            )
+            ),
+            dict(
+                preferred_result_interval=0.2,
+                result_override=dict(
+                    gooey_parent_item=item,
+                    gooey_no_existing_item=True,
+                ),
+            ),
         )
+
+    @Slot(Interface, list)
+    def _cmdexec_results_handler(self, cls, res):
+        res_handler = None
+        if cls == TreeCommand:
+            res_handler = self._tree_result_receiver
+        elif cls == Status:
+            res_handler = self._status_result_receiver
+        else:
+            raise NotImplementedError(
+                f"No handler for {cls} result")
+
+        for r in res:
+            res_handler(r)
 
     def _tree_result_receiver(self, res):
         if res.get('action') != 'tree':
             # no what we are looking for
             return
 
+        target_item = None
+        target_item_parent = res.get('gooey_parent_item')
+        no_existing_item = res.get('gooey_no_existing_item', False)
+
         ipath = Path(res['path'])
-        try:
-            target_item_parent = self._get_item_from_path(ipath.parent)
-        except ValueError:
-            # ok, now we have no clue what this tree result is about
-            # its parent is no in the tree
+        if target_item_parent is None:
+            # we did not get it delivered in the result, search for it
+            try:
+                target_item_parent = self._get_item_from_path(ipath.parent)
+            except ValueError:
+                # ok, now we have no clue what this tree result is about
+                # its parent is no in the tree
+                return
+
+        if (no_existing_item and target_item_parent
+                and target_item_parent.pathobj == ipath):
+            # sender claims that the item does not exist and provided a parent
+            # item. reject a result if it matches the parent to avoid
+            # duplicating the item as a child, and to also prevent an unintended
+            # item update
             return
 
-        try:
-            # give the parent as a starting item, to speed things up
-            target_item = self._get_item_from_path(ipath, target_item_parent)
-        except ValueError:
-            # it is quite possible that the item does not exist yet
-            # so let's find the parent
-            target_item = None
+        if not no_existing_item:
+            # we have no indication that the item this is about does not
+            # already exist, search for it
+            try:
+                # give the parent as a starting item, to speed things up
+                target_item = self._get_item_from_path(
+                    ipath, target_item_parent)
+            except ValueError:
+                # it is quite possible that the item does not exist yet.
+                # but such cases are expensive, and the triggering code could
+                # consider sending the 'gooey_no_existing_item' flag
+                pass
 
         if target_item is None:
             # we don't have such an item yet -> make one
@@ -195,17 +235,9 @@ class GooeyFilesystemBrowser(QObject):
                 for child in item.children_():
                     # get type, only annotate non-directory items
                     if child.datalad_type != 'directory':
-                        self.item_annotation_available.emit(
+                        self._annotate_item(
                             child, dict(state='untracked'))
             else:
-                # with have a containing dataset, run a datalad-status.
-                # attach to the execution handler's result received signal
-                # to route them this our own receiver
-                self._app._cmdexec.result_received.connect(
-                    self._status_result_receiver)
-                # attach the handler that disconnects from the result signal
-                self._app._cmdexec.execution_finished.connect(
-                    self._disconnect_status_result_receiver)
                 # trigger datalad-status execution
                 # giving the target directory as a `path` argument should
                 # avoid undesired recursion into subDIRECTORIES
@@ -223,7 +255,8 @@ class GooeyFilesystemBrowser(QObject):
                             path=paths_to_investigate,
                             eval_subdataset_state='commit',
                             annex='basic',
-                        )
+                        ),
+                        dict(),
                     )
 
         # restart annotation watcher
@@ -245,7 +278,7 @@ class GooeyFilesystemBrowser(QObject):
         annex_key = res.get('key')
         if annex_key is None:
             storage = 'file-git'
-        self.item_annotation_available.emit(
+        self._annotate_item(
             self._get_item_from_path(Path(path)),
             dict(state=state, storage=storage),
         )
@@ -261,19 +294,9 @@ class GooeyFilesystemBrowser(QObject):
         if item.data(1, Qt.EditRole) == 'file':
             if 'storage' in props:
                 item.setIcon(0, item._getIcon(props['storage']))
-            else: 
+            else:
                 item.setIcon(0, item._getIcon('file'))
             item.emitDataChanged()
-
-    # DONE
-    def _disconnect_status_result_receiver(self, thread, cmdname, args):
-        if cmdname != 'status':
-            # no what we are looking for
-            return
-        # TODO come up with some kind of counter to verify when it is safe
-        # to disconnect the result receiver
-        # some status processes could be running close to forever
-        print("DISCONNECT?", cmdname)
 
     # DONE
     def _watch_dir(self, item):
