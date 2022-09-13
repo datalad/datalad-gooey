@@ -1,6 +1,7 @@
 from functools import lru_cache
 import logging
 from pathlib import Path
+from typing import List
 
 from PySide6.QtCore import (
     QFileSystemWatcher,
@@ -187,7 +188,15 @@ class GooeyFilesystemBrowser(QObject):
             return item
         # otherwise look for the item with the right name at the
         # respective level
-        for p in path.relative_to(ipath).parts:
+        try:
+            return self._get_item_from_trace(
+                item, path.relative_to(ipath).parts)
+        except ValueError as e:
+            raise ValueError(f'Cannot find item for {path}') from e
+
+    def _get_item_from_trace(self, root: FSBrowserItem, trace: List):
+        item = root
+        for p in trace:
             found = False
             for ci in range(item.childCount()):
                 child = item.child(ci)
@@ -196,7 +205,7 @@ class GooeyFilesystemBrowser(QObject):
                     found = True
                     break
             if not found:
-                raise ValueError(f'Cannot find item for {path}')
+                raise ValueError(f'Cannot find item for {trace}')
         return item
 
     def _queue_item_for_annotation(self, item):
@@ -214,6 +223,11 @@ class GooeyFilesystemBrowser(QObject):
     def _process_item_annotation_queue(self):
         if not self._annotation_queue:
             return
+        if self._app._cmdexec.n_running:
+            # stuff is still running
+            self._annotation_timer.start(1000)
+            return
+
         # there is stuff to annotate, make sure we do not trigger more
         # annotations while this one is running
         self._annotation_timer.stop()
@@ -228,6 +242,7 @@ class GooeyFilesystemBrowser(QObject):
             # another, attention would be on the last expanded one, not the
             # first)
             item = self._annotation_queue.pop()
+            print('->', item)
             ipath = item.pathobj
             dsroot = get_dataset_root(ipath)
             if dsroot is None:
@@ -255,8 +270,16 @@ class GooeyFilesystemBrowser(QObject):
                             path=paths_to_investigate,
                             eval_subdataset_state='commit',
                             annex='basic',
+                            result_renderer='disabled',
+                            on_failure='ignore',
+                            return_type='generator',
                         ),
-                        dict(),
+                        dict(
+                            preferred_result_interval=.5,
+                            result_override=dict(
+                                gooey_parent_item=item,
+                            ),
+                        ),
                     )
 
         # restart annotation watcher
@@ -279,23 +302,29 @@ class GooeyFilesystemBrowser(QObject):
         if annex_key is None:
             storage = 'file-git'
         self._annotate_item(
-            self._get_item_from_path(Path(path)),
+            # TODO it could well be gone by now, double-check
+            self._get_item_from_trace(
+                res['gooey_parent_item'],
+                # the parent will only ever be the literal parent directory
+                [Path(path).name],
+            ),
             dict(state=state, storage=storage),
         )
 
     def _annotate_item(self, item, props):
+        changed = False
         if 'state' in props:
             state = props['state']
             prev_state = item.data(2, Qt.EditRole)
             if state != prev_state:
                 item.setData(2, Qt.EditRole, state)
                 item.setIcon(2, item._getIcon(state))
-                item.emitDataChanged()
-        if item.data(1, Qt.EditRole) == 'file':
-            if 'storage' in props:
-                item.setIcon(0, item._getIcon(props['storage']))
-            else:
-                item.setIcon(0, item._getIcon('file'))
+                changed = True
+        if item.datalad_type == 'file':
+            # get the right icon, fall back on 'file'
+            item.setIcon(0, item._getIcon(props.get('storage', 'file')))
+            changed = True
+        if changed:
             item.emitDataChanged()
 
     # DONE
