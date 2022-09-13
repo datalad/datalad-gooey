@@ -164,10 +164,12 @@ class FSBrowserItem(QTreeWidgetItem):
             'untracked': 'untracked',
             'clean': 'clean',
             'modified': 'modified',
+            'deleted': 'untracked',
+            'unknown': 'untracked',
         }
         icon_name = icon_mapping.get(item_type, None)
         if icon_name:
             return QIcon(str(
                 package_path / 'resources' / 'icons' / f'{icon_name}.svg'))
         else:
-            return None
+            raise NotImplementedError(f"Unkown item type {item_type}")
