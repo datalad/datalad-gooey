@@ -37,6 +37,10 @@ def add_dataset_actions_to_menu(parent, receiver, menu=None, dataset=None):
         if mname.startswith('_'):
             # skip any private stuff
             continue
+        if mname == 'gooey':
+            # right now, we are technically not able to handle GUI inception
+            # and need to prevent launching multiple instances of this app
+            continue
         m = getattr(Dataset, mname)
         try:
             # if either of the following tests fails, this member is not
