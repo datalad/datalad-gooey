@@ -73,40 +73,6 @@ class FSBrowserItem(QTreeWidgetItem):
         if changed:
             self.emitDataChanged()
 
-    def update_from(self, other):
-        # properties of this item
-        self.update_data_from(other)
-        # now children
-        # TODO build lookup dicts to speed up matching
-        # first delete children of self, not present in other
-        changed = False
-        for mychild in self.children_():
-            child_path = mychild.pathobj
-            if not any(child_path == c.pathobj for c in other.children_()):
-                self.removeChild(mychild)
-                changed = True
-
-        for otherchild in other.children_():
-            if not any(
-                    otherchild.pathobj == c.pathobj for c in self.children_()
-            ):
-                # we do not have a child for this path yet, adopt it.
-                # reparent by removing and than adding
-                other.removeChild(otherchild)
-                self.addChild(otherchild)
-                changed = True
-                continue
-            # what remains is to update the properties from a child that
-            # we both have
-            # TODO use lookups built for TODO above
-            for mychild in self.children_():
-                if mychild.pathobj == otherchild.pathobj:
-                    mychild.update_data_from(otherchild)
-                    changed = True
-                    break
-        if changed:
-            self.emitDataChanged()
-
     @classmethod
     def from_path(cls,
                   path: Path,

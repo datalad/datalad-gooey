@@ -371,17 +371,36 @@ class GooeyFilesystemBrowser(QObject):
                 raise NotImplementedError
             parent.removeChild(item)
             lgr.log(8, "-> _inspect_changed_dir() -> item removed")
+            return
 
-        # the modification is not a deletion of the watched dir itself.
-        # get a new item with its immediate children, in order
-        # to than compare the present to the new one(s): remove/add
-        # as needed, update the existing node instances for the rest
-        newitem = FSBrowserItem.from_path(
-            pathobj, root=True, children=True, include_files=True,
-            parent=None)
-
-        item.update_from(newitem)
-        lgr.log(9, "_inspect_changed_dir() -> updated tree items")
+        # we will kick off a `tree` run to update the widget, but it could
+        # no detect item that no longer have a file system counterpart
+        # so we remove them here and now
+        for child in item.children_():
+            try:
+                # same as lexists() but with pathlib
+                child.pathobj.lstat()
+            except (OSError, ValueError):
+                item.removeChild(child)
+        # now re-explore the tree
+        self._app.execute_dataladcmd.emit(
+            'tree',
+            dict(
+                path=item.pathobj,
+                depth=1,
+                include_files=True,
+                result_renderer='disabled',
+                on_failure='ignore',
+                return_type='generator',
+            ),
+            dict(
+                preferred_result_interval=0.2,
+                result_override=dict(
+                    gooey_parent_item=item,
+                ),
+            ),
+        )
+        lgr.log(9, "_inspect_changed_dir() -> requested update")
 
     # DONE
     def _custom_context_menu(self, onpoint):
