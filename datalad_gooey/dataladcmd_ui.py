@@ -22,8 +22,9 @@ class GooeyDataladCmdUI(QObject):
 
     configured_dataladcmd = Signal(str, dict)
 
-    def __init__(self, ui_parent: QWidget):
+    def __init__(self, app, ui_parent: QWidget):
         super().__init__()
+        self._app = app
         self._ui_parent = ui_parent
         # start out disabled, there will be no populated form
         self._ui_parent.setDisabled(True)
@@ -81,6 +82,8 @@ class GooeyDataladCmdUI(QObject):
 
         assert cmdname is not None, \
             "GooeyDataladCmdUI.configure() called without command name"
+
+        self._app.get_widget('contextTabs').setCurrentWidget(self.pwidget)
 
         self._empty_form()
         populate_form_w_params(
