@@ -85,7 +85,7 @@ class GooeyDataladCmdUI(QObject):
 
         self._app.get_widget('contextTabs').setCurrentWidget(self.pwidget)
 
-        self._empty_form()
+        self.reset_form()
         populate_form_w_params(
             self.pform,
             cmdname,
@@ -124,7 +124,10 @@ class GooeyDataladCmdUI(QObject):
         # accessible. Widget empties itself on reconfigure
         self.pwidget.setDisabled(True)
 
-    def _empty_form(self):
+    def reset_form(self):
+        if self._cmd_title:
+            self._cmd_title.setText('')
         for i in range(self.pform.rowCount() - 1, -1, -1):
             # empty the form layout (deletes all widgets)
             self.pform.removeRow(i)
+        self.disable()

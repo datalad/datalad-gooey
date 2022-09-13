@@ -98,6 +98,11 @@ class GooeyApp(QObject):
         # connect pushbutton clicked signal to clear slot of logViewer
         self.get_widget('clearLogPB').clicked.connect(self.get_widget('logViewer').clear)
 
+        # reset the command configuration tab whenever the item selection in
+        # tree view changed
+        self._fsbrowser._tree.currentItemChanged.connect(
+            lambda cur, prev: self._cmdui.reset_form())
+
     def _setup_ongoing_cmdexec(self, thread_id, cmdname, cmdargs):
         self.get_widget('statusbar').showMessage(f'Started `{cmdname}`')
         self.main_window.setCursor(QCursor(Qt.BusyCursor))
