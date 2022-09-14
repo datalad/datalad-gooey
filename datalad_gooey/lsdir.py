@@ -1,0 +1,177 @@
+"""DataLad GUI ls-dir helper"""
+
+__docformat__ = 'restructuredtext'
+
+import stat
+import logging
+from pathlib import Path
+
+from datalad.interface.base import Interface
+from datalad.interface.base import build_doc
+from datalad.support.param import Parameter
+from datalad.support.exceptions import CapturedException
+from datalad.interface.utils import eval_results
+
+from datalad.runner import (
+    GitRunner,
+    StdOutCapture,
+    CommandError,
+)
+
+lgr = logging.getLogger('datalad.ext.gooey.lsdir')
+
+
+@build_doc
+class GooeyLsDir(Interface):
+    """DataLad GUI helper
+
+    Long description of arbitrary volume.
+    """
+    # parameters of the command, must be exhaustive
+    _params_ = dict(
+        # name of the parameter, must match argument name
+        path=Parameter(
+            # cmdline argument definitions, incl aliases
+            args=("path", ),
+            # documentation
+            doc="""""",
+        )
+    )
+
+    @staticmethod
+    @eval_results
+    def __call__(path: Path or str):
+        # This needs to be keep simple and as fast as anyhow possible.
+        # anything that is not absolutely crucial to have should have
+        # an inexpensive switch to turn it off (or be off by default.
+        # This command is an internal helper of gooey, it has no ambition
+        # to generalize, although the components it uses internally
+        # might have applicability in a broader scope.
+
+        # - this takes a single path as a mandatory argument
+        # TODO must be absolute?
+        # - this path must be a directory, if it exists
+        # - this directory can be inside or outside of a dataset
+        # - a result is returned for each item inside that is considered
+        #   "relevant" for gooey (ie. no content inside `.git` or `.git` itself
+        #   etc.
+
+        path = Path(path)
+        if not path.is_absolute():
+            # make absolute
+            # this is not a datasetmethod, we do not have to take the
+            # "relative-to-dsroot" case into account
+            path = Path.cwd() / path
+        # for each item we report
+        # - type (symlink, file, directory, dataset)
+        # - state (untracked, clean, ...)
+        for r in _list(path):
+            r.update(action='gooey-lsdir')
+            if 'status' not in r:
+                r.update(status='ok')
+            yield r
+
+
+def _list(path: Path):
+    try:
+        yield from _lsfiles(path)
+    # TODO dedicated exception?
+    except CommandError as e:
+        # not in a dataset
+        ce = CapturedException(e)
+        lgr.debug(
+            'git-ls-files failed, falling back on manual inspaction: %s',
+            ce)
+        # TODO apply standard filtering of results
+        yield from _iterdir(path)
+
+
+def _lsfiles(path: Path):
+    from datalad.support.gitrepo import GitRepo
+    import re
+
+    # just to be able use _get_content_info_line_helper
+    # without a GitRepo instance
+    class _Dummy:
+        def __init__(self, path):
+            self.pathobj = path
+
+    # stolen from GitRepo.get_content_info()
+    props_re = re.compile(
+        r'(?P<type>[0-9]+) (?P<sha>.*) (.*)\t(?P<fname>.*)$')
+
+    # we use a plain runner to avoid the overhead of a GitRepo instance
+    runner = GitRunner()
+    ret = runner.run(
+        ['git', 'ls-files',
+         # we want them all
+         '--cached', '--deleted', '--modified', '--others',
+         # we want the type info
+         '--stage',
+         # given that we only want the immediate directory content
+         # there is little point in exploring the content of subdir
+         '--directory',
+         # don't show the stuff that a user didn't want to see
+         '--exclude-standard',
+         # to satisfy the needs of _get_content_info_line_helper()
+         '-z'],
+        protocol=StdOutCapture,
+        # run in the directory we want info on
+        # and do not pass further path constraints
+        cwd=path,
+    )
+    info = dict()
+    GitRepo._get_content_info_line_helper(
+        _Dummy(path),
+        None,
+        info,
+        ret['stdout'].split('\0'),
+        props_re,
+    )
+    subdirs_reported = set()
+    for p, props in info.items():
+        rpath_parts = p.relative_to(path).parts
+        if len(rpath_parts) > 1:
+            # subdirectory content: regret the time it took to process
+            # it (ls-files cannot be prevented to list it)
+            if rpath_parts[0] in subdirs_reported:
+                # we had the pleasure already, nothing else todo
+                continue
+            yield dict(
+                path=path / rpath_parts[0],
+                type='directory',
+            )
+            # and ignore now
+            subdirs_reported.add(rpath_parts[0])
+            continue
+        yield dict(
+            path=str(p),
+            type=props['type'],
+        )
+
+
+def _iterdir(path: Path):
+    # anything reported from here will be state=untracked
+    # figure out the type, as far as we need it
+    # right now we do not detect a subdir to be a dataset
+    # vs a directory, only directories
+    for c in path.iterdir():
+        if c.name == '.git':
+            # we do not report on this special name
+            continue
+        # given that c is from iterdir, it will always exist
+        cmode = c.lstat().st_mode
+        if stat.S_ISLNK(cmode):
+            ctype = 'symlink'
+        elif stat.S_ISDIR(cmode):
+            ctype = 'directory'
+        else:
+            # the rest is a file
+            # there could be fifos and sockets, etc.
+            # but we do not recognize them here
+            ctype = 'file'
+        yield dict(
+            path=str(c),
+            type=ctype,
+            state='untracked',
+        )

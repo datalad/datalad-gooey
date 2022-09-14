@@ -16,6 +16,7 @@ High-level API commands
    :toctree: generated
 
    gooey
+   gooey_lsdir
 
 
 Command line reference
@@ -25,6 +26,7 @@ Command line reference
    :maxdepth: 1
 
    generated/man/datalad-gooey
+   generated/man/datalad-gooey-lsdir
 
 
 Indices and tables
