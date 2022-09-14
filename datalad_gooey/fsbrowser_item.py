@@ -86,12 +86,12 @@ class FSBrowserItem(QTreeWidgetItem):
             include_files=include_files
         )
         if root:
-            root = cls.from_tree_result(next(gen), parent=parent)
+            root = cls.from_lsdir_result(next(gen), parent=parent)
         else:
             next(gen)
             root = parent
         children = [
-            cls.from_tree_result(r, parent=root) for r in gen
+            cls.from_lsdir_result(r, parent=root) for r in gen
         ]
         if children:
             root.addChildren(children)
@@ -99,7 +99,7 @@ class FSBrowserItem(QTreeWidgetItem):
         return root
 
     @classmethod
-    def from_tree_result(cls, res: Dict, parent=None):
+    def from_lsdir_result(cls, res: Dict, parent=None):
         item = FSBrowserItem(parent=parent)
         path = Path(res['path'])
         item.setData(0, FSBrowserItem.PathObjRole, path)
@@ -127,15 +127,18 @@ class FSBrowserItem(QTreeWidgetItem):
             'file': 'file',
             'file-annex': 'file-annex',
             'file-git': 'file-git',
+            # opportunistic guess?
+            'symlink': 'file-annex',
             'untracked': 'untracked',
             'clean': 'clean',
             'modified': 'modified',
             'deleted': 'untracked',
             'unknown': 'untracked',
+            'added': 'modified',
         }
         icon_name = icon_mapping.get(item_type, None)
         if icon_name:
             return QIcon(str(
                 package_path / 'resources' / 'icons' / f'{icon_name}.svg'))
         else:
-            raise NotImplementedError(f"Unkown item type {item_type}")
+            raise NotImplementedError(f"Unknown item type {item_type}")

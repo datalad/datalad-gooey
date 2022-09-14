@@ -20,10 +20,9 @@ from datalad.core.local.status import Status
 from datalad.interface.base import Interface
 from datalad.utils import get_dataset_root
 
-from datalad_next.tree import TreeCommand
-
 from .dataset_actions import add_dataset_actions_to_menu
 from .fsbrowser_item import FSBrowserItem
+from .lsdir import GooeyLsDir
 
 lgr = logging.getLogger('datalad.gooey.fsbrowser')
 
@@ -88,13 +87,11 @@ class GooeyFilesystemBrowser(QObject):
             return
 
         # only parse, if there are no children yet
-        # kick off tree command in the background
+        # kick off lsdir command in the background
         self._app.execute_dataladcmd.emit(
-            'tree',
+            'gooey_lsdir',
             dict(
                 path=item.pathobj,
-                depth=1,
-                include_files=True,
                 result_renderer='disabled',
                 on_failure='ignore',
                 return_type='generator',
@@ -111,8 +108,8 @@ class GooeyFilesystemBrowser(QObject):
     @Slot(Interface, list)
     def _cmdexec_results_handler(self, cls, res):
         res_handler = None
-        if cls == TreeCommand:
-            res_handler = self._tree_result_receiver
+        if cls == GooeyLsDir:
+            res_handler = self._lsdir_result_receiver
         elif cls == Status:
             res_handler = self._status_result_receiver
         else:
@@ -122,8 +119,8 @@ class GooeyFilesystemBrowser(QObject):
         for r in res:
             res_handler(r)
 
-    def _tree_result_receiver(self, res):
-        if res.get('action') != 'tree':
+    def _lsdir_result_receiver(self, res):
+        if res.get('action') != 'gooey-lsdir':
             # no what we are looking for
             return
 
@@ -137,7 +134,7 @@ class GooeyFilesystemBrowser(QObject):
             try:
                 target_item_parent = self._get_item_from_path(ipath.parent)
             except ValueError:
-                # ok, now we have no clue what this tree result is about
+                # ok, now we have no clue what this lsdir result is about
                 # its parent is no in the tree
                 return
 
@@ -164,11 +161,11 @@ class GooeyFilesystemBrowser(QObject):
 
         if target_item is None:
             # we don't have such an item yet -> make one
-            target_item = FSBrowserItem.from_tree_result(
+            target_item = FSBrowserItem.from_lsdir_result(
                 res, target_item_parent)
         else:
             # we do have this already, good occasion to update it?
-            other_item = FSBrowserItem.from_tree_result(res)
+            other_item = FSBrowserItem.from_lsdir_result(res)
             target_item.update_data_from(other_item)
 
         # for now we register the parent for an annotation update
@@ -373,7 +370,7 @@ class GooeyFilesystemBrowser(QObject):
             lgr.log(8, "-> _inspect_changed_dir() -> item removed")
             return
 
-        # we will kick off a `tree` run to update the widget, but it could
+        # we will kick off a `lsdir` run to update the widget, but it could
         # no detect item that no longer have a file system counterpart
         # so we remove them here and now
         for child in item.children_():
@@ -382,13 +379,11 @@ class GooeyFilesystemBrowser(QObject):
                 child.pathobj.lstat()
             except (OSError, ValueError):
                 item.removeChild(child)
-        # now re-explore the tree
+        # now re-explore
         self._app.execute_dataladcmd.emit(
-            'tree',
+            'gooey_lsdir',
             dict(
                 path=item.pathobj,
-                depth=1,
-                include_files=True,
                 result_renderer='disabled',
                 on_failure='ignore',
                 return_type='generator',
