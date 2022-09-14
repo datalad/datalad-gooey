@@ -109,7 +109,9 @@ def _lsfiles(path: Path):
          # we want the type info
          '--stage',
          # given that we only want the immediate directory content
-         # there is little point in exploring the content of subdir
+         # there is little point in exploring the content of subdir.
+         # however, we still want to be able to list directories
+         # that are wholly untracked, but still have content
          '--directory',
          # don't show the stuff that a user didn't want to see
          '--exclude-standard',
@@ -129,6 +131,7 @@ def _lsfiles(path: Path):
         props_re,
     )
     subdirs_reported = set()
+    entirely_untracked_dir = False
     for p, props in info.items():
         rpath_parts = p.relative_to(path).parts
         if len(rpath_parts) > 1:
@@ -144,10 +147,19 @@ def _lsfiles(path: Path):
             # and ignore now
             subdirs_reported.add(rpath_parts[0])
             continue
-        yield dict(
-            path=str(p),
-            type=props['type'],
-        )
+        # we should never get a report on the parent dir we are listing.
+        # this only happens, when it is itself entirely untracked.
+        # setting this flag catches this condition (there will be no other
+        # result), and enable mitigation
+        entirely_untracked_dir = p == path
+        if not entirely_untracked_dir:
+            yield dict(
+                path=str(p),
+                type=props['type'],
+            )
+    if entirely_untracked_dir:
+        # fall back on _iterdir() for wholly untracked directories
+        yield from _iterdir(path)
 
 
 def _iterdir(path: Path):
@@ -170,8 +182,10 @@ def _iterdir(path: Path):
             # there could be fifos and sockets, etc.
             # but we do not recognize them here
             ctype = 'file'
-        yield dict(
+        props = dict(
             path=str(c),
             type=ctype,
-            state='untracked',
         )
+        if type != 'directory':
+            props['state'] = 'untracked'
+        yield props
