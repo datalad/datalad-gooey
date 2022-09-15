@@ -138,7 +138,9 @@ class FSBrowserItem(QTreeWidgetItem):
         # Set 'type' icon
         item_type = res['type']
         if item_type != 'file':
-            self.setIcon(0, self._getIcon(item_type))
+            icon = self._getIcon(item_type)
+            if icon:
+                self.setIcon(0, icon)
         # Set other icon types: TODO
 
     def _getIcon(self, item_type):
@@ -158,9 +160,9 @@ class FSBrowserItem(QTreeWidgetItem):
             'unknown': 'untracked',
             'added': 'modified',
         }
+        # TODO have a fallback icon, when we do not know a specific type
+        # rather than crashing. Maybe a ?, maybe something blank?
         icon_name = icon_mapping.get(item_type, None)
         if icon_name:
             return QIcon(str(
                 package_path / 'resources' / 'icons' / f'{icon_name}.svg'))
-        else:
-            raise NotImplementedError(f"Unknown item type {item_type}")

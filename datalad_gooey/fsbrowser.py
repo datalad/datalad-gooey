@@ -181,6 +181,7 @@ class GooeyFilesystemBrowser(QObject):
             # we cannot get in, reflect in UI
             # TODO needs to be undone, once permissions change
             target_item.setDisabled(True)
+            # also prevent expansion
             target_item.setChildIndicatorPolicy(
                 FSBrowserItem.DontShowIndicator)
 
@@ -295,6 +296,9 @@ class GooeyFilesystemBrowser(QObject):
             # nothing that we could handle
             return
         state = res.get('state')
+        if res.get('status') == 'error' and 'message' in res and state is None:
+            # something went wrong, we got no state info, but we have a message
+            state = res['message']
         if state is None:
             # nothing to show for
             return
