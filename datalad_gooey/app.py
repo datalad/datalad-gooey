@@ -161,10 +161,10 @@ class GooeyApp(QObject):
         if is_outdated:
             self.get_widget('logViewer').appendPlainText(
                 f'Update-alert: Consider updating DataLad from '
-                f'version {dlversion} to {latest}️')
+                f'version {dlversion} to {latest}')
         else:
             self.get_widget('logViewer').appendPlainText(
-                f'Your DataLad version is up to date ✔️')
+                f'Your DataLad version is up to date')
         self.get_widget('statusbar').showMessage('Done', timeout=500)
 
 class QtApp(QApplication):
