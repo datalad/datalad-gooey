@@ -167,6 +167,7 @@ class GooeyApp(QObject):
                 f'Your DataLad version is up to date')
         self.get_widget('statusbar').showMessage('Done', timeout=500)
 
+
 class QtApp(QApplication):
     # A wrapper around QApplication to provide a single (i.e. deduplicated)
     # point for setting Qapplication-level properties, such as icons.
@@ -180,6 +181,14 @@ class QtApp(QApplication):
 
 def main():
     qtapp = QtApp(sys.argv)
+
+    # go dark, if supported
+    try:
+        import qdarktheme
+        qtapp.setStyleSheet(qdarktheme.load_stylesheet('dark'))
+    except ImportError:
+        pass
+
     gooey = GooeyApp()
     gooey.main_window.show()
     sys.exit(qtapp.exec())
