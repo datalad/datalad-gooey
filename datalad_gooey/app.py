@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+from outdated import check_outdated
 from PySide6.QtWidgets import (
     QApplication,
     QMenu,
@@ -16,11 +17,13 @@ from PySide6.QtCore import (
     Signal,
 )
 from PySide6.QtGui import (
+    QAction,
     QCursor,
     QIcon,
 )
 
 from datalad import cfg as dlcfg
+from datalad import __version__ as dlversion
 import datalad.ui as dlui
 
 from .utils import load_ui
@@ -153,7 +156,16 @@ class GooeyApp(QObject):
             self._populate_dataset_menu)
 
     def _check_new_version(self):
-        pass
+        self.get_widget('statusbar').showMessage('Checking latest version')
+        is_outdated, latest = check_outdated('datalad', dlversion)
+        if is_outdated:
+            self.get_widget('logViewer').appendPlainText(
+                f'Update-alert: Consider updating DataLad from '
+                f'version {dlversion} to {latest}️')
+        else:
+            self.get_widget('logViewer').appendPlainText(
+                f'Your DataLad version is up to date ✔️')
+        self.get_widget('statusbar').showMessage('Done', timeout=500)
 
 class QtApp(QApplication):
     # A wrapper around QApplication to provide a single (i.e. deduplicated)
