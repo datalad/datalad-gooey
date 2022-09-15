@@ -176,6 +176,14 @@ class GooeyFilesystemBrowser(QObject):
             other_item = FSBrowserItem.from_lsdir_result(res)
             target_item.update_data_from(other_item)
 
+        if res.get('status') == 'error' \
+                and res.get('message') == 'Permissions denied':
+            # we cannot get in, reflect in UI
+            # TODO needs to be undone, once permissions change
+            target_item.setDisabled(True)
+            target_item.setChildIndicatorPolicy(
+                FSBrowserItem.DontShowIndicator)
+
     @lru_cache(maxsize=1000)
     def _get_item_from_path(self, path: Path, root: FSBrowserItem = None):
         # this is a key function in terms of result UI snappiness

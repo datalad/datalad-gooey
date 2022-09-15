@@ -11,6 +11,7 @@ from datalad.interface.base import build_doc
 from datalad.support.param import Parameter
 from datalad.support.exceptions import CapturedException
 from datalad.interface.utils import eval_results
+from datalad.interface.results import get_status_dict
 
 from datalad.runner import (
     GitRunner,
@@ -70,11 +71,20 @@ class GooeyLsDir(Interface):
             r.update(action='gooey-lsdir')
             if 'status' not in r:
                 r.update(status='ok')
-            if r['type'] == 'directory':
+            if r.get('type') == 'directory':
                 # a directory could still be an untracked dataset,
                 # run the cheapest possible standard test to tell them apart.
-                r['type'] = 'dataset' \
-                    if GitRepo.is_valid(r['path']) else 'directory'
+                try:
+                    is_repo = GitRepo.is_valid(r['path'])
+                except PermissionError as e:
+                    ce = CapturedException(e)
+                    # could be read-protected
+                    r['status'] = 'error'
+                    r['exception'] = ce
+                    r['message'] = 'Permissions denied'
+                    yield r
+                    continue
+                r['type'] = 'dataset' if is_repo else 'directory'
             yield r
 
 
@@ -90,6 +100,12 @@ def _list(path: Path):
             ce)
         # TODO apply standard filtering of results
         yield from _iterdir(path)
+    except PermissionError as e:
+        yield get_status_dict(
+            path=str(path),
+            status='error',
+            exception=CapturedException(e),
+        )
 
 
 def _lsfiles(path: Path):
