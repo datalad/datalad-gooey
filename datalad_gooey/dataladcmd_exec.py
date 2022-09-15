@@ -82,16 +82,26 @@ class GooeyDataladCmdExec(QObject):
         # to PY3.8+ native thread IDs, so let's go with a string identifier
         # right away
         thread_id = str(threading.get_ident())
+        # get functor to execute, resolve name against full API
+        try:
+            cmd = getattr(dlapi, cmdname)
+            cls = get_wrapped_class(cmd)
+        except Exception as e:
+            self.execution_failed.emit(
+                thread_id,
+                cmdname,
+                cmdkwargs,
+                exec_params,
+                CapturedException(e),
+            )
+            return
+
         self.execution_started.emit(
             thread_id,
             cmdname,
             cmdkwargs,
             exec_params,
         )
-        # get functor to execute, resolve name against full API
-        cmd = getattr(dlapi, cmdname)
-        cls = get_wrapped_class(cmd)
-
         # enforce return_type='generator' to get the most responsive
         # any command could be
         cmdkwargs['return_type'] = 'generator'
