@@ -43,6 +43,8 @@ class GooeyApp(QObject):
         'logViewer': QPlainTextEdit,
         'menuDataset': QMenu,
         'statusbar': QStatusBar,
+        'menuUtilities': QMenu,
+        'actionCheck_for_new_version': QAction,
     }
 
     execute_dataladcmd = Signal(str, dict, dict)
@@ -90,18 +92,18 @@ class GooeyApp(QObject):
         self._cmdexec.execution_started.connect(self._setup_ongoing_cmdexec)
         self._cmdexec.execution_finished.connect(self._setup_stopped_cmdexec)
         self._cmdexec.execution_failed.connect(self._setup_stopped_cmdexec)
-
         # arrange for the dataset menu to populate itself lazily once
         # necessary
         self.get_widget('menuDataset').aboutToShow.connect(self._populate_dataset_menu)
-
         # connect pushbutton clicked signal to clear slot of logViewer
         self.get_widget('clearLogPB').clicked.connect(self.get_widget('logViewer').clear)
-
+        self.main_window.actionCheck_for_new_version.triggered.connect(
+            self._check_new_version)
         # reset the command configuration tab whenever the item selection in
         # tree view changed
         self._fsbrowser._tree.currentItemChanged.connect(
             lambda cur, prev: self._cmdui.reset_form())
+
 
     def _setup_ongoing_cmdexec(self, thread_id, cmdname, cmdargs, exec_params):
         self.get_widget('statusbar').showMessage(f'Started `{cmdname}`')
@@ -150,6 +152,8 @@ class GooeyApp(QObject):
         self.get_widget('menuDataset').aboutToShow.disconnect(
             self._populate_dataset_menu)
 
+    def _check_new_version(self):
+        pass
 
 class QtApp(QApplication):
     # A wrapper around QApplication to provide a single (i.e. deduplicated)
