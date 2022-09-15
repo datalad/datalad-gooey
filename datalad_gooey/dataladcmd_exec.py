@@ -25,8 +25,8 @@ class GooeyDataladCmdExec(QObject):
     and Qt-signal result reporting
     """
     # thread_id, cmdname, cmdargs/kwargs
-    execution_started = Signal(str, str, dict)
-    execution_finished = Signal(str, str, dict)
+    execution_started = Signal(str, str, dict, dict)
+    execution_finished = Signal(str, str, dict, dict)
     # thread_id, cmdname, cmdargs/kwargs, CapturedException
     execution_failed = Signal(str, str, dict, CapturedException)
     results_received = Signal(Interface, list)
@@ -86,6 +86,7 @@ class GooeyDataladCmdExec(QObject):
             thread_id,
             cmdname,
             cmdkwargs,
+            exec_params,
         )
         # get functor to execute, resolve name against full API
         cmd = getattr(dlapi, cmdname)
@@ -123,6 +124,7 @@ class GooeyDataladCmdExec(QObject):
                 thread_id,
                 cmdname,
                 cmdkwargs,
+                exec_params,
                 ce
             )
         else:
@@ -132,6 +134,7 @@ class GooeyDataladCmdExec(QObject):
                 thread_id,
                 cmdname,
                 cmdkwargs,
+                exec_params,
             )
 
     @property

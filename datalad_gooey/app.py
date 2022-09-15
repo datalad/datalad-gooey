@@ -103,11 +103,11 @@ class GooeyApp(QObject):
         self._fsbrowser._tree.currentItemChanged.connect(
             lambda cur, prev: self._cmdui.reset_form())
 
-    def _setup_ongoing_cmdexec(self, thread_id, cmdname, cmdargs):
+    def _setup_ongoing_cmdexec(self, thread_id, cmdname, cmdargs, exec_params):
         self.get_widget('statusbar').showMessage(f'Started `{cmdname}`')
         self.main_window.setCursor(QCursor(Qt.BusyCursor))
 
-    def _setup_stopped_cmdexec(self, thread_id, cmdname, cmdargs, ce=None):
+    def _setup_stopped_cmdexec(self, thread_id, cmdname, cmdargs, exec_params, ce=None):
         if ce is None:
             self.get_widget('statusbar').showMessage(f'Finished `{cmdname}`')
         else:
