@@ -195,15 +195,10 @@ class GooeyFilesystemBrowser(QObject):
     def _get_item_from_trace(self, root: FSBrowserItem, trace: List):
         item = root
         for p in trace:
-            found = False
-            for ci in range(item.childCount()):
-                child = item.child(ci)
-                if p == child.data(0, Qt.EditRole):
-                    item = child
-                    found = True
-                    break
-            if not found:
+            item = item[p]
+            if item is None:
                 raise ValueError(f'Cannot find item for {trace}')
+            continue
         return item
 
     def _queue_item_for_annotation(self, item):
