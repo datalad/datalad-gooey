@@ -201,8 +201,6 @@
      <string>&amp;Utilities</string>
     </property>
     <addaction name="actionCheck_for_new_version"/>
-    <addaction name="actionRun_stuff"/>
-    <addaction name="actionConfigure_stuff"/>
    </widget>
    <widget class="QMenu" name="menuDataset">
     <property name="title">
