@@ -12,9 +12,7 @@ from PySide6.QtWidgets import (
 )
 
 from .fsbrowser_utils import _parse_dir
-
-# package path
-package_path = Path(__file__).resolve().parent
+from .resource_provider import gooey_resources
 
 
 class FSBrowserItem(QTreeWidgetItem):
@@ -164,5 +162,4 @@ class FSBrowserItem(QTreeWidgetItem):
         # rather than crashing. Maybe a ?, maybe something blank?
         icon_name = icon_mapping.get(item_type, None)
         if icon_name:
-            return QIcon(str(
-                package_path / 'resources' / 'icons' / f'{icon_name}.svg'))
+            return gooey_resources.get_icon(icon_name)
