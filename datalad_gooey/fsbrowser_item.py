@@ -16,14 +16,17 @@ from .fsbrowser_utils import _parse_dir
 # package path
 package_path = Path(__file__).resolve().parent
 
+
 class FSBrowserItem(QTreeWidgetItem):
     PathObjRole = Qt.UserRole + 765
 
     def __init__(self, parent=None):
+        # DO NOT USE DIRECTLY, GO THROUGH from_lsdir_result()
         super().__init__(
             parent,
             type=QTreeWidgetItem.UserType + 145,
         )
+        self._child_lookup = None
 
     def __str__(self):
         return f'FSBrowserItem<{self.pathobj}>'
@@ -47,6 +50,23 @@ class FSBrowserItem(QTreeWidgetItem):
             return self.pathobj.name
         # fall back on default implementation
         return super().data(column, role)
+
+    def __getitem__(self, name: str):
+        if self._child_lookup is None:
+            self._child_lookup = {
+                child.data(0, Qt.EditRole): child
+                for child in self.children_()
+            }
+        return self._child_lookup.get(name)
+
+    def _register_child(self, name, item):
+        if self._child_lookup is None:
+            self._child_lookup = {}
+        self._child_lookup[name] = item
+
+    def removeChild(self, item):
+        super().removeChild(item)
+        del self._child_lookup[item.pathobj.name]
 
     def children_(self):
         # get all pointers to children at once, other wise removing
@@ -86,12 +106,12 @@ class FSBrowserItem(QTreeWidgetItem):
             include_files=include_files
         )
         if root:
-            root = cls.from_tree_result(next(gen), parent=parent)
+            root = cls.from_lsdir_result(next(gen), parent=parent)
         else:
             next(gen)
             root = parent
         children = [
-            cls.from_tree_result(r, parent=root) for r in gen
+            cls.from_lsdir_result(r, parent=root) for r in gen
         ]
         if children:
             root.addChildren(children)
@@ -99,9 +119,11 @@ class FSBrowserItem(QTreeWidgetItem):
         return root
 
     @classmethod
-    def from_tree_result(cls, res: Dict, parent=None):
+    def from_lsdir_result(cls, res: Dict, parent=None):
         item = FSBrowserItem(parent=parent)
         path = Path(res['path'])
+        if hasattr(parent, '_register_child'):
+            parent._register_child(path.name, item)
         item.setData(0, FSBrowserItem.PathObjRole, path)
         path_type = res['type']
         item.setData(1, Qt.EditRole, path_type)
@@ -127,15 +149,18 @@ class FSBrowserItem(QTreeWidgetItem):
             'file': 'file',
             'file-annex': 'file-annex',
             'file-git': 'file-git',
+            # opportunistic guess?
+            'symlink': 'file-annex',
             'untracked': 'untracked',
             'clean': 'clean',
             'modified': 'modified',
             'deleted': 'untracked',
             'unknown': 'untracked',
+            'added': 'modified',
         }
         icon_name = icon_mapping.get(item_type, None)
         if icon_name:
             return QIcon(str(
                 package_path / 'resources' / 'icons' / f'{icon_name}.svg'))
         else:
-            raise NotImplementedError(f"Unkown item type {item_type}")
+            raise NotImplementedError(f"Unknown item type {item_type}")

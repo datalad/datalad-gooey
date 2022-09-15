@@ -10,12 +10,12 @@ lgr = logging.getLogger('datalad.ext.gooey')
 # to be found by datalad
 command_suite = (
     # description of the command suite, displayed in cmdline help
-    "GUI",
+    "Gooey (GUI)",
     [
-        (
-            'datalad_gooey.gooey',
-            'Gooey',
-        ),
+        ('datalad_gooey.gooey', 'Gooey'),
+        ('datalad_gooey.lsdir', 'GooeyLsDir', 'gooey-lsdir', 'gooey_lsdir'),
+        ('datalad_gooey.status_light', 'GooeyStatusLight',
+         'gooey-status-light', 'gooey_status_light'),
     ]
 )
 

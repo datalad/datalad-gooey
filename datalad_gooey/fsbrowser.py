@@ -16,14 +16,13 @@ from PySide6.QtWidgets import (
     QTreeWidget,
 )
 
-from datalad.core.local.status import Status
 from datalad.interface.base import Interface
 from datalad.utils import get_dataset_root
 
-from datalad_next.tree import TreeCommand
-
 from .dataset_actions import add_dataset_actions_to_menu
 from .fsbrowser_item import FSBrowserItem
+from .lsdir import GooeyLsDir
+from .status_light import GooeyStatusLight
 
 lgr = logging.getLogger('datalad.gooey.fsbrowser')
 
@@ -82,19 +81,18 @@ class GooeyFilesystemBrowser(QObject):
         self._app._cmdexec.results_received.connect(
             self._cmdexec_results_handler)
 
-    # DONE
     def _populate_item(self, item):
         if item.childCount():
             return
-
         # only parse, if there are no children yet
-        # kick off tree command in the background
+        # kick off lsdir command in the background
+        self._populate_and_annotate(item, no_existing_children=True)
+
+    def _populate_and_annotate(self, item, no_existing_children):
         self._app.execute_dataladcmd.emit(
-            'tree',
+            'gooey_lsdir',
             dict(
                 path=item.pathobj,
-                depth=1,
-                include_files=True,
                 result_renderer='disabled',
                 on_failure='ignore',
                 return_type='generator',
@@ -103,17 +101,24 @@ class GooeyFilesystemBrowser(QObject):
                 preferred_result_interval=0.2,
                 result_override=dict(
                     gooey_parent_item=item,
-                    gooey_no_existing_item=True,
+                    gooey_no_existing_item=no_existing_children,
                 ),
             ),
         )
 
+        # for now we register the parent for an annotation update
+        # but we could also report the specific path and let the
+        # annotation code figure out the optimal way.
+        # at present however, we get here for items of a whole dir
+        # being reported at once.
+        self._queue_item_for_annotation(item)
+
     @Slot(Interface, list)
     def _cmdexec_results_handler(self, cls, res):
         res_handler = None
-        if cls == TreeCommand:
-            res_handler = self._tree_result_receiver
-        elif cls == Status:
+        if cls == GooeyLsDir:
+            res_handler = self._lsdir_result_receiver
+        elif cls == GooeyStatusLight:
             res_handler = self._status_result_receiver
         else:
             raise NotImplementedError(
@@ -122,8 +127,8 @@ class GooeyFilesystemBrowser(QObject):
         for r in res:
             res_handler(r)
 
-    def _tree_result_receiver(self, res):
-        if res.get('action') != 'tree':
+    def _lsdir_result_receiver(self, res):
+        if res.get('action') != 'gooey-lsdir':
             # no what we are looking for
             return
 
@@ -137,7 +142,7 @@ class GooeyFilesystemBrowser(QObject):
             try:
                 target_item_parent = self._get_item_from_path(ipath.parent)
             except ValueError:
-                # ok, now we have no clue what this tree result is about
+                # ok, now we have no clue what this lsdir result is about
                 # its parent is no in the tree
                 return
 
@@ -164,19 +169,12 @@ class GooeyFilesystemBrowser(QObject):
 
         if target_item is None:
             # we don't have such an item yet -> make one
-            target_item = FSBrowserItem.from_tree_result(
+            target_item = FSBrowserItem.from_lsdir_result(
                 res, target_item_parent)
         else:
             # we do have this already, good occasion to update it?
-            other_item = FSBrowserItem.from_tree_result(res)
+            other_item = FSBrowserItem.from_lsdir_result(res)
             target_item.update_data_from(other_item)
-
-        # for now we register the parent for an annotation update
-        # but we could also report the specific path and let the
-        # annotation code figure out the optimal way.
-        # at present however, we get here for items of a whole dir
-        # being reported at once.
-        self._queue_item_for_annotation(target_item_parent)
 
     @lru_cache(maxsize=1000)
     def _get_item_from_path(self, path: Path, root: FSBrowserItem = None):
@@ -197,15 +195,10 @@ class GooeyFilesystemBrowser(QObject):
     def _get_item_from_trace(self, root: FSBrowserItem, trace: List):
         item = root
         for p in trace:
-            found = False
-            for ci in range(item.childCount()):
-                child = item.child(ci)
-                if p == child.data(0, Qt.EditRole):
-                    item = child
-                    found = True
-                    break
-            if not found:
+            item = item[p]
+            if item is None:
                 raise ValueError(f'Cannot find item for {trace}')
+            continue
         return item
 
     def _queue_item_for_annotation(self, item):
@@ -225,6 +218,7 @@ class GooeyFilesystemBrowser(QObject):
             return
         if self._app._cmdexec.n_running:
             # stuff is still running
+            # make sure the population of the tree items is done too!
             self._annotation_timer.start(1000)
             return
 
@@ -253,7 +247,7 @@ class GooeyFilesystemBrowser(QObject):
                         self._annotate_item(
                             child, dict(state='untracked'))
             else:
-                # trigger datalad-status execution
+                # trigger datalad-gooey-status-light execution
                 # giving the target directory as a `path` argument should
                 # avoid undesired recursion into subDIRECTORIES
                 paths_to_investigate = [
@@ -264,18 +258,17 @@ class GooeyFilesystemBrowser(QObject):
                 if paths_to_investigate:
                     # do not run, if there are no relevant paths to inspect
                     self._app.execute_dataladcmd.emit(
-                        'status',
+                        'gooey_status_light',
                         dict(
                             dataset=dsroot,
-                            path=paths_to_investigate,
-                            eval_subdataset_state='commit',
-                            annex='basic',
+                            path=[ipath],
+                            #annex='basic',
                             result_renderer='disabled',
                             on_failure='ignore',
                             return_type='generator',
                         ),
                         dict(
-                            preferred_result_interval=.5,
+                            preferred_result_interval=3.0,
                             result_override=dict(
                                 gooey_parent_item=item,
                             ),
@@ -373,7 +366,7 @@ class GooeyFilesystemBrowser(QObject):
             lgr.log(8, "-> _inspect_changed_dir() -> item removed")
             return
 
-        # we will kick off a `tree` run to update the widget, but it could
+        # we will kick off a `lsdir` run to update the widget, but it could
         # no detect item that no longer have a file system counterpart
         # so we remove them here and now
         for child in item.children_():
@@ -382,24 +375,8 @@ class GooeyFilesystemBrowser(QObject):
                 child.pathobj.lstat()
             except (OSError, ValueError):
                 item.removeChild(child)
-        # now re-explore the tree
-        self._app.execute_dataladcmd.emit(
-            'tree',
-            dict(
-                path=item.pathobj,
-                depth=1,
-                include_files=True,
-                result_renderer='disabled',
-                on_failure='ignore',
-                return_type='generator',
-            ),
-            dict(
-                preferred_result_interval=0.2,
-                result_override=dict(
-                    gooey_parent_item=item,
-                ),
-            ),
-        )
+        # now re-explore
+        self._populate_and_annotate(item, no_existing_children=False)
         lgr.log(9, "_inspect_changed_dir() -> requested update")
 
     # DONE
