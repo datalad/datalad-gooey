@@ -81,13 +81,14 @@ class GooeyFilesystemBrowser(QObject):
         self._app._cmdexec.results_received.connect(
             self._cmdexec_results_handler)
 
-    # DONE
     def _populate_item(self, item):
         if item.childCount():
             return
-
         # only parse, if there are no children yet
         # kick off lsdir command in the background
+        self._populate_and_annotate(item, no_existing_children=True)
+
+    def _populate_and_annotate(self, item, no_existing_children):
         self._app.execute_dataladcmd.emit(
             'gooey_lsdir',
             dict(
@@ -100,10 +101,17 @@ class GooeyFilesystemBrowser(QObject):
                 preferred_result_interval=0.2,
                 result_override=dict(
                     gooey_parent_item=item,
-                    gooey_no_existing_item=True,
+                    gooey_no_existing_item=no_existing_children,
                 ),
             ),
         )
+
+        # for now we register the parent for an annotation update
+        # but we could also report the specific path and let the
+        # annotation code figure out the optimal way.
+        # at present however, we get here for items of a whole dir
+        # being reported at once.
+        self._queue_item_for_annotation(item)
 
     @Slot(Interface, list)
     def _cmdexec_results_handler(self, cls, res):
@@ -168,13 +176,6 @@ class GooeyFilesystemBrowser(QObject):
             other_item = FSBrowserItem.from_lsdir_result(res)
             target_item.update_data_from(other_item)
 
-        # for now we register the parent for an annotation update
-        # but we could also report the specific path and let the
-        # annotation code figure out the optimal way.
-        # at present however, we get here for items of a whole dir
-        # being reported at once.
-        self._queue_item_for_annotation(target_item_parent)
-
     @lru_cache(maxsize=1000)
     def _get_item_from_path(self, path: Path, root: FSBrowserItem = None):
         # this is a key function in terms of result UI snappiness
@@ -222,6 +223,7 @@ class GooeyFilesystemBrowser(QObject):
             return
         if self._app._cmdexec.n_running:
             # stuff is still running
+            # make sure the population of the tree items is done too!
             self._annotation_timer.start(1000)
             return
 
@@ -380,21 +382,7 @@ class GooeyFilesystemBrowser(QObject):
             except (OSError, ValueError):
                 item.removeChild(child)
         # now re-explore
-        self._app.execute_dataladcmd.emit(
-            'gooey_lsdir',
-            dict(
-                path=item.pathobj,
-                result_renderer='disabled',
-                on_failure='ignore',
-                return_type='generator',
-            ),
-            dict(
-                preferred_result_interval=0.2,
-                result_override=dict(
-                    gooey_parent_item=item,
-                ),
-            ),
-        )
+        self._populate_and_annotate(item, no_existing_children=False)
         lgr.log(9, "_inspect_changed_dir() -> requested update")
 
     # DONE
