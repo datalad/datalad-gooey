@@ -57,6 +57,8 @@ class GooeyDataladCmdExec(QObject):
                 exec_params: Dict or None = None):
         if kwargs is None:
             kwargs = dict()
+        if exec_params is None:
+            exec_params = dict()
 
         global dlapi
         if dlapi is None:
@@ -71,7 +73,7 @@ class GooeyDataladCmdExec(QObject):
             exec_params,
         ))
 
-    def _cmdexec_thread(self, cmdname, cmdkwargs, exec_params):
+    def _cmdexec_thread(self, cmdname: str, cmdkwargs: Dict, exec_params: Dict):
         """The code is executed in a worker thread"""
         print('EXECINTHREAD', cmdname, cmdkwargs, exec_params)
         preferred_result_interval = exec_params.get(
