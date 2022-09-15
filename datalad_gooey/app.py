@@ -157,7 +157,13 @@ class GooeyApp(QObject):
 
     def _check_new_version(self):
         self.get_widget('statusbar').showMessage('Checking latest version')
-        is_outdated, latest = check_outdated('datalad', dlversion)
+        try:
+            is_outdated, latest = check_outdated('datalad', dlversion)
+        except ValueError:
+            # thrown when one is in a development version (ie., more
+            # recent than the most recent release)
+            is_outdated = False
+            pass
         if is_outdated:
             self.get_widget('logViewer').appendPlainText(
                 f'Update-alert: Consider updating DataLad from '
