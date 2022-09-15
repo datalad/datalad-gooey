@@ -142,7 +142,8 @@ def _lsfiles(path: Path):
         protocol=StdOutCapture,
         # run in the directory we want info on
         # and do not pass further path constraints
-        cwd=path,
+        # work around https://github.com/datalad/datalad/issues/7040
+        cwd=str(path),
     )
     info = dict()
     GitRepo._get_content_info_line_helper(
