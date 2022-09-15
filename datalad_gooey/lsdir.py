@@ -17,6 +17,7 @@ from datalad.runner import (
     StdOutCapture,
     CommandError,
 )
+from datalad.dataset.gitrepo import GitRepo
 
 lgr = logging.getLogger('datalad.ext.gooey.lsdir')
 
@@ -69,6 +70,11 @@ class GooeyLsDir(Interface):
             r.update(action='gooey-lsdir')
             if 'status' not in r:
                 r.update(status='ok')
+            if r['type'] == 'directory':
+                # a directory could still be an untracked dataset,
+                # run the cheapest possible standard test to tell them apart.
+                r['type'] = 'dataset' \
+                    if GitRepo.is_valid(r['path']) else 'directory'
             yield r
 
 
