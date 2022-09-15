@@ -14,6 +14,8 @@ command_suite = (
     [
         ('datalad_gooey.gooey', 'Gooey'),
         ('datalad_gooey.lsdir', 'GooeyLsDir', 'gooey-lsdir', 'gooey_lsdir'),
+        ('datalad_gooey.status_light', 'GooeyStatusLight',
+         'gooey-status-light', 'gooey_status_light'),
     ]
 )
 

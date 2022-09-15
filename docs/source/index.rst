@@ -17,6 +17,7 @@ High-level API commands
 
    gooey
    gooey_lsdir
+   gooey_status_light
 
 
 Command line reference
@@ -27,6 +28,7 @@ Command line reference
 
    generated/man/datalad-gooey
    generated/man/datalad-gooey-lsdir
+   generated/man/datalad-gooey-status-light
 
 
 Indices and tables

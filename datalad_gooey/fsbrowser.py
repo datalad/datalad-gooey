@@ -16,13 +16,13 @@ from PySide6.QtWidgets import (
     QTreeWidget,
 )
 
-from datalad.core.local.status import Status
 from datalad.interface.base import Interface
 from datalad.utils import get_dataset_root
 
 from .dataset_actions import add_dataset_actions_to_menu
 from .fsbrowser_item import FSBrowserItem
 from .lsdir import GooeyLsDir
+from .status_light import GooeyStatusLight
 
 lgr = logging.getLogger('datalad.gooey.fsbrowser')
 
@@ -118,7 +118,7 @@ class GooeyFilesystemBrowser(QObject):
         res_handler = None
         if cls == GooeyLsDir:
             res_handler = self._lsdir_result_receiver
-        elif cls == Status:
+        elif cls == GooeyStatusLight:
             res_handler = self._status_result_receiver
         else:
             raise NotImplementedError(
@@ -247,7 +247,7 @@ class GooeyFilesystemBrowser(QObject):
                         self._annotate_item(
                             child, dict(state='untracked'))
             else:
-                # trigger datalad-status execution
+                # trigger datalad-gooey-status-light execution
                 # giving the target directory as a `path` argument should
                 # avoid undesired recursion into subDIRECTORIES
                 paths_to_investigate = [
@@ -258,18 +258,17 @@ class GooeyFilesystemBrowser(QObject):
                 if paths_to_investigate:
                     # do not run, if there are no relevant paths to inspect
                     self._app.execute_dataladcmd.emit(
-                        'status',
+                        'gooey_status_light',
                         dict(
                             dataset=dsroot,
-                            path=paths_to_investigate,
-                            eval_subdataset_state='commit',
-                            annex='basic',
+                            path=[ipath],
+                            #annex='basic',
                             result_renderer='disabled',
                             on_failure='ignore',
                             return_type='generator',
                         ),
                         dict(
-                            preferred_result_interval=.5,
+                            preferred_result_interval=3.0,
                             result_override=dict(
                                 gooey_parent_item=item,
                             ),
