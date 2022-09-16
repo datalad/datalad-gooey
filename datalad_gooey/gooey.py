@@ -61,9 +61,9 @@ class Gooey(Interface):
     def __call__(path: str = None):
         # local import to keep entrypoint import independent of PySide
         # availability
-        from .app import GooeyApp, QtApp
+        from .app import GooeyApp, QApplication
 
-        qtapp = QtApp(sys.argv)
+        qtapp = QApplication(sys.argv)
         gooey = GooeyApp(path)
         gooey.main_window.show()
 

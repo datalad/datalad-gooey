@@ -113,6 +113,8 @@ class GooeyApp(QObject):
 
         self._connect_menu_view(self.get_widget('menuView'))
 
+        self._setup_looknfeel()
+
     def _setup_ongoing_cmdexec(self, thread_id, cmdname, cmdargs, exec_params):
         self.get_widget('statusbar').showMessage(f'Started `{cmdname}`')
         self.main_window.setCursor(QCursor(Qt.BusyCursor))
@@ -198,26 +200,21 @@ class GooeyApp(QObject):
             'The new interface mode is enabled at the next application start.'
         )
 
+    def _setup_looknfeel(self):
+        # set application icon
+        qtapp = QApplication.instance()
+        qtapp.setWindowIcon(gooey_resources.get_icon('app_icon_32'))
 
-class QtApp(QApplication):
-    # A wrapper around QApplication to provide a single (i.e. deduplicated)
-    # point for setting Qapplication-level properties, such as icons.
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        # Set application icon
-        self.setWindowIcon(gooey_resources.get_icon('app_icon_32'))
+        # go dark, if supported
+        try:
+            import qdarktheme
+            qtapp.setStyleSheet(qdarktheme.load_stylesheet('dark'))
+        except ImportError:
+            pass
 
 
 def main():
-    qtapp = QtApp(sys.argv)
-
-    # go dark, if supported
-    try:
-        import qdarktheme
-        qtapp.setStyleSheet(qdarktheme.load_stylesheet('dark'))
-    except ImportError:
-        pass
-
+    qtapp = QApplication(sys.argv)
     gooey = GooeyApp()
     gooey.main_window.show()
     sys.exit(qtapp.exec())
