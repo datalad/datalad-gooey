@@ -38,8 +38,10 @@ class FSBrowserItem(QTreeWidgetItem):
         return self.data(1, Qt.EditRole)
 
     def set_item_type(self, type_: str, icon: str or None = None):
-        # TODO check if needed
-        # https://github.com/datalad/datalad-gooey/issues/113
+        prev_type = self.data(1, Qt.EditRole)
+        if prev_type == type_:
+            # nothing to do, we already have this type set
+            return
         self.setData(1, Qt.EditRole, type_)
         icon = gooey_resources.get_best_icon(icon or type_)
         if icon:
@@ -47,8 +49,10 @@ class FSBrowserItem(QTreeWidgetItem):
             self.setIcon(0, icon)
 
     def set_item_state(self, state: str, icon: str or None = None):
-        # TODO check if needed
-        # https://github.com/datalad/datalad-gooey/issues/113
+        prev_state = self.data(2, Qt.EditRole)
+        if prev_state == state:
+            # nothing to do, we already have this type set
+            return
         self.setData(2, Qt.EditRole, '' if state is None else state)
         icon = gooey_resources.get_best_icon(icon or state)
         if icon:
