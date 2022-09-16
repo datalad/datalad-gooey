@@ -92,6 +92,8 @@ class GooeyApp(QObject):
         self.configure_dataladcmd.connect(self._cmdui.configure)
         # when a command was configured, pass it to the executor
         self._cmdui.configured_dataladcmd.connect(self._cmdexec.execute)
+        # and give a visual indication of what exactly is happening
+        self._cmdui.configured_dataladcmd.connect(self._render_cmd_call)
 
         # connect execution handler signals to the setup methods
         self._cmdexec.execution_started.connect(self._setup_ongoing_cmdexec)
@@ -212,6 +214,26 @@ class GooeyApp(QObject):
             qtapp.setStyleSheet(qdarktheme.load_stylesheet('dark'))
         except ImportError:
             pass
+
+    def _render_cmd_call(self, cmdname, cmdkwargs):
+        """Minimalistic Python-like rendering of commands in the log"""
+        lv = self.get_widget('logViewer')
+        ds_path = cmdkwargs.pop('dataset', None)
+        if ds_path:
+            if hasattr(ds_path, 'pathobj'):
+                ds_path = ds_path.path
+            ds_path = str(ds_path)
+        # show commands running on datasets as dataset method calls
+        rendered = "<hr><b>Running:</b> "
+        rendered += f"<code>Dataset({ds_path!r})." if ds_path else ''
+        rendered += f"{cmdname}<nobr>("
+        rendered += ', '.join(
+            f"<i>{k}</i>={v!r}"
+            for k, v in cmdkwargs.items()
+            if k not in ('return_type', 'result_xfm')
+        )
+        rendered += ")</code><hr>"
+        lv.appendHtml(rendered)
 
 
 def main():
