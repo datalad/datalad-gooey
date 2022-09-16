@@ -60,6 +60,7 @@ class FSBrowserItem(QTreeWidgetItem):
         self._child_lookup[name] = item
 
     def removeChild(self, item):
+        # we needed to implement this to be able to update the lookup
         super().removeChild(item)
         del self._child_lookup[item.pathobj.name]
 
@@ -81,6 +82,12 @@ class FSBrowserItem(QTreeWidgetItem):
             state_icon = 'file-git'
 
         if state:
+            if state == 'deleted':
+                # TODO test if removal would have trigger child node removal
+                # also
+                self.setChildIndicatorPolicy(
+                    FSBrowserItem.DontShowIndicator)
+
             self.setData(2, Qt.EditRole, state)
             icon = self._getIcon(state)
             if icon:
