@@ -122,7 +122,8 @@ class GooeyApp(QObject):
     def _setup_stopped_cmdexec(
             self, thread_id, cmdname, cmdargs, exec_params, ce=None):
         if ce is None:
-            self.get_widget('statusbar').showMessage(f'Finished `{cmdname}`')
+            self.get_widget('statusbar').showMessage(f'Finished `{cmdname}`',
+                                                     timeout=1000)
         else:
             self.get_widget('statusbar').showMessage(
                 f'`{cmdname}` failed: {ce.format_short()}')
