@@ -41,7 +41,7 @@ class FSBrowserItem(QTreeWidgetItem):
         # TODO check if needed
         # https://github.com/datalad/datalad-gooey/issues/113
         self.setData(1, Qt.EditRole, type_)
-        icon = self._getIcon(icon or type_)
+        icon = gooey_resources.get_best_icon(icon or type_)
         if icon:
             # yes, this goes to the first column
             self.setIcon(0, icon)
@@ -50,7 +50,7 @@ class FSBrowserItem(QTreeWidgetItem):
         # TODO check if needed
         # https://github.com/datalad/datalad-gooey/issues/113
         self.setData(2, Qt.EditRole, '' if state is None else state)
-        icon = self._getIcon(icon or state)
+        icon = gooey_resources.get_best_icon(icon or state)
         if icon:
             self.setIcon(2, icon)
 
@@ -156,26 +156,3 @@ class FSBrowserItem(QTreeWidgetItem):
             parent._register_child(path.name, item)
         item.update_from_lsdir_result(res)
         return item
-
-    def _getIcon(self, item_type):
-        """Gets icon associated with item type"""
-        icon_mapping = {
-            'dataset': 'dataset-closed',
-            'directory': 'directory-closed',
-            'file': 'file',
-            'file-annex': 'file-annex',
-            'file-git': 'file-git',
-            # opportunistic guess?
-            'symlink': 'file-annex',
-            'untracked': 'untracked',
-            'clean': 'clean',
-            'modified': 'modified',
-            'deleted': 'untracked',
-            'unknown': 'untracked',
-            'added': 'modified',
-        }
-        # TODO have a fallback icon, when we do not know a specific type
-        # rather than crashing. Maybe a ?, maybe something blank?
-        icon_name = icon_mapping.get(item_type, None)
-        if icon_name:
-            return gooey_resources.get_icon(icon_name)
