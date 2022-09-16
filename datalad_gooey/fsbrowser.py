@@ -309,13 +309,18 @@ class GooeyFilesystemBrowser(QObject):
 
     # DONE
     def _watch_dir(self, item):
-        path = str(item.pathobj)
+        path = item.pathobj
         lgr.log(
             9,
-            "GooeyFilesystemBrowser._watch_dir(%r) -> %r",
+            "GooeyFilesystemBrowser._watch_dir(%r)",
             path,
-            self._fswatcher.addPath(path),
         )
+        self._fswatcher.addPath(str(path))
+        if item.datalad_type == 'dataset':
+            # for a repository, also watch its .git to become aware of more
+            # Git operation outcomes. specifically watch the HEADS to catch
+            # updates on any branch
+            self._fswatcher.addPath(str(path / '.git' / 'refs' / 'heads'))
 
     # DONE
     # https://github.com/datalad/datalad-gooey/issues/50
@@ -331,7 +336,16 @@ class GooeyFilesystemBrowser(QObject):
     # DONE
     def _inspect_changed_dir(self, path: str):
         pathobj = Path(path)
+        # look for special case of the internals of a dataset having changed
+        path_parts = pathobj.parts
+        if len(path_parts) > 3 \
+                and path_parts[-3:] == ('.git', 'refs', 'heads'):
+            # yep, happened -- inspect corresponding dataset root
+            self._inspect_changed_dir(pathobj.parent.parent.parent)
+            return
+
         lgr.log(9, "GooeyFilesystemBrowser._inspect_changed_dir(%r)", pathobj)
+
         # we need to know the item in the tree corresponding
         # to the changed directory
         try:
