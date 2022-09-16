@@ -14,12 +14,13 @@ from .resource_provider import gooey_resources
 class FSBrowserItem(QTreeWidgetItem):
     PathObjRole = Qt.UserRole + 765
 
-    def __init__(self, parent=None):
+    def __init__(self, path, parent=None):
         # DO NOT USE DIRECTLY, GO THROUGH from_lsdir_result()
         super().__init__(
             parent,
             type=QTreeWidgetItem.UserType + 145,
         )
+        self.setData(0, FSBrowserItem.PathObjRole, path)
         self._child_lookup = None
 
     def __str__(self):
@@ -130,11 +131,10 @@ class FSBrowserItem(QTreeWidgetItem):
 
     @classmethod
     def from_lsdir_result(cls, res: Dict, parent=None):
-        item = FSBrowserItem(parent=parent)
         path = Path(res['path'])
+        item = FSBrowserItem(path, parent=parent)
         if hasattr(parent, '_register_child'):
             parent._register_child(path.name, item)
-        item.setData(0, FSBrowserItem.PathObjRole, path)
         item.update_from_lsdir_result(res)
         return item
 
