@@ -295,12 +295,16 @@ class GooeyFilesystemBrowser(QObject):
             # nothing that we could handle
             return
 
-        # TODO it could well be gone by now, double-check
-        target_item = self._get_item_from_trace(
-            res['gooey_parent_item'],
-            # the parent will only ever be the literal parent directory
-            [Path(path).name],
-        )
+        try:
+            target_item = self._get_item_from_trace(
+                res['gooey_parent_item'],
+                # the parent will only ever be the literal parent directory
+                [Path(path).name],
+            )
+        except ValueError:
+            # the corersponding item is no longer around
+            return
+
         target_item.update_from_status_result(res)
 
     # DONE
