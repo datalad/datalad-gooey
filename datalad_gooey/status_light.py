@@ -270,7 +270,15 @@ def _get_annexinfo(self, path):
         self.pathobj / PurePosixPath(r['file']):
         # include the hashdirs, to enable a consumer to do a
         # "have-locally" check
-        {k: r[k] for k in ('bytesize', 'key', 'hashdirlower', 'hashdirmixed')}
+        {
+            k: r[k]
+            for k in ('bytesize', 'key', 'hashdirlower', 'hashdirmixed')
+            # for now exclude, but what is likely happening below is
+            # that we hit an untracked file
+            # lsdir() will report that too, so not much is lost,
+            # but maybe other errors can happen too
+            if k in r
+        }
         for r in self.call_annex_records(
             ['find',
              # include any
