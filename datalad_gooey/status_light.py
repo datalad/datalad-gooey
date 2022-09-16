@@ -46,7 +46,9 @@ class GooeyStatusLight(Interface):
 
     @staticmethod
     @eval_results
-    def __call__(dataset=None, path: Path or str or None = None):
+    def __call__(dataset=None,
+                 path: Path or str or None = None,
+    ):
         # This needs to be keep simple and as fast as anyhow possible.
         # anything that is not absolutely crucial to have should have
         # an inexpensive switch to turn it off (or be off by default.
@@ -77,6 +79,10 @@ class GooeyStatusLight(Interface):
         )
         # put in repo paths!!
         untracked = _get_untracked(repo, repo_paths)
+
+        # put in repo paths!!
+        annex = _get_annexinfo(repo, repo_paths[0]) \
+            if hasattr(repo, 'call_annex_records') else {}
 
         class _NoValue:
             pass
@@ -115,6 +121,11 @@ class GooeyStatusLight(Interface):
             # recode path into the dataset domain
             moreprops['path'] = str(ds.pathobj / path.relative_to(repo_path))
             r.update(moreprops)
+            # pull in annex info, if there is any
+            r.update(annex.get(path, {}))
+            if 'key' in r and r.get('type') == 'symlink':
+                # a symlink with a key is an annexed file
+                r['type'] = 'file'
             yield r
 
 
@@ -250,3 +261,23 @@ def _get_untracked(self, paths=None):
         if p
     )
     return untracked_files
+
+
+def _get_annexinfo(self, path):
+    rpath = str(path.relative_to(self.path))
+    match_prefix = f'{rpath}/' if rpath != '.' else ''
+    return {
+        self.pathobj / PurePosixPath(r['file']):
+        # include the hashdirs, to enable a consumer to do a
+        # "have-locally" check
+        {k: r[k] for k in ('bytesize', 'key', 'hashdirlower', 'hashdirmixed')}
+        for r in self.call_annex_records(
+            ['find',
+             # include any
+             '--include', f'{match_prefix}*',
+             # exclude any records within subdirs of rpath
+             '--exclude', f'{match_prefix}*/*',
+            ],
+            files=[rpath],
+        )
+    }
