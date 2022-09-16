@@ -69,23 +69,14 @@ class FSBrowserItem(QTreeWidgetItem):
         for c in [self.child(ci) for ci in range(self.childCount())]:
             yield c
 
-    def update_data_from(self, other):
-        # only meant to be called for items representing the same path
-        assert self.pathobj == other.pathobj
-
-        changed = False
-        # take whatever the item has
-        for col in range(1, other.columnCount()):
-            # should they be different?
-            #for role in (Qt.DisplayRole, Qt.EditRole):
-            for role in (Qt.EditRole,):
-                have = self.data(col, role)
-                got = other.data(col, role)
-                if have != got:
-                    changed = True
-                    self.setData(col, role, got)
-        if changed:
-            self.emitDataChanged()
+    def update_from_lsdir_result(self, res: Dict):
+        path_type = res['type']
+        self.setData(1, Qt.EditRole, path_type)
+        self._setItemIcons(res)
+        if path_type in ('directory', 'dataset'):
+            # show an expansion indiciator, even when we do not have
+            # children in the item yet
+            self.setChildIndicatorPolicy(QTreeWidgetItem.ShowIndicator)
 
     @classmethod
     def from_lsdir_result(cls, res: Dict, parent=None):
@@ -94,13 +85,7 @@ class FSBrowserItem(QTreeWidgetItem):
         if hasattr(parent, '_register_child'):
             parent._register_child(path.name, item)
         item.setData(0, FSBrowserItem.PathObjRole, path)
-        path_type = res['type']
-        item.setData(1, Qt.EditRole, path_type)
-        item._setItemIcons(res)
-        if path_type in ('directory', 'dataset'):
-            # show an expansion indiciator, even when we do not have
-            # children in the item yet
-            item.setChildIndicatorPolicy(QTreeWidgetItem.ShowIndicator)
+        item.update_from_lsdir_result(res)
         return item
 
     def _setItemIcons(self, res):

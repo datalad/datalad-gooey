@@ -181,9 +181,8 @@ class GooeyFilesystemBrowser(QObject):
             target_item = FSBrowserItem.from_lsdir_result(
                 res, target_item_parent)
         else:
-            # we do have this already, good occasion to update it?
-            other_item = FSBrowserItem.from_lsdir_result(res)
-            target_item.update_data_from(other_item)
+            # we do have this already, good occasion to update it
+            target_item.update_from_lsdir_result(res)
 
         if res.get('status') == 'error' \
                 and res.get('message') == 'Permissions denied':
