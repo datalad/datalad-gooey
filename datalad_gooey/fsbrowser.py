@@ -130,8 +130,8 @@ class GooeyFilesystemBrowser(QObject):
         elif cls == GooeyStatusLight:
             res_handler = self._status_result_receiver
         else:
-            raise NotImplementedError(
-                f"No handler for {cls} result")
+            lgr.debug('FSBrowser has no handler for result from %s', cls)
+            return
 
         for r in res:
             res_handler(r)
