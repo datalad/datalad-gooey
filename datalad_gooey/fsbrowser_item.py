@@ -46,6 +46,14 @@ class FSBrowserItem(QTreeWidgetItem):
             # yes, this goes to the first column
             self.setIcon(0, icon)
 
+    def set_item_state(self, state: str, icon: str or None = None):
+        # TODO check if needed
+        # https://github.com/datalad/datalad-gooey/issues/113
+        self.setData(2, Qt.EditRole, '' if state is None else state)
+        icon = self._getIcon(icon or state)
+        if icon:
+            self.setIcon(2, icon)
+
     def data(self, column: int, role: int):
         if column == 0 and role in (Qt.DisplayRole, Qt.EditRole):
             # for now, we do not distinguish the two, maybe never will
@@ -92,11 +100,7 @@ class FSBrowserItem(QTreeWidgetItem):
                 # also
                 self.setChildIndicatorPolicy(
                     FSBrowserItem.DontShowIndicator)
-
-            self.setData(2, Qt.EditRole, state)
-            icon = self._getIcon(state)
-            if icon:
-                self.setIcon(2, self._getIcon(state))
+            self.set_item_state(state)
 
         # update type info
         type_ = res.get('type')
@@ -142,7 +146,7 @@ class FSBrowserItem(QTreeWidgetItem):
 
         if path_type == 'directory':
             # a regular directory with proper permissions has no state
-            self.setData(2, Qt.EditRole, '')
+            self.set_item_state(None)
 
     @classmethod
     def from_lsdir_result(cls, res: Dict, parent=None):
