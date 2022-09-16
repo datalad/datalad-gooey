@@ -323,7 +323,10 @@ class GooeyFilesystemBrowser(QObject):
             prev_state = item.data(2, Qt.EditRole)
             if state != prev_state:
                 item.setData(2, Qt.EditRole, state)
-                item.setIcon(2, item._getIcon(state))
+                # TODO deduplicate with FSBrowserItem._setItemIcons()
+                icon = item._getIcon(state)
+                if icon:
+                    item.setIcon(2, item._getIcon(state))
                 changed = True
         if item.datalad_type == 'file':
             # get the right icon, fall back on 'file'
