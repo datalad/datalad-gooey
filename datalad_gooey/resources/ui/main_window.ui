@@ -94,7 +94,7 @@
                <x>0</x>
                <y>0</y>
                <width>381</width>
-               <height>142</height>
+               <height>152</height>
               </rect>
              </property>
             </widget>
@@ -193,7 +193,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>23</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuUtilities">
@@ -213,8 +213,22 @@
     </property>
     <addaction name="action_Quit"/>
    </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>&amp;View</string>
+    </property>
+    <widget class="QMenu" name="menuInterface">
+     <property name="title">
+      <string>&amp;Interface mode</string>
+     </property>
+     <addaction name="actionInterfaceMode_novice"/>
+     <addaction name="actionInterfaceMode_expert"/>
+    </widget>
+    <addaction name="menuInterface"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuDataset"/>
+   <addaction name="menuView"/>
    <addaction name="menuUtilities"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -239,6 +253,16 @@
   <action name="action_Quit">
    <property name="text">
     <string>&amp;Quit</string>
+   </property>
+  </action>
+  <action name="actionInterfaceMode_novice">
+   <property name="text">
+    <string>Novice</string>
+   </property>
+  </action>
+  <action name="actionInterfaceMode_expert">
+   <property name="text">
+    <string>Expert</string>
    </property>
   </action>
  </widget>

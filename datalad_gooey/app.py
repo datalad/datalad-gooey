@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QTreeWidget,
     QWidget,
+    QMessageBox,
 )
 from PySide6.QtCore import (
     QObject,
@@ -32,6 +33,7 @@ from .dataladcmd_exec import GooeyDataladCmdExec
 from .dataladcmd_ui import GooeyDataladCmdUI
 from .dataset_actions import add_dataset_actions_to_menu
 from .fsbrowser import GooeyFilesystemBrowser
+from .resource_provider import gooey_resources
 
 
 class GooeyApp(QObject):
@@ -45,8 +47,9 @@ class GooeyApp(QObject):
         'fsBrowser': QTreeWidget,
         'logViewer': QPlainTextEdit,
         'menuDataset': QMenu,
-        'statusbar': QStatusBar,
+        'menuView': QMenu,
         'menuUtilities': QMenu,
+        'statusbar': QStatusBar,
         'actionCheck_for_new_version': QAction,
     }
 
@@ -106,6 +109,8 @@ class GooeyApp(QObject):
         # tree view changed
         self._fsbrowser._tree.currentItemChanged.connect(
             lambda cur, prev: self._cmdui.reset_form())
+
+        self._connect_menu_view(self.get_widget('menuView'))
 
 
     def _setup_ongoing_cmdexec(self, thread_id, cmdname, cmdargs, exec_params):
@@ -173,16 +178,33 @@ class GooeyApp(QObject):
                 f'Your DataLad version is up to date')
         self.get_widget('statusbar').showMessage('Done', timeout=500)
 
+    def _connect_menu_view(self, menu: QMenu):
+        uimode = dlcfg.obtain('datalad.gooey.ui-mode')
+        menu_intf = menu.findChild(QMenu, 'menuInterface')
+        for a in menu_intf.actions():
+            a.triggered.connect(self._set_interface_mode)
+            if a.objectName().split('_')[-1] == uimode:
+                a.setDisabled(True)
+
+    def _set_interface_mode(self):
+        action = self.sender()
+        uimode = action.objectName().split('_')[-1]
+        assert uimode in ('novice', 'expert')
+        dlcfg.set('datalad.gooey.ui-mode', uimode, scope='global')
+        QMessageBox.information(
+            self.main_window,
+            'Note',
+            'The new interface mode gets enabled at the next application start.'
+        )
+
 
 class QtApp(QApplication):
     # A wrapper around QApplication to provide a single (i.e. deduplicated)
     # point for setting Qapplication-level properties, such as icons.
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Set application icon using base file path as reference
-        package_path = Path(__file__).resolve().parent
-        self.setWindowIcon(QIcon(str(
-            package_path / 'resources' / 'icons' / 'app_icon_32.svg')))
+        # Set application icon
+        self.setWindowIcon(gooey_resources.get_icon('app_icon_32'))
 
 
 def main():
