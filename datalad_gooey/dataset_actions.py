@@ -31,15 +31,30 @@ def add_dataset_actions_to_menu(parent, receiver, menu=None, dataset=None):
 
     menu_lookup = _generate_submenus(menu)
 
+    # a potential filter to simplify the interface
+    command_filter = None
+    from datalad import cfg
+    if cfg.obtain('datalad.gooey.ui-mode') == 'novice':
+        command_filter = set((
+            'clone', 'get', 'update', 'drop', 'create', 'save', 'push',
+            'create_sibling_gitlab', 'create_sibling_gin',
+            'create_sibling_github',
+        ))
+
     # iterate over all members of the Dataset class and find the
     # methods that are command interface callables
     for mname in dir(Dataset):
         if mname.startswith('_'):
             # skip any private stuff
             continue
-        if mname == 'gooey':
+        if mname.startswith('gooey'):
             # right now, we are technically not able to handle GUI inception
-            # and need to prevent launching multiple instances of this app
+            # and need to prevent launching multiple instances of this app.
+            # we also do not want the internal gooey helpers
+            continue
+        if command_filter and mname not in command_filter:
+            # we have a specific idea what we want, and this is not part of
+            # it
             continue
         m = getattr(Dataset, mname)
         try:
