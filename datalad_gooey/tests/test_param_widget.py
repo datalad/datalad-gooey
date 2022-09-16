@@ -1,10 +1,6 @@
 import functools
 from pathlib import Path
 
-from PySide6.QtWidgets import (
-    QApplication,
-)
-
 from ..param_widgets import (
     BoolParamWidget,
     StrParamWidget,
@@ -16,13 +12,11 @@ from ..param_widgets import (
 from ..param_multival_widget import MultiValueInputWidget
 
 
+
 def test_GooeyParamWidgetMixin():
     # can we set and get a supported value to/from any widget
     # through the GooeyParamWidgetMixin API
 
-    # have a headless qtapp for the CI
-    # TODO make fixture
-    QApplication(['test_app', '-platform', 'offscreen'])
     for pw_factory, val, default in (
             (BoolParamWidget, True, False),
             (PosIntParamWidget, 4, 1),
