@@ -37,6 +37,15 @@ class FSBrowserItem(QTreeWidgetItem):
     def datalad_type(self):
         return self.data(1, Qt.EditRole)
 
+    def set_item_type(self, type_: str, icon: str or None = None):
+        # TODO check if needed
+        # https://github.com/datalad/datalad-gooey/issues/113
+        self.setData(1, Qt.EditRole, type_)
+        icon = self._getIcon(icon or type_)
+        if icon:
+            # yes, this goes to the first column
+            self.setIcon(0, icon)
+
     def data(self, column: int, role: int):
         if column == 0 and role in (Qt.DisplayRole, Qt.EditRole):
             # for now, we do not distinguish the two, maybe never will
@@ -77,10 +86,6 @@ class FSBrowserItem(QTreeWidgetItem):
             # something went wrong, we got no state info, but we have a message
             state = res['message']
 
-        state_icon = 'file-annex'
-        if res.get('key'):
-            state_icon = 'file-git'
-
         if state:
             if state == 'deleted':
                 # TODO test if removal would have trigger child node removal
@@ -93,13 +98,17 @@ class FSBrowserItem(QTreeWidgetItem):
             if icon:
                 self.setIcon(2, self._getIcon(state))
 
+        # update type info
         type_ = res.get('type')
-        if type_ == 'file':
-            # get the right icon, fall back on 'file'
-            self.setIcon(0, self._getIcon(state_icon))
-
         if type_:
-            self.setData(1, Qt.EditRole, type_)
+            # guess by type, by default
+            type_icon = None
+            if type_ == 'file':
+                # for files we can further differentiate
+                type_icon = 'file-annex'
+                if res.get('key'):
+                    type_icon = 'file-git'
+            self.set_item_type(type_, icon=type_icon)
 
     def update_from_lsdir_result(self, res: Dict):
         # This sets
@@ -111,8 +120,7 @@ class FSBrowserItem(QTreeWidgetItem):
         # Resets
         # - state column for directories
         path_type = res['type']
-        self.setData(1, Qt.EditRole, path_type)
-        self._setItemIcons(res)
+        self.set_item_type(path_type)
         if res.get('status') == 'error' \
                 and res.get('message') == 'Permissions denied':
             # we cannot get info on it, reflect in UI
@@ -144,15 +152,6 @@ class FSBrowserItem(QTreeWidgetItem):
             parent._register_child(path.name, item)
         item.update_from_lsdir_result(res)
         return item
-
-    def _setItemIcons(self, res):
-        # Set 'type' icon
-        item_type = res['type']
-        if item_type != 'file':
-            icon = self._getIcon(item_type)
-            if icon:
-                self.setIcon(0, icon)
-        # Set other icon types: TODO
 
     def _getIcon(self, item_type):
         """Gets icon associated with item type"""
