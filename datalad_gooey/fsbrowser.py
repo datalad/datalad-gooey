@@ -294,26 +294,14 @@ class GooeyFilesystemBrowser(QObject):
         if path is None:
             # nothing that we could handle
             return
-        state = res.get('state')
-        if res.get('status') == 'error' and 'message' in res and state is None:
-            # something went wrong, we got no state info, but we have a message
-            state = res['message']
-        if state is None:
-            # nothing to show for
-            return
-        storage = 'file-annex'
-        annex_key = res.get('key')
-        if annex_key is None:
-            storage = 'file-git'
-        self._annotate_item(
-            # TODO it could well be gone by now, double-check
-            self._get_item_from_trace(
-                res['gooey_parent_item'],
-                # the parent will only ever be the literal parent directory
-                [Path(path).name],
-            ),
-            dict(state=state, storage=storage),
+
+        # TODO it could well be gone by now, double-check
+        target_item = self._get_item_from_trace(
+            res['gooey_parent_item'],
+            # the parent will only ever be the literal parent directory
+            [Path(path).name],
         )
+        target_item.update_from_status_result(res)
 
     def _annotate_item(self, item, props):
         changed = False

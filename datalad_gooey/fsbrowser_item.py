@@ -69,7 +69,39 @@ class FSBrowserItem(QTreeWidgetItem):
         for c in [self.child(ci) for ci in range(self.childCount())]:
             yield c
 
+    def update_from_status_result(self, res: Dict):
+        state = res.get('state')
+        if res.get('status') == 'error' and 'message' in res and state is None:
+            # something went wrong, we got no state info, but we have a message
+            state = res['message']
+
+        state_icon = 'file-annex'
+        if res.get('key'):
+            state_icon = 'file-git'
+
+        if state:
+            self.setData(2, Qt.EditRole, state)
+            icon = self._getIcon(state)
+            if icon:
+                self.setIcon(2, self._getIcon(state))
+
+        type_ = res.get('type')
+        if type_ == 'file':
+            # get the right icon, fall back on 'file'
+            self.setIcon(0, self._getIcon(state_icon))
+
+        if type_:
+            self.setData(1, Qt.EditRole, type_)
+
     def update_from_lsdir_result(self, res: Dict):
+        # This sets
+        # - type column
+        # - child indicator
+        # - icons TODO check which and how
+        # - disabled-mode
+        #
+        # Resets
+        # - state column for directories
         path_type = res['type']
         self.setData(1, Qt.EditRole, path_type)
         self._setItemIcons(res)
