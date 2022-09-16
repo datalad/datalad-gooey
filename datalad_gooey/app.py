@@ -127,8 +127,13 @@ class GooeyApp(QObject):
             self.get_widget('statusbar').showMessage(f'Finished `{cmdname}`',
                                                      timeout=1000)
         else:
-            self.get_widget('statusbar').showMessage(
-                f'`{cmdname}` failed: {ce.format_short()}')
+            # if a command crashes, state it in the statusbar
+            self.get_widget('statusbar').showMessage(f'`{cmdname}` failed')
+            # but also barf the error into the logviewer
+            lv = self.get_widget('logViewer')
+            lv.appendHtml(
+                f'<font color="red">{ce.format_standard()}</font>'
+            )
         if not self._cmdexec.n_running:
             self.main_window.setCursor(QCursor(Qt.ArrowCursor))
 

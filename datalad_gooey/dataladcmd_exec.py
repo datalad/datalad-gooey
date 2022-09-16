@@ -24,11 +24,11 @@ class GooeyDataladCmdExec(QObject):
 
     and Qt-signal result reporting
     """
-    # thread_id, cmdname, cmdargs/kwargs
+    # thread_id, cmdname, cmdargs/kwargs, exec_params
     execution_started = Signal(str, str, dict, dict)
     execution_finished = Signal(str, str, dict, dict)
-    # thread_id, cmdname, cmdargs/kwargs, CapturedException
-    execution_failed = Signal(str, str, dict, CapturedException)
+    # thread_id, cmdname, cmdargs/kwargs, exec_params, CapturedException
+    execution_failed = Signal(str, str, dict, dict, CapturedException)
     results_received = Signal(Interface, list)
 
     def __init__(self):
