@@ -252,8 +252,8 @@ class GooeyFilesystemBrowser(QObject):
                 for child in item.children_():
                     # get type, only annotate non-directory items
                     if child.datalad_type != 'directory':
-                        self._annotate_item(
-                            child, dict(state='untracked'))
+                        child.update_from_status_result(
+                            dict(state='untracked'))
             else:
                 # trigger datalad-gooey-status-light execution
                 # giving the target directory as a `path` argument should
@@ -302,25 +302,6 @@ class GooeyFilesystemBrowser(QObject):
             [Path(path).name],
         )
         target_item.update_from_status_result(res)
-
-    def _annotate_item(self, item, props):
-        changed = False
-        if 'state' in props:
-            state = props['state']
-            prev_state = item.data(2, Qt.EditRole)
-            if state != prev_state:
-                item.setData(2, Qt.EditRole, state)
-                # TODO deduplicate with FSBrowserItem._setItemIcons()
-                icon = item._getIcon(state)
-                if icon:
-                    item.setIcon(2, item._getIcon(state))
-                changed = True
-        if item.datalad_type == 'file':
-            # get the right icon, fall back on 'file'
-            item.setIcon(0, item._getIcon(props.get('storage', 'file')))
-            changed = True
-        if changed:
-            item.emitDataChanged()
 
     # DONE
     def _watch_dir(self, item):
