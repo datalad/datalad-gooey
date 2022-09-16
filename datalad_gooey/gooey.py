@@ -62,8 +62,13 @@ class Gooey(Interface):
         # local import to keep entrypoint import independent of PySide
         # availability
         from .app import GooeyApp, QtApp
-
         qtapp = QtApp(sys.argv)
+        if path is None:
+            from PySide6.QtWidgets import QFileDialog
+            path = QFileDialog.getExistingDirectory(
+                caption="Choose directory or dataset",
+                options=QFileDialog.ShowDirsOnly,
+            )
         gooey = GooeyApp(path)
         gooey.main_window.show()
 
