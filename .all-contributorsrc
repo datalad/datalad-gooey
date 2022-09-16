@@ -1,28 +1,105 @@
 {
-  "files": [
-    "README.md"
-  ],
-  "imageSize": 100,
-  "commit": false,
-  "commitConvention": "angular",
-  "contributors": [
-    {
-      "login": "mih",
-      "name": "Michael Hanke",
-      "avatar_url": "https://avatars.githubusercontent.com/u/136479?v=4",
-      "profile": "http://psychoinformatics.de",
-      "contributions": [
-        "code",
-        "ideas",
-        "projectManagement",
-        "mentoring"
-      ]
-    }
-  ],
-  "contributorsPerLine": 7,
-  "skipCi": true,
-  "repoType": "github",
-  "repoHost": "https://github.com",
-  "projectName": "datalad-gooey",
-  "projectOwner": "datalad"
+    "files": [
+        "README.md"
+    ],
+    "imageSize": 100,
+    "commit": false,
+    "commitConvention": "angular",
+    "contributors": [
+        {
+            "login": "mih",
+            "name": "Michael Hanke",
+            "avatar_url": "https://avatars.githubusercontent.com/u/136479?v=4",
+            "profile": "http://psychoinformatics.de",
+            "contributions": [
+                "code",
+                "ideas",
+                "projectManagement",
+                "mentoring"
+            ]
+        },
+        {
+            "login": "yarikoptic",
+            "name": "Yaroslav Halchenko",
+            "contributions": [
+                "code"
+            ],
+            "profile": "www.onerussian.com",
+            "avatar_url": [
+                "https://avatars.githubusercontent.com/u/39889?v=4"
+            ]
+        },
+        {
+            "login": "effigies",
+            "name": "Chris Markiewicz",
+            "contributions": [
+                "code"
+            ],
+            "profile": "https://github.com/effigies",
+            "avatar_url": [
+                "https://avatars.githubusercontent.com/u/83442?v=4"
+            ]
+        },
+        {
+            "login": "adswa",
+            "name": "Adina Wagner",
+            "contributions": [
+                "code"
+            ],
+            "profile": "www.adina-wagner.com",
+            "avatar_url": [
+                "https://avatars.githubusercontent.com/u/29738718?v=4"
+            ]
+        },
+        {
+            "login": "jwodder",
+            "name": "John T. Wodder II",
+            "contributions": [
+                "code"
+            ],
+            "profile": "https://github.com/jwodder",
+            "avatar_url": [
+                "https://avatars.githubusercontent.com/u/98207?v=4"
+            ]
+        },
+        {
+            "login": "bpoldrack",
+            "name": "Benjamin Poldrack",
+            "contributions": [
+                "code"
+            ],
+            "profile": "https://github.com/bpoldrack",
+            "avatar_url": [
+                "https://avatars.githubusercontent.com/u/10498301?v=4"
+            ]
+        },
+        {
+            "login": "jsheunis",
+            "name": "Stephan Heunis",
+            "contributions": [
+                "code"
+            ],
+            "profile": "https://jsheunis.github.io/",
+            "avatar_url": [
+                "https://avatars.githubusercontent.com/u/10141237?v=4"
+            ]
+        },
+        {
+            "login": "mslw",
+            "name": "Michał Szczepanik",
+            "contributions": [
+                "code"
+            ],
+            "profile": "mslw.github.io",
+            "avatar_url": [
+                "https://avatars.githubusercontent.com/u/11985212?v=4"
+            ]
+        }
+    ],
+    "contributorsPerLine": 7,
+    "skipCi": true,
+    "repoType": "github",
+    "repoHost": "https://github.com",
+    "projectName": "datalad-gooey",
+    "projectOwner": "datalad"
 }
