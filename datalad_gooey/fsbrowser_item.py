@@ -73,10 +73,28 @@ class FSBrowserItem(QTreeWidgetItem):
         path_type = res['type']
         self.setData(1, Qt.EditRole, path_type)
         self._setItemIcons(res)
+        if res.get('status') == 'error' \
+                and res.get('message') == 'Permissions denied':
+            # we cannot get info on it, reflect in UI
+            self.setDisabled(True)
+            # also prevent expansion if there are no children yet
+            if not self.childCount():
+                self.setChildIndicatorPolicy(
+                    FSBrowserItem.DontShowIndicator)
+            # END HERE
+            return
+
+        # ensure we are on
+        self.setDisabled(False)
+
         if path_type in ('directory', 'dataset'):
             # show an expansion indiciator, even when we do not have
             # children in the item yet
             self.setChildIndicatorPolicy(QTreeWidgetItem.ShowIndicator)
+
+        if path_type == 'directory':
+            # a regular directory with proper permissions has no state
+            self.setData(2, Qt.EditRole, '')
 
     @classmethod
     def from_lsdir_result(cls, res: Dict, parent=None):
