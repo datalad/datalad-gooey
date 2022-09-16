@@ -61,8 +61,10 @@ class Gooey(Interface):
     def __call__(path: str = None):
         # local import to keep entrypoint import independent of PySide
         # availability
-        from .app import GooeyApp, QtApp
-        qtapp = QtApp(sys.argv)
+        from .app import GooeyApp, QApplication
+
+        qtapp = QApplication(sys.argv)
+
         if path is None:
             from PySide6.QtWidgets import QFileDialog
             path = QFileDialog.getExistingDirectory(
