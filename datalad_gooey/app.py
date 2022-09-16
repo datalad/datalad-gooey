@@ -20,7 +20,6 @@ from PySide6.QtCore import (
 from PySide6.QtGui import (
     QAction,
     QCursor,
-    QIcon,
 )
 
 from datalad import cfg as dlcfg
@@ -100,9 +99,11 @@ class GooeyApp(QObject):
         self._cmdexec.execution_failed.connect(self._setup_stopped_cmdexec)
         # arrange for the dataset menu to populate itself lazily once
         # necessary
-        self.get_widget('menuDataset').aboutToShow.connect(self._populate_dataset_menu)
+        self.get_widget('menuDataset').aboutToShow.connect(
+            self._populate_dataset_menu)
         # connect pushbutton clicked signal to clear slot of logViewer
-        self.get_widget('clearLogPB').clicked.connect(self.get_widget('logViewer').clear)
+        self.get_widget('clearLogPB').clicked.connect(
+            self.get_widget('logViewer').clear)
         self.main_window.actionCheck_for_new_version.triggered.connect(
             self._check_new_version)
         # reset the command configuration tab whenever the item selection in
@@ -112,12 +113,12 @@ class GooeyApp(QObject):
 
         self._connect_menu_view(self.get_widget('menuView'))
 
-
     def _setup_ongoing_cmdexec(self, thread_id, cmdname, cmdargs, exec_params):
         self.get_widget('statusbar').showMessage(f'Started `{cmdname}`')
         self.main_window.setCursor(QCursor(Qt.BusyCursor))
 
-    def _setup_stopped_cmdexec(self, thread_id, cmdname, cmdargs, exec_params, ce=None):
+    def _setup_stopped_cmdexec(
+            self, thread_id, cmdname, cmdargs, exec_params, ce=None):
         if ce is None:
             self.get_widget('statusbar').showMessage(f'Finished `{cmdname}`')
         else:
@@ -194,7 +195,7 @@ class GooeyApp(QObject):
         QMessageBox.information(
             self.main_window,
             'Note',
-            'The new interface mode gets enabled at the next application start.'
+            'The new interface mode is enabled at the next application start.'
         )
 
 
