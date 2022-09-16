@@ -25,17 +25,10 @@ lgr = logging.getLogger('datalad.ext.gooey.lsdir')
 
 @build_doc
 class GooeyLsDir(Interface):
-    """DataLad GUI helper
-
-    Long description of arbitrary volume.
-    """
-    # parameters of the command, must be exhaustive
+    """Internal helper for datalad-gooey"""
     _params_ = dict(
-        # name of the parameter, must match argument name
         path=Parameter(
-            # cmdline argument definitions, incl aliases
             args=("path", ),
-            # documentation
             doc="""""",
         )
     )
@@ -51,7 +44,6 @@ class GooeyLsDir(Interface):
         # might have applicability in a broader scope.
 
         # - this takes a single path as a mandatory argument
-        # TODO must be absolute?
         # - this path must be a directory, if it exists
         # - this directory can be inside or outside of a dataset
         # - a result is returned for each item inside that is considered

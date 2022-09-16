@@ -30,9 +30,7 @@ lgr = logging.getLogger('datalad.ext.gooey.status_light')
 
 @build_doc
 class GooeyStatusLight(Interface):
-    """DataLad GUI helper
-    """
-    # parameters of the command, must be exhaustive
+    """Internal helper for datalad-gooey"""
     _params_ = dict(
         dataset=Parameter(
             args=("-d", "--dataset"),
@@ -55,14 +53,6 @@ class GooeyStatusLight(Interface):
         # This command is an internal helper of gooey, it has no ambition
         # to generalize, although the components it uses internally
         # might have applicability in a broader scope.
-
-        # - this takes a single path as a mandatory argument
-        # TODO must be absolute?
-        # - this path must be a directory, if it exists
-        # - this directory can be inside or outside of a dataset
-        # - a result is returned for each item inside that is considered
-        #   "relevant" for gooey (ie. no content inside `.git` or `.git` itself
-        #   etc.
 
         ds = require_dataset(
             dataset,
