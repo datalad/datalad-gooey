@@ -4,14 +4,10 @@ from typing import Dict
 from PySide6.QtCore import (
     Qt,
 )
-from PySide6.QtGui import (
-    QIcon,
-)
 from PySide6.QtWidgets import (
     QTreeWidgetItem,
 )
 
-from .fsbrowser_utils import _parse_dir
 from .resource_provider import gooey_resources
 
 
@@ -90,31 +86,6 @@ class FSBrowserItem(QTreeWidgetItem):
                     self.setData(col, role, got)
         if changed:
             self.emitDataChanged()
-
-    @classmethod
-    def from_path(cls,
-                  path: Path,
-                  root: bool = True,
-                  children: bool = True,
-                  include_files: bool = False,
-                  parent=None):
-        gen = _parse_dir(
-            path,
-            depth=1 if children else 0,
-            include_files=include_files
-        )
-        if root:
-            root = cls.from_lsdir_result(next(gen), parent=parent)
-        else:
-            next(gen)
-            root = parent
-        children = [
-            cls.from_lsdir_result(r, parent=root) for r in gen
-        ]
-        if children:
-            root.addChildren(children)
-
-        return root
 
     @classmethod
     def from_lsdir_result(cls, res: Dict, parent=None):

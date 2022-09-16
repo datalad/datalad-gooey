@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
 
 from datalad.interface.base import Interface
 from datalad.utils import get_dataset_root
+from datalad.dataset.gitrepo import GitRepo
 
 from .dataset_actions import add_dataset_actions_to_menu
 from .fsbrowser_item import FSBrowserItem
@@ -49,8 +50,16 @@ class GooeyFilesystemBrowser(QObject):
         # established defined sorting order of the tree
         tw.sortItems(1, Qt.AscendingOrder)
 
-        # establish the root item
-        root = FSBrowserItem.from_path(path, children=False, parent=tw)
+        # establish the root item, based on a fake lsdir result
+        # the info needed is so simple, it is not worth a command
+        # execution
+        root = FSBrowserItem.from_lsdir_result(
+            dict(
+                path=path,
+                type='dataset' if GitRepo.is_valid(path) else 'directory',
+            ),
+            parent=tw,
+        )
         # set the tooltip to the full path, otherwise only names are shown
         root.setToolTip(0, str(path))
         tw.addTopLevelItem(root)
