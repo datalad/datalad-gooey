@@ -19,6 +19,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from datalad import cfg as dlcfg
+
 from .resource_provider import gooey_resources
 
 
@@ -271,6 +273,11 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
 
         # the main widget is a simple line edit
         self._edit = QLineEdit(self)
+        if dlcfg.obtain('datalad.gooey.ui-mode') == 'simplified':
+            # in simplified mode we do not allow manual entry of paths
+            # to avoid confusions re interpretation of relative paths
+            # https://github.com/datalad/datalad-gooey/issues/106
+            self._edit.setDisabled(True)
         hl.addWidget(self._edit)
 
         # next to the line edit, we place to small button to facilitate
@@ -306,7 +313,10 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
         self._edit.setText(str(value))
 
     def set_gooey_param_default(self, value):
-        self._edit.setPlaceholderText(str(value))
+        placeholder = 'Select path'
+        if value is not None:
+            placeholder += f'(default: {value})'
+        self._edit.setPlaceholderText(placeholder)
 
     def get_gooey_param_value(self):
         # return the value if it was set be the caller, or modified

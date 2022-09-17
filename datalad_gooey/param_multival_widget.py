@@ -60,7 +60,9 @@ class MyItemDelegate(QStyledItemDelegate):
     def setEditorData(self, editor: QWidget, index: QModelIndex):
         # this requires the inverse of the already existing
         # _get_datalad_param_spec() "retriever" methods
-        editor.set_gooey_param_value(index.data())
+        data = index.data()
+        if data is not _NoValue:
+            editor.set_gooey_param_value(data)
 
     # called after editing is done
     def setModelData(self,
@@ -124,6 +126,10 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
         )
         # TODO if a value is given, we do not want it to be editable
         newitem.setFlags(newitem.flags() | Qt.ItemIsEditable)
+        # give it a special value if nothing is set
+        # this helps to populate the edit widget with existing
+        # values, or not
+        newitem.setData(Qt.EditRole, _NoValue)
 
         # put in list
         self._lw.addItem(newitem)
