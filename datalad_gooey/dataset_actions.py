@@ -34,7 +34,7 @@ def add_dataset_actions_to_menu(parent, receiver, menu=None, dataset=None):
     # a potential filter to simplify the interface
     command_filter = None
     from datalad import cfg
-    if cfg.obtain('datalad.gooey.ui-mode') == 'novice':
+    if cfg.obtain('datalad.gooey.ui-mode') == 'simplified':
         command_filter = set((
             'clone', 'get', 'update', 'drop', 'create', 'save', 'push',
             'create_sibling_gitlab', 'create_sibling_gin',

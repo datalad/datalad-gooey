@@ -200,7 +200,7 @@ class GooeyApp(QObject):
     def _set_interface_mode(self):
         action = self.sender()
         uimode = action.objectName().split('_')[-1]
-        assert uimode in ('novice', 'expert')
+        assert uimode in ('simplified', 'complete')
         dlcfg.set('datalad.gooey.ui-mode', uimode, scope='global')
         QMessageBox.information(
             self.main_window,

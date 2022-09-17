@@ -25,11 +25,11 @@ register_config(
     'datalad.gooey.ui-mode',
     'Which user interface mode to use in the application',
     description=\
-    'In novice mode the user interface is simplified and more advanced '
-    'operations are hidden. Expert mode offers the complete aplication '
-    'functionality.',
-    type=EnsureChoice('novice', 'expert'),
-    default='novice',
+    "In 'simplified' mode advanced operations operations are hidden "
+    "in the user interface. In 'complete' mode, all functionality "
+    'is exposed.',
+    type=EnsureChoice('simplified', 'complete'),
+    default='simplified',
     scope='global')
 
 
