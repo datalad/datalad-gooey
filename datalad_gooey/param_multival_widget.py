@@ -97,6 +97,7 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
         self._lw.setAlternatingRowColors(True)
         # we assing the editor factory
         self._lw.setItemDelegate(MyItemDelegate(self))
+        self._lw.setToolTip('Double-click to edit items')
         layout.addWidget(self._lw)
 
         # now the buttons
