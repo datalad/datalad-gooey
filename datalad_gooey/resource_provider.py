@@ -8,6 +8,7 @@ class GooeyResources:
     label_to_name = {
         'dataset': 'dataset-closed',
         'directory': 'directory-closed',
+        'path': 'file-or-directory',
         'file': 'file',
         'file-annex': 'file-annex',
         'file-git': 'file-git',

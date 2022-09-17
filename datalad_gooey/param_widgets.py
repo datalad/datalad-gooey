@@ -19,6 +19,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from .resource_provider import gooey_resources
+
 
 class _NoValue:
     """Type to annotate the absence of a value
@@ -273,26 +275,32 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
 
         # next to the line edit, we place to small button to facilitate
         # selection of file/directory paths by a browser dialog.
-        if pathtype == QFileDialog.AnyFile:
-            # we use two separate ones, because we cannot know which type is
-            # needed, and on some platforms the respected native
+        if pathtype in (
+                QFileDialog.AnyFile,
+                QFileDialog.Directory):
+            # we use a dedicated directory selector.
+            # on some platforms the respected native
             # dialogs are different... so we go with two for the best "native"
             # experience
             dir_button = QToolButton(self)
             dir_button.setToolTip('Choose directory')
-            # TODO use icon
-            dir_button.setArrowType(Qt.LeftArrow)
+            dir_button.setIcon(gooey_resources.get_best_icon('directory'))
             hl.addWidget(dir_button)
             dir_button.clicked.connect(self._select_dir)
-
-        file_button = QToolButton(self)
-        file_button.setToolTip('Select path')
-        # TODO use icon
-        file_button.setArrowType(Qt.UpArrow)
-        hl.addWidget(file_button)
-
-        # wire up the slots
-        file_button.clicked.connect(self._select_path)
+        if pathtype in (
+                QFileDialog.AnyFile,
+                QFileDialog.ExistingFile):
+            file_button = QToolButton(self)
+            file_button.setToolTip(
+                'Select path'
+                if pathtype == QFileDialog.AnyFile
+                else 'Select file')
+            file_button.setIcon(
+                gooey_resources.get_best_icon(
+                    'path' if pathtype == QFileDialog.AnyFile else 'file'))
+            hl.addWidget(file_button)
+            # wire up the slots
+            file_button.clicked.connect(self._select_path)
 
     def set_gooey_param_value(self, value):
         self._edit.setText(str(value))
