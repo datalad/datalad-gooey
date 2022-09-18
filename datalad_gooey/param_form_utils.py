@@ -1,7 +1,10 @@
 
 from collections.abc import Callable
 import functools
-from itertools import zip_longest
+from itertools import (
+    chain,
+    zip_longest,
+)
 from typing import (
     Any,
     Dict,
@@ -14,7 +17,6 @@ from PySide6.QtWidgets import (
     QFileDialog,
 )
 
-from datalad.interface.base import Interface
 from datalad.interface.common_opts import eval_params
 from datalad.support.constraints import EnsureChoice
 from datalad.support.param import Parameter
@@ -26,6 +28,11 @@ from datalad.utils import (
 
 from . import param_widgets as pw
 from .param_multival_widget import MultiValueInputWidget
+from .active_api import (
+    api_spec,
+    exclude_parameters,
+    parameter_display_names,
+)
 
 __all__ = ['populate_form_w_params']
 
@@ -44,14 +51,41 @@ def populate_form_w_params(
     formlayout.datalad_cmd_name = cmdname
     # get the matching callable from the DataLad API
     cmd = getattr(dlapi, cmdname)
+    cmd_api_spec = api_spec.get(cmdname, {})
+    cmd_param_display_names = cmd_api_spec.get(
+        'parameter_display_names', {})
     # resolve to the interface class that has all the specification
     cmd_cls = get_wrapped_class(cmd)
+
     # loop over all parameters of the command (with their defaults)
-    for pname, pdefault in _get_params(cmd):
+    def _specific_params():
+        for pname, pdefault in _get_params(cmd):
+            yield pname, pdefault, cmd_cls._params_[pname]
+
+    # loop over all generic
+    def _generic_params():
+        for pname, param in eval_params.items():
+            yield (
+                pname,
+                param.cmd_kwargs.get('default', pw._NoValue), \
+                param,
+            )
+    for pname, pdefault, param_spec in sorted(
+            # across cmd params, and generic params
+            chain(_specific_params(), _generic_params()),
+            # sort by custom order and/or parameter name
+            key=lambda x: (
+                cmd_api_spec.get(
+                    'parameter_order', {}).get(x[0], 99),
+                x[0])):
+        if pname in exclude_parameters:
+            continue
+        if pname in cmd_api_spec.get('exclude_parameters', set()):
+            continue
         # populate the layout with widgets for each of them
         pwidget = _get_parameter_widget(
             formlayout.parentWidget(),
-            cmd_cls._params_[pname],
+            param_spec,
             pname,
             # pass a given value, or indicate that there was none
             cmdkwargs.get(pname, pw._NoValue),
@@ -64,25 +98,25 @@ def populate_form_w_params(
             # on a `dataset` argument)
             allargs=cmdkwargs,
         )
-        formlayout.addRow(pname, pwidget)
-
-    # Add widgets for standard options like result_renderer:
-    for pname, param in eval_params.items():
-        if pname not in ['result_renderer', 'on_failure']:
-            continue
-        pwidget = _get_parameter_widget(
-            formlayout.parentWidget(),
-            param,
+        # query for a known display name
+        # first in command-specific spec
+        display_name = cmd_param_display_names.get(
             pname,
-            # pass a given value, or indicate that there was none
-            cmdkwargs.get(pname, pw._NoValue),
-            # will also be _NoValue, if there was none
-            param.cmd_kwargs.get('default', pw._NoValue),
-            # The generic options are not command specific and have no relation
-            # to command specific ones. Hence, allargs shouldn't be needed.
-            allargs=None,
+            # fallback to API specific override
+            parameter_display_names.get(
+                pname,
+                # last resort:
+                # use capitalized orginal with _ removed as default
+                pname.replace('_', ' ').capitalize()
+            ),
         )
-        formlayout.addRow(pname, pwidget)
+        display_label = QLabel(display_name)
+        display_label.setToolTip(f'API command parameter: `{pname}`')
+        formlayout.addRow(display_label, pwidget)
+
+
+def get_cmd_displayname(cmdname):
+    return api_spec.get(cmdname, {}).get('name', cmdname.capitalize())
 
 
 #

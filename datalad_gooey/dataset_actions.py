@@ -8,6 +8,9 @@ from datalad.interface.base import (
 )
 from datalad.utils import get_wrapped_class
 
+from .active_api import api_spec
+from .param_form_utils import get_cmd_displayname
+
 
 def add_dataset_actions_to_menu(parent, receiver, menu=None, dataset=None):
     """Slot to populate (connected) QMenu with dataset actions
@@ -32,14 +35,7 @@ def add_dataset_actions_to_menu(parent, receiver, menu=None, dataset=None):
     menu_lookup = _generate_submenus(menu)
 
     # a potential filter to simplify the interface
-    command_filter = None
-    from datalad import cfg
-    if cfg.obtain('datalad.gooey.ui-mode') == 'simplified':
-        command_filter = set((
-            'clone', 'get', 'update', 'drop', 'create', 'save', 'push',
-            'create_sibling_gitlab', 'create_sibling_gin',
-            'create_sibling_github',
-        ))
+    command_filter = api_spec
 
     # iterate over all members of the Dataset class and find the
     # methods that are command interface callables
@@ -65,7 +61,10 @@ def add_dataset_actions_to_menu(parent, receiver, menu=None, dataset=None):
         except Exception:
             continue
         # we create a dedicated action for each command
-        action = QAction(mname, parent=parent)
+        action = QAction(
+            get_cmd_displayname(mname),
+            parent=parent
+        )
         # the name of the command is injected into the action
         # as user data. We wrap it in a dict to enable future
         # additional payload
