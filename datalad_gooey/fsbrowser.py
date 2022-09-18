@@ -14,7 +14,6 @@ from PySide6.QtCore import (
 from PySide6.QtWidgets import (
     QMenu,
     QTreeWidget,
-    QHeaderView,
 )
 
 from datalad.interface.base import Interface
@@ -41,8 +40,7 @@ class GooeyFilesystemBrowser(QObject):
 
         tw = treewidget
         # TODO must setColumnNumber()
-        # make file tree width resize to path lengths
-        tw.header().setSectionResizeMode(QHeaderView.ResizeToContents)
+
         self._app = app
         self._fswatcher = QFileSystemWatcher(parent=app)
         self.item_requires_annotation.connect(
