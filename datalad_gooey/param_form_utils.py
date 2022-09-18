@@ -29,7 +29,7 @@ from datalad.utils import (
 from . import param_widgets as pw
 from .param_multival_widget import MultiValueInputWidget
 from .active_api import (
-    api_spec,
+    api,
     exclude_parameters,
     parameter_display_names,
 )
@@ -51,7 +51,7 @@ def populate_form_w_params(
     formlayout.datalad_cmd_name = cmdname
     # get the matching callable from the DataLad API
     cmd = getattr(dlapi, cmdname)
-    cmd_api_spec = api_spec.get(cmdname, {})
+    cmd_api_spec = api.get(cmdname, {})
     cmd_param_display_names = cmd_api_spec.get(
         'parameter_display_names', {})
     # resolve to the interface class that has all the specification
@@ -116,7 +116,7 @@ def populate_form_w_params(
 
 
 def get_cmd_displayname(cmdname):
-    return api_spec.get(cmdname, {}).get('name', cmdname.capitalize())
+    return api.get(cmdname, {}).get('name', cmdname.capitalize())
 
 
 #

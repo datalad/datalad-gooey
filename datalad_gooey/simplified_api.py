@@ -1,9 +1,9 @@
-
 # each item is a command that is allowed in the API
 # the key is the command name in the Python API.
 # the values are dicts with the following keys
 # - exclude_parameters: set with parameter names to
 #   exclude from the API
+
 api = dict(
     clone=dict(
         exclude_parameters=set((
@@ -61,3 +61,26 @@ parameter_display_names = dict(
     cfg_proc='Configuration procedure(s)',
     dataset='Dataset location',
 )
+
+dataset_api = {
+    c: s for c, s in api.items()
+    if c in (
+        'clone', 'create', 'create_sibling_gitlab', 'create_sibling_gin',
+        'create_sibling_github', 'drop', 'get', 'push', 'save', 'update'
+    )
+}
+directory_api = {
+    c: s for c, s in api.items() if c in ('clone', 'create')
+}
+directory_in_ds_api = {
+    c: s for c, s in api.items()
+    if c in ('clone', 'create', 'drop', 'get', 'push', 'save')
+}
+file_api = None
+file_in_ds_api = {
+    c: s for c, s in api.items() if c in ('save',)
+}
+annexed_file_api = {
+    c: s for c, s in api.items()
+    if c in ('drop', 'get', 'push', 'save')
+}

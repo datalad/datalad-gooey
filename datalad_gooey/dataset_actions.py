@@ -8,7 +8,7 @@ from datalad.interface.base import (
 )
 from datalad.utils import get_wrapped_class
 
-from .active_api import api_spec
+from .active_api import dataset_api
 from .param_form_utils import get_cmd_displayname
 
 
@@ -35,7 +35,7 @@ def add_dataset_actions_to_menu(parent, receiver, menu=None, dataset=None):
     menu_lookup = _generate_submenus(menu)
 
     # a potential filter to simplify the interface
-    command_filter = api_spec
+    command_filter = dataset_api
 
     # iterate over all members of the Dataset class and find the
     # methods that are command interface callables
