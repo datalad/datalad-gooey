@@ -31,6 +31,15 @@ register_config(
     type=EnsureChoice('simplified', 'complete'),
     default='simplified',
     scope='global')
+register_config(
+    'datalad.gooey.ui-theme',
+    'Which user interface theme to use in the application',
+    description=\
+    "Besides the standard 'system' theme, additional 'light' and 'dark' "
+    "themes are available, if the `qdarktheme` package is installed.",
+    type=EnsureChoice('system', 'light', 'dark'),
+    default='system',
+    scope='global')
 
 
 from ._version import get_versions

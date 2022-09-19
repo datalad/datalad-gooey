@@ -1,3 +1,4 @@
+import logging
 import sys
 from pathlib import Path
 from outdated import check_outdated
@@ -11,6 +12,7 @@ from PySide6.QtWidgets import (
     QTreeWidget,
     QWidget,
     QMessageBox,
+    QFileDialog,
 )
 from PySide6.QtCore import (
     QObject,
@@ -33,6 +35,8 @@ from .dataladcmd_ui import GooeyDataladCmdUI
 from .cmd_actions import add_cmd_actions_to_menu
 from .fsbrowser import GooeyFilesystemBrowser
 from .resource_provider import gooey_resources
+
+lgr = logging.getLogger('datalad.ext.gooey.app')
 
 
 class GooeyApp(QObject):
@@ -61,9 +65,19 @@ class GooeyApp(QObject):
         # we cannot handle ANSI coloring
         dlcfg.set('datalad.ui.color', 'off', scope='override', force=True)
 
-        # set default path
+        # setup themeing before the first dialog goes up
+        self._setup_looknfeel()
+
         if not path:
-            path = Path.cwd()
+            # start root path given, ask user
+            path = QFileDialog.getExistingDirectory(
+                caption="Choose directory or dataset",
+                options=QFileDialog.ShowDirsOnly,
+            )
+            if not path:
+                # user aborted root path selection, start in HOME.
+                # HOME is a better choice than CWD in most environments
+                path = Path.home()
 
         self._dlapi = None
         self._path = path
@@ -116,8 +130,6 @@ class GooeyApp(QObject):
             lambda cur, prev: self._cmdui.reset_form())
 
         self._connect_menu_view(self.get_widget('menuView'))
-
-        self._setup_looknfeel()
 
     def _setup_ongoing_cmdexec(self, thread_id, cmdname, cmdargs, exec_params):
         self.get_widget('statusbar').showMessage(f'Started `{cmdname}`')
@@ -201,6 +213,12 @@ class GooeyApp(QObject):
             a.triggered.connect(self._set_interface_mode)
             if a.objectName().split('_')[-1] == uimode:
                 a.setDisabled(True)
+        uitheme = dlcfg.obtain('datalad.gooey.ui-theme')
+        menu_theme = menu.findChild(QMenu, 'menuTheme')
+        for a in menu_theme.actions():
+            a.triggered.connect(self._set_ui_theme)
+            if a.objectName().split('_')[-1] == uitheme:
+                a.setDisabled(True)
 
     def _set_interface_mode(self):
         action = self.sender()
@@ -213,17 +231,35 @@ class GooeyApp(QObject):
             'The new interface mode is enabled at the next application start.'
         )
 
+    def _set_ui_theme(self):
+        action = self.sender()
+        uitheme = action.objectName().split('_')[-1]
+        assert uitheme in ('system', 'light', 'dark')
+        dlcfg.set('datalad.gooey.ui-theme', uitheme, scope='global')
+        QMessageBox.information(
+            self.main_window,
+            'Note',
+            'The new interface theme is enabled at the next application start.'
+        )
+
     def _setup_looknfeel(self):
         # set application icon
         qtapp = QApplication.instance()
         qtapp.setWindowIcon(gooey_resources.get_icon('app_icon_32'))
 
-        # go dark, if supported
-        try:
-            import qdarktheme
-            qtapp.setStyleSheet(qdarktheme.load_stylesheet('dark'))
-        except ImportError:
-            pass
+        uitheme = dlcfg.obtain('datalad.gooey.ui-theme')
+        if uitheme not in ('system', 'light', 'dark'):
+            lgr.warning('Unsupported UI theme label %r', uitheme)
+            return
+        if uitheme != 'system':
+            # go custom, if supported
+            try:
+                import qdarktheme
+            except ImportError:
+                lgr.warning('Custom UI theme not supported. '
+                            'Missing `qdarktheme` installation.')
+                return
+            qtapp.setStyleSheet(qdarktheme.load_stylesheet(uitheme))
 
     def _render_cmd_call(self, cmdname, cmdkwargs):
         """Minimalistic Python-like rendering of commands in the log"""
