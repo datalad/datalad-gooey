@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QTreeWidget,
     QWidget,
     QMessageBox,
+    QFileDialog,
 )
 from PySide6.QtCore import (
     QObject,
@@ -64,9 +65,19 @@ class GooeyApp(QObject):
         # we cannot handle ANSI coloring
         dlcfg.set('datalad.ui.color', 'off', scope='override', force=True)
 
-        # set default path
+        # setup themeing before the first dialog goes up
+        self._setup_looknfeel()
+
         if not path:
-            path = Path.cwd()
+            # start root path given, ask user
+            path = QFileDialog.getExistingDirectory(
+                caption="Choose directory or dataset",
+                options=QFileDialog.ShowDirsOnly,
+            )
+            if not path:
+                # user aborted root path selection, start in HOME.
+                # HOME is a better choice than CWD in most environments
+                path = Path.home()
 
         self._dlapi = None
         self._path = path
@@ -117,8 +128,6 @@ class GooeyApp(QObject):
             lambda cur, prev: self._cmdui.reset_form())
 
         self._connect_menu_view(self.get_widget('menuView'))
-
-        self._setup_looknfeel()
 
     def _setup_ongoing_cmdexec(self, thread_id, cmdname, cmdargs, exec_params):
         self.get_widget('statusbar').showMessage(f'Started `{cmdname}`')

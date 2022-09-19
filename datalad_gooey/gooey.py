@@ -64,13 +64,6 @@ class Gooey(Interface):
         from .app import GooeyApp, QApplication
 
         qtapp = QApplication(sys.argv)
-
-        if path is None:
-            from PySide6.QtWidgets import QFileDialog
-            path = QFileDialog.getExistingDirectory(
-                caption="Choose directory or dataset",
-                options=QFileDialog.ShowDirsOnly,
-            )
         gooey = GooeyApp(path)
         gooey.main_window.show()
 
