@@ -6,11 +6,22 @@
 
 api = dict(
     clone=dict(
+        name='Clone a dataset',
         exclude_parameters=set((
             'git_clone_opts',
             'reckless',
             'description',
         )),
+        parameter_display_names=dict(
+            source='Clone from',
+            path='Clone into',
+            dataset='Register clone in dataset',
+        ),
+        parameter_order=dict(
+            source=0,
+            path=1,
+            dataset=2,
+        ),
     ),
     create=dict(
         name='Create a dataset',
