@@ -16,7 +16,11 @@ from PySide6.QtWidgets import (
 
 from datalad.interface.base import Interface
 from datalad.interface.common_opts import eval_params
-from datalad.support.constraints import EnsureChoice
+from datalad.support.constraints import (
+    AltConstraints,
+    EnsureChoice,
+    EnsureNone,
+)
 from datalad.support.param import Parameter
 from datalad.utils import (
     getargspec,
@@ -185,6 +189,33 @@ def _get_parameter_widget_factory(
             pw.ChoiceParamWidget, choices=argparse_spec.get('choices'))
     elif name == 'recursion_limit':
         type_widget = functools.partial(pw.PosIntParamWidget, allow_none=True)
+    elif isinstance(constraints, AltConstraints):
+
+        # Generate a AltParamWidget and recurse into constraints.constraints to
+        # pass generic child widgets. However, skip `EnsureNone`. This only
+        # determines the entire thing to be toggelable - no dedicated child
+        # widget is generated from it.
+
+        children = []
+        toggleable = False
+        for c in constraints.constraints:
+            if isinstance(c, EnsureNone):
+                toggleable = True
+                continue
+            child_widget = _get_parameter_widget_factory(name=name,
+                                                         default=None,  # TODO: default isn't actually used here, so what's reasonable to pass?
+                                                         constraints=c,
+                                                         argparse_spec=argparse_spec,
+                                                         allargs=allargs)
+            # TODO: Need to pass `c` as validator. But: The widget is not yet
+            # instantiated here, since we'd need to pass the parent. Hence, probably make the `children` list in `AltParamWidget` a tuple?
+            #child_widget.set_gooey_param_validator(c)
+
+            children.append(child_widget)
+
+        type_widget = functools.partial(pw.AltParamWidget,
+                                        toggleable=toggleable,
+                                        children=children)
 
     # we must consider the following nargs spec for widget selection
     # (int, '*', '+'), plus action=append

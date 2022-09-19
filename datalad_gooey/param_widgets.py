@@ -12,10 +12,13 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFileDialog,
+    QFormLayout,
     QHBoxLayout,
     QLineEdit,
+    QRadioButton,
     QSpinBox,
     QToolButton,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -241,7 +244,7 @@ class StrParamWidget(QLineEdit, GooeyParamWidgetMixin):
         # return the value if it was set be the caller, or modified
         # by the user -- otherwise stay silent and let the command
         # use its default
-        if self.isEnabled() and not self.isModified() :
+        if self.isEnabled() and not self.isModified():
             raise ValueError('Present value was not modified')
         return self.text()
 
@@ -342,3 +345,58 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
         if path:
             self.set_gooey_param_value(path)
             self._edit.setModified(True)
+
+
+class AltParamWidget(QWidget, GooeyParamWidgetMixin):
+
+    # Generic widget constructed from `AltConstraints`
+
+    def __init__(self,
+                 parent=None,
+                 toggleable=False,
+                 children=None
+                 ):
+
+        super().__init__(parent)
+        if children is None:
+            children = []
+        fl = QFormLayout()
+        # squash the margins
+        margins = fl.contentsMargins()
+        # we stay with the default left/right, but minimize vertically
+        fl.setContentsMargins(margins.left(), 0, margins.right(), 0)
+        self.setLayout(fl)
+        self._radios = []
+
+        if toggleable:
+            # This is supposed to enable/disable the whole thing with disabled
+            # implying `None` as the param value.
+            self._toggle = QCheckBox(self)
+            fl.addRow(self._toggle)
+
+        if len(children) == 1:
+            entry = children[0](parent=self)
+            fl.addRow(entry)
+        elif len(children) > 1:
+            for c in children:
+                radio = QRadioButton(self)
+                entry = c(parent=self)
+                fl.addRow(radio, entry)
+                self._radios.append((radio, entry))
+
+        # TODO: Wire up the (sub-) widgets.
+
+    def set_gooey_param_value(self, value):
+        pass
+
+    def get_gooey_param_value(self):
+        pass
+
+    def set_gooey_param_default(self, value):
+        # We need to find the right child widget to put the default in.
+        # -> Iterate over their validators until it fits.
+        # In case of overlapping Constraints, where a value would pass for
+        # several of them (like EnsureBool | EnsureStr), simply the first one
+        # will do. It shouldn't matter much in such a case.
+
+        pass
