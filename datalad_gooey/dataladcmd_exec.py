@@ -10,6 +10,9 @@ from PySide6.QtCore import (
     Signal,
     Slot,
 )
+from PySide6.QtWidgets import (
+    QToolButton,
+)
 
 from datalad.interface.base import Interface
 from datalad.support.exceptions import CapturedException
@@ -33,6 +36,18 @@ class GooeyDataladCmdExec(QObject):
 
     def __init__(self):
         super().__init__()
+
+        aw = QToolButton()
+        aw.setAutoRaise(True)
+        aw.clicked.connect(self._stop_thread)
+        aw.hide()
+        self._activity_widget = aw
+        self.execution_started.connect(self._enable_activity_widget)
+        self.execution_finished.connect(self._disable_activity_widget)
+        self.execution_failed.connect(self._disable_activity_widget)
+
+        # flag whether a running thread should stop ASAP
+        self._kaboom = False
 
         self._threadpool = ThreadPoolExecutor(
             max_workers=1,
@@ -124,6 +139,8 @@ class GooeyDataladCmdExec(QObject):
                 t = time()
                 res.update(res_override)
                 gathered_results.append(res)
+                if self._kaboom:
+                    raise InterruptedError()
                 if (t - last_report_ts) > preferred_result_interval:
                     self.results_received.emit(cls, gathered_results)
                     gathered_results = []
@@ -148,6 +165,29 @@ class GooeyDataladCmdExec(QObject):
                 cmdkwargs,
                 exec_params,
             )
+
+    def _enable_activity_widget(
+            self, thread_id: str, cmdname: str, cmdkwargs: dict,
+            exec_params: dict):
+        # thread_id, cmdname, cmdargs/kwargs, exec_params
+        aw = self._activity_widget
+        aw.setText(f"KABOOM {cmdname}")
+        aw.show()
+
+    def _disable_activity_widget(
+            self, thread_id: str, cmdname: str, cmdkwargs: dict,
+            exec_params: dict, exc: CapturedException = None):
+        self._kaboom = False
+        # thread_id, cmdname, cmdargs/kwargs, exec_params
+        aw = self._activity_widget
+        aw.hide()
+
+    def _stop_thread(self):
+        self._kaboom = True
+
+    @property
+    def activity_widget(self):
+        return self._activity_widget
 
     @property
     def n_running(self):
