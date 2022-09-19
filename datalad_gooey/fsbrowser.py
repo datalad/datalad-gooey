@@ -398,35 +398,30 @@ class GooeyFilesystemBrowser(QObject):
             # to happen)
             return
         ipath = item.pathobj
+        cmdkwargs = dict()
         context = QMenu(parent=self._tree)
         if path_type == 'dataset':
-            from .active_api import dataset_api
-            # we are not reusing the generic dataset actions menu
-            #context.addMenu(self.get_widget('menuDataset'))
-            # instead we generic a new one, with actions prepopulated
-            # with the specific dataset path argument
-            dsmenu = context.addMenu('Dataset commands')
-            add_cmd_actions_to_menu(
-                self._tree, self._app._cmdui.configure,
-                dataset_api,
-                dsmenu,
-                dict(dataset=ipath))
+            from .active_api import dataset_api as cmdapi
+            submenu = context.addMenu('Dataset commands')
+            cmdkwargs['dataset'] = ipath
         elif path_type == 'directory':
             dsroot = get_dataset_root(ipath)
             # path the directory path to the command's `path` argument
-            cmdkwargs = dict(path=ipath)
+            cmdkwargs['path'] = ipath
             if dsroot:
-                from .active_api import directory_in_ds_api as directory_api
+                from .active_api import directory_in_ds_api as cmdapi
                 # also pass dsroot
                 cmdkwargs['dataset'] = dsroot
             else:
-                from .active_api import directory_api
-            dirmenu = context.addMenu('Directory commands')
-            add_cmd_actions_to_menu(
-                self._tree, self._app._cmdui.configure,
-                directory_api,
-                dirmenu,
-                cmdkwargs)
+                from .active_api import directory_api as cmdapi
+            submenu = context.addMenu('Directory commands')
+
+        add_cmd_actions_to_menu(
+            self._tree, self._app._cmdui.configure,
+            cmdapi,
+            submenu,
+            cmdkwargs,
+        )
 
         if not context.isEmpty():
             # present the menu at the clicked point
