@@ -224,7 +224,16 @@
      <addaction name="actionInterfaceMode_simplified"/>
      <addaction name="actionInterfaceMode_complete"/>
     </widget>
+    <widget class="QMenu" name="menuTheme">
+     <property name="title">
+      <string>Theme</string>
+     </property>
+     <addaction name="actionViewTheme_system"/>
+     <addaction name="actionViewTheme_light"/>
+     <addaction name="actionViewTheme_dark"/>
+    </widget>
     <addaction name="menuInterface"/>
+    <addaction name="menuTheme"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuDataset"/>
@@ -263,6 +272,21 @@
   <action name="actionInterfaceMode_complete">
    <property name="text">
     <string>Complete</string>
+   </property>
+  </action>
+  <action name="actionViewTheme_system">
+   <property name="text">
+    <string>System</string>
+   </property>
+  </action>
+  <action name="actionViewTheme_light">
+   <property name="text">
+    <string>Light</string>
+   </property>
+  </action>
+  <action name="actionViewTheme_dark">
+   <property name="text">
+    <string>Dark</string>
    </property>
   </action>
  </widget>
