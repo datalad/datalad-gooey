@@ -207,39 +207,28 @@ class GooeyApp(QObject):
         mbox(self.main_window, title, msg)
 
     def _connect_menu_view(self, menu: QMenu):
-        uimode = dlcfg.obtain('datalad.gooey.ui-mode')
-        menu_intf = menu.findChild(QMenu, 'menuInterface')
-        for a in menu_intf.actions():
-            a.triggered.connect(self._set_interface_mode)
-            if a.objectName().split('_')[-1] == uimode:
-                a.setDisabled(True)
-        uitheme = dlcfg.obtain('datalad.gooey.ui-theme')
-        menu_theme = menu.findChild(QMenu, 'menuTheme')
-        for a in menu_theme.actions():
-            a.triggered.connect(self._set_ui_theme)
-            if a.objectName().split('_')[-1] == uitheme:
-                a.setDisabled(True)
+        for cfgvar, menuname, subject in (
+                ('datalad.gooey.ui-mode', 'menuInterface', 'interface mode'),
+                ('datalad.gooey.ui-theme', 'menuTheme', 'theme'),
+        ):
+            mode = dlcfg.obtain(cfgvar)
+            submenu = menu.findChild(QMenu, menuname)
+            for a in submenu.actions():
+                a.triggered.connect(self._set_mode_cfg)
+                a.setData((cfgvar, subject))
+                if a.objectName().split('_')[-1] == mode:
+                    a.setDisabled(True)
 
-    def _set_interface_mode(self):
+    def _set_mode_cfg(self):
+        # this works for specially crafted actions with names that
+        # have trailing `_<mode-label>` component in their name
         action = self.sender()
-        uimode = action.objectName().split('_')[-1]
-        assert uimode in ('simplified', 'complete')
-        dlcfg.set('datalad.gooey.ui-mode', uimode, scope='global')
+        cfgvar, subject = action.data()
+        mode = action.objectName().split('_')[-1]
+        dlcfg.set(cfgvar, mode, scope='global')
         QMessageBox.information(
-            self.main_window,
-            'Note',
-            'The new interface mode is enabled at the next application start.'
-        )
-
-    def _set_ui_theme(self):
-        action = self.sender()
-        uitheme = action.objectName().split('_')[-1]
-        assert uitheme in ('system', 'light', 'dark')
-        dlcfg.set('datalad.gooey.ui-theme', uitheme, scope='global')
-        QMessageBox.information(
-            self.main_window,
-            'Note',
-            'The new interface theme is enabled at the next application start.'
+            self.main_window, 'Note',
+            f'The new {subject} is enabled at the next application start.'
         )
 
     def _setup_looknfeel(self):
