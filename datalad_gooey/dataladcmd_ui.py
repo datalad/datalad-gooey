@@ -89,6 +89,7 @@ class GooeyDataladCmdUI(QObject):
 
         self.reset_form()
         populate_form_w_params(
+            self._app.rootpath,
             self.pform,
             cmdname,
             cmdkwargs,

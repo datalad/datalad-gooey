@@ -5,6 +5,7 @@ from itertools import (
     chain,
     zip_longest,
 )
+from pathlib import Path
 from typing import (
     Any,
     Dict,
@@ -38,6 +39,7 @@ __all__ = ['populate_form_w_params']
 
 
 def populate_form_w_params(
+        basedir: Path,
         formlayout: QFormLayout,
         cmdname: str,
         cmdkwargs: Dict) -> None:
@@ -84,6 +86,7 @@ def populate_form_w_params(
             continue
         # populate the layout with widgets for each of them
         pwidget = _get_parameter_widget(
+            basedir,
             formlayout.parentWidget(),
             param_spec,
             pname,
@@ -141,6 +144,7 @@ def _get_params(cmd) -> List:
 
 
 def _get_parameter_widget(
+        basedir: Path,
         parent: QWidget,
         param: Parameter,
         name: str,
@@ -157,8 +161,12 @@ def _get_parameter_widget(
     # guess the best widget-type based on the argparse setup and configured
     # constraints
     pwid_factory = _get_parameter_widget_factory(
-        name, default, param.constraints, param.cmd_kwargs,
-        allargs if allargs else dict())
+        name,
+        default,
+        param.constraints,
+        param.cmd_kwargs,
+        allargs if allargs else dict(),
+        basedir)
     return pw.load_parameter_widget(
         parent,
         pwid_factory,
@@ -176,7 +184,8 @@ def _get_parameter_widget_factory(
         default: Any,
         constraints: Callable or None,
         argparse_spec: Dict,
-        allargs: Dict) -> Callable:
+        allargs: Dict,
+        basedir: Path) -> Callable:
     """Translate DataLad command parameter specs into Gooey input widgets"""
     # for now just one to play with
     # TODO each factory must provide a standard widget method
@@ -201,10 +210,12 @@ def _get_parameter_widget_factory(
     type_widget = pw.StrParamWidget
     if name == 'dataset':
         type_widget = functools.partial(
-            pw.PathParamWidget, pathtype=QFileDialog.Directory)
+            pw.PathParamWidget,
+            pathtype=QFileDialog.Directory,
+            basedir=basedir)
     if name == 'path':
         type_widget = functools.partial(
-            pw.PathParamWidget, basedir=dspath)
+            pw.PathParamWidget, basedir=dspath or basedir)
     if argparse_action in ('store_true', 'store_false'):
         type_widget = pw.BoolParamWidget
     elif isinstance(constraints, EnsureChoice) and argparse_action is None:
