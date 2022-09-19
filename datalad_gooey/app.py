@@ -174,7 +174,8 @@ class GooeyApp(QObject):
             self._populate_dataset_menu)
 
     def _check_new_version(self):
-        self.get_widget('statusbar').showMessage('Checking latest version')
+        self.get_widget('statusbar').showMessage(
+            'Checking latest version', timeout=2000)
         try:
             is_outdated, latest = check_outdated('datalad', dlversion)
         except ValueError:
@@ -182,14 +183,14 @@ class GooeyApp(QObject):
             # recent than the most recent release)
             is_outdated = False
             pass
+        mbox = QMessageBox.information
+        title = 'Version check'
+        msg = 'Your DataLad version is up to date.'
         if is_outdated:
-            self.get_widget('logViewer').appendPlainText(
-                f'Update-alert: Consider updating DataLad from '
-                f'version {dlversion} to {latest}')
-        else:
-            self.get_widget('logViewer').appendPlainText(
-                f'Your DataLad version is up to date')
-        self.get_widget('statusbar').showMessage('Done', timeout=500)
+            mbox = QMessageBox.warning
+            msg = f'A newer DataLad version {latest} ' \
+                  f'is available (installed: {dlversion}).'
+        mbox(self.main_window, title, msg)
 
     def _connect_menu_view(self, menu: QMenu):
         uimode = dlcfg.obtain('datalad.gooey.ui-mode')
