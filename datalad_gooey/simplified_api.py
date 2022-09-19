@@ -6,7 +6,7 @@
 
 api = dict(
     clone=dict(
-        name='Clone a dataset',
+        name='&Clone a dataset',
         exclude_parameters=set((
             'git_clone_opts',
             'reckless',
@@ -24,7 +24,7 @@ api = dict(
         ),
     ),
     create=dict(
-        name='Create a dataset',
+        name='C&reate a dataset',
         exclude_parameters=set((
             'initopts',
             'description',
@@ -42,19 +42,46 @@ api = dict(
         ),
     ),
     create_sibling_gitlab=dict(
+        name='Create a Git&Lab sibling',
+        exclude_parameters=set((
+            'dryrun',
+        )),
     ),
     create_sibling_gin=dict(
+        name='Create a GI&N sibling',
     ),
     create_sibling_github=dict(
+        name='Create a Git&Hub sibling',
+        exclude_parameters=set((
+            'dryrun',
+        )),
+    ),
+    create_sibling_webdav=dict(
+        name='Create a &WebDAV sibling',
     ),
     drop=dict(
+        name='Dr&op dataset content',
+        exclude_parameters=set((
+            'check',
+            'if_dirty',
+            'reckless',
+        )),
     ),
     get=dict(
+        name='&Get dataset content',
+        exclude_parameters=set((
+            'description',
+            'reckless',
+        )),
     ),
     push=dict(
+        name='&Push data/updates to a sibling',
+        exclude_parameters=set((
+            'since',
+        )),
     ),
     save=dict(
-        name='Save the state in a dataset',
+        name='&Save the state in a dataset',
         exclude_parameters=set((
             'updated',
             'message_file',
@@ -79,6 +106,14 @@ api = dict(
         ),
     ),
     update=dict(
+        name='&Update from a sibling',
+        exclude_parameters=set((
+            'merge',
+            'fetch_all',
+            'how_subds',
+            'follow',
+            'reobtain_data',
+        )),
     ),
 )
 
