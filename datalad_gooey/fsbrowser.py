@@ -415,6 +415,16 @@ class GooeyFilesystemBrowser(QObject):
             else:
                 from .active_api import directory_api as cmdapi
             submenu = context.addMenu('Directory commands')
+        elif path_type in ('file', 'symlink'):
+            dsroot = get_dataset_root(ipath)
+            cmdkwargs['path'] = ipath
+            if dsroot:
+                from .active_api import file_in_ds_api as cmdapi
+                cmdkwargs['dataset'] = dsroot
+            else:
+                from .active_api import file_api as cmdapi
+            submenu = context.addMenu('File commands')
+        # TODO context menu for annex'ed files
 
         add_cmd_actions_to_menu(
             self._tree, self._app._cmdui.configure,
