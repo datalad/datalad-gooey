@@ -261,6 +261,9 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
         - `QFileDialog.Directory`
         """
         super().__init__(parent)
+        if basedir is None:
+            from os import getenv
+            basedir = getenv("HOME")
         self._basedir = basedir
         self._pathtype = pathtype
 
