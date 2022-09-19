@@ -20,7 +20,7 @@ from datalad.interface.base import Interface
 from datalad.utils import get_dataset_root
 from datalad.dataset.gitrepo import GitRepo
 
-from .dataset_actions import add_dataset_actions_to_menu
+from .cmd_actions import add_cmd_actions_to_menu
 from .fsbrowser_item import FSBrowserItem
 from .lsdir import GooeyLsDir
 from .status_light import GooeyStatusLight
@@ -392,21 +392,25 @@ class GooeyFilesystemBrowser(QObject):
             # land on an item
             return
         # what kind of path is this item representing
-        path_type = item.data(1, Qt.EditRole)
+        path_type = item.datalad_type
         if path_type is None:
             # we don't know what to do with this (but it also is not expected
             # to happen)
             return
         context = QMenu(parent=self._tree)
         if path_type == 'dataset':
+            from .active_api import dataset_api
             # we are not reusing the generic dataset actions menu
             #context.addMenu(self.get_widget('menuDataset'))
             # instead we generic a new one, with actions prepopulated
             # with the specific dataset path argument
             dsmenu = context.addMenu('Dataset commands')
-            add_dataset_actions_to_menu(
-                self._tree, self._app._cmdui.configure, dsmenu,
-                dataset=item.pathobj)
+            add_cmd_actions_to_menu(
+                self._tree, self._app._cmdui.configure,
+                dataset_api,
+                dsmenu,
+                dict(dataset=item.pathobj))
+        #elif path_type == 'directory':
 
         if not context.isEmpty():
             # present the menu at the clicked point

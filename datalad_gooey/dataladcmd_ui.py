@@ -94,7 +94,7 @@ class GooeyDataladCmdUI(QObject):
             cmdkwargs,
         )
         # set title afterwards, form might just have been created first, lazily
-        self._cmd_title.setText(api, get_cmd_displayname(cmdname))
+        self._cmd_title.setText(get_cmd_displayname(api, cmdname))
         self._cmd_title.setToolTip(f'API command: `{cmdname}`')
         # make sure the UI is visible
         self.pwidget.setEnabled(True)

@@ -3,11 +3,10 @@ from PySide6.QtWidgets import QMenu
 
 from .active_api import (
     api_group_order,
-    dataset_api,
 )
 
 
-def add_dataset_actions_to_menu(parent, receiver, menu=None, dataset=None):
+def add_cmd_actions_to_menu(parent, receiver, api, menu=None, cmdkwargs=None):
     """Slot to populate (connected) QMenu with dataset actions
 
     Actions' `triggered` signal will be connected to a `receiver` slot.
@@ -28,12 +27,12 @@ def add_dataset_actions_to_menu(parent, receiver, menu=None, dataset=None):
     submenus = {
         group: QMenu(group, parent=menu)
         for group in set(
-            cmdspec['group'] for cmdspec in dataset_api.values()
+            cmdspec['group'] for cmdspec in api.values()
             if 'group' in cmdspec
         )
     }
 
-    for cmdname, cmdspec in dataset_api.items():
+    for cmdname, cmdspec in api.items():
         # we create a dedicated action for each command
         action = QAction(cmdspec.get('name', cmdname), parent=parent)
         # the name of the command is injected into the action
@@ -42,8 +41,8 @@ def add_dataset_actions_to_menu(parent, receiver, menu=None, dataset=None):
         adata = dict(__cmd_name__=cmdname)
         # put on record, if we are generating actions for a specific
         # dataset
-        if dataset is not None:
-            adata['dataset'] = dataset
+        if cmdkwargs is not None:
+            adata.update(cmdkwargs)
         action.setData(adata)
         # all actions connect to the command configuration
         # UI handler, such that clicking on the menu item

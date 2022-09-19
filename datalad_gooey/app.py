@@ -30,7 +30,7 @@ from .utils import load_ui
 from .datalad_ui import GooeyUI
 from .dataladcmd_exec import GooeyDataladCmdExec
 from .dataladcmd_ui import GooeyDataladCmdUI
-from .dataset_actions import add_dataset_actions_to_menu
+from .cmd_actions import add_cmd_actions_to_menu
 from .fsbrowser import GooeyFilesystemBrowser
 from .resource_provider import gooey_resources
 
@@ -165,7 +165,9 @@ class GooeyApp(QObject):
 
     def _populate_dataset_menu(self):
         """Private slot to populate connected QMenus with dataset actions"""
-        add_dataset_actions_to_menu(self, self._cmdui.configure, self.sender())
+        from .active_api import dataset_api
+        add_cmd_actions_to_menu(
+            self, self._cmdui.configure, dataset_api, self.sender())
         # immediately sever the connection to avoid repopulating the menu
         # over and over
         self.get_widget('menuDataset').aboutToShow.disconnect(
