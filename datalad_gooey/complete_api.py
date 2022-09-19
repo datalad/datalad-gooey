@@ -19,6 +19,15 @@ _cmd_group_lookup = {
     for cmd_spec in cmds
 }
 
+# make each extension package its own group
+from datalad.support.entrypoints import iter_entrypoints
+for ename, _, (grp_descr, interfaces) in iter_entrypoints(
+        'datalad.extensions', load=True):
+    for intfspec in interfaces:
+        # turn the interface spec into an instance
+        intf = load_interface(intfspec[:2])
+        _cmd_group_lookup[intf] = grp_descr
+
 
 # all supported commands
 api = {}
