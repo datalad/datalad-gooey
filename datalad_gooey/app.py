@@ -95,6 +95,8 @@ class GooeyApp(QObject):
         # and give a visual indication of what exactly is happening
         self._cmdui.configured_dataladcmd.connect(self._render_cmd_call)
 
+        self.get_widget('statusbar').addPermanentWidget(
+            self._cmdexec.activity_widget)
         # connect execution handler signals to the setup methods
         self._cmdexec.execution_started.connect(self._setup_ongoing_cmdexec)
         self._cmdexec.execution_finished.connect(self._setup_stopped_cmdexec)
