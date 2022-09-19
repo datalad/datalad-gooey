@@ -284,18 +284,6 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
         # selection of file/directory paths by a browser dialog.
         if pathtype in (
                 QFileDialog.AnyFile,
-                QFileDialog.Directory):
-            # we use a dedicated directory selector.
-            # on some platforms the respected native
-            # dialogs are different... so we go with two for the best "native"
-            # experience
-            dir_button = QToolButton(self)
-            dir_button.setToolTip('Choose directory')
-            dir_button.setIcon(gooey_resources.get_best_icon('directory'))
-            hl.addWidget(dir_button)
-            dir_button.clicked.connect(self._select_dir)
-        if pathtype in (
-                QFileDialog.AnyFile,
                 QFileDialog.ExistingFile):
             file_button = QToolButton(self)
             file_button.setToolTip(
@@ -308,6 +296,18 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
             hl.addWidget(file_button)
             # wire up the slots
             file_button.clicked.connect(self._select_path)
+        if pathtype in (
+                QFileDialog.AnyFile,
+                QFileDialog.Directory):
+            # we use a dedicated directory selector.
+            # on some platforms the respected native
+            # dialogs are different... so we go with two for the best "native"
+            # experience
+            dir_button = QToolButton(self)
+            dir_button.setToolTip('Choose directory')
+            dir_button.setIcon(gooey_resources.get_best_icon('directory'))
+            hl.addWidget(dir_button)
+            dir_button.clicked.connect(self._select_dir)
 
     def set_gooey_param_value(self, value):
         self._edit.setText(str(value))
