@@ -397,6 +397,7 @@ class GooeyFilesystemBrowser(QObject):
             # we don't know what to do with this (but it also is not expected
             # to happen)
             return
+        ipath = item.pathobj
         context = QMenu(parent=self._tree)
         if path_type == 'dataset':
             from .active_api import dataset_api
@@ -409,8 +410,23 @@ class GooeyFilesystemBrowser(QObject):
                 self._tree, self._app._cmdui.configure,
                 dataset_api,
                 dsmenu,
-                dict(dataset=item.pathobj))
-        #elif path_type == 'directory':
+                dict(dataset=ipath))
+        elif path_type == 'directory':
+            dsroot = get_dataset_root(ipath)
+            # path the directory path to the command's `path` argument
+            cmdkwargs = dict(path=ipath)
+            if dsroot:
+                from .active_api import directory_in_ds_api as directory_api
+                # also pass dsroot
+                cmdkwargs['dataset'] = dsroot
+            else:
+                from .active_api import directory_api
+            dirmenu = context.addMenu('Directory commands')
+            add_cmd_actions_to_menu(
+                self._tree, self._app._cmdui.configure,
+                directory_api,
+                dirmenu,
+                cmdkwargs)
 
         if not context.isEmpty():
             # present the menu at the clicked point
