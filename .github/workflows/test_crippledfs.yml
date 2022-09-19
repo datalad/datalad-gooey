@@ -16,13 +16,15 @@ jobs:
         #sudo sed -e 's|\(deb.*data\)|#\1|' -e 's|/debian |/debian-devel |' /etc/apt/sources.list.d/neurodebian.sources.list | sudo tee /etc/apt/sources.list.d/neurodebian-devel.sources.list
         sudo apt-get update -qq
         sudo apt-get install eatmydata
-        sudo eatmydata apt-get install git-annex-standalone dosfstools
+        sudo eatmydata apt-get install git-annex-standalone dosfstools xvfb
         # 500 MB VFAT FS in a box
         sudo dd if=/dev/zero of=/crippledfs.img count=500 bs=1M
         sudo mkfs.vfat /crippledfs.img
         # mount
         sudo mkdir /crippledfs
         sudo mount -o "uid=$(id -u),gid=$(id -g)" /crippledfs.img /crippledfs
+    - name: Qt dependencies
+      uses: tlambert03/setup-qt-libs@v1
     - name: Set up environment
       run: |
         git config --global user.email "test@github.land"
