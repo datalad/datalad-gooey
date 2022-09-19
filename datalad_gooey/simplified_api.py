@@ -84,3 +84,6 @@ annexed_file_api = {
     c: s for c, s in api.items()
     if c in ('drop', 'get', 'push', 'save')
 }
+
+# simplified API has no groups
+api_group_order = {}

@@ -115,10 +115,6 @@ def populate_form_w_params(
         formlayout.addRow(display_label, pwidget)
 
 
-def get_cmd_displayname(cmdname):
-    return api.get(cmdname, {}).get('name', cmdname.capitalize())
-
-
 #
 # Internal helpers
 #

@@ -15,10 +15,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from .param_form_utils import (
-    get_cmd_displayname,
-    populate_form_w_params,
-)
+from .param_form_utils import populate_form_w_params
+from .api_utils import get_cmd_displayname
+from .active_api import api
 
 
 class GooeyDataladCmdUI(QObject):
@@ -95,7 +94,7 @@ class GooeyDataladCmdUI(QObject):
             cmdkwargs,
         )
         # set title afterwards, form might just have been created first, lazily
-        self._cmd_title.setText(get_cmd_displayname(cmdname))
+        self._cmd_title.setText(api, get_cmd_displayname(cmdname))
         self._cmd_title.setToolTip(f'API command: `{cmdname}`')
         # make sure the UI is visible
         self.pwidget.setEnabled(True)

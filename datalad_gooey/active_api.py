@@ -4,6 +4,9 @@ from datalad import cfg
 # API specifications
 #
 # superset of all API scopes, full set of all supported commands
+# the order in this dict (and generally also those below) defines
+# the order in which commands appear in the respective places
+# the API is listed
 api = None
 # commands that operate on datasets
 dataset_api = None
@@ -25,8 +28,12 @@ exclude_parameters = set()
 # to be applied across all commands
 parameter_display_names = {}
 
+# mapping of group name/title to sort index
+api_group_order = {}
 
-if cfg.obtain('datalad.gooey.ui-mode') == 'simplified':
+
+ui_mode = cfg.obtain('datalad.gooey.ui-mode')
+if ui_mode == 'simplified':
     from .simplified_api import (
         api,
         dataset_api,
@@ -37,4 +44,20 @@ if cfg.obtain('datalad.gooey.ui-mode') == 'simplified':
         annexed_file_api,
         exclude_parameters,
         parameter_display_names,
+        api_group_order,
     )
+elif ui_mode == 'complete':
+    from .complete_api import (
+        api,
+        dataset_api,
+        directory_api,
+        directory_in_ds_api,
+        file_api,
+        file_in_ds_api,
+        annexed_file_api,
+        exclude_parameters,
+        parameter_display_names,
+        api_group_order,
+    )
+else:
+    raise NotImplementedError
