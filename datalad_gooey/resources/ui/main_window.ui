@@ -119,22 +119,6 @@
           </item>
          </layout>
         </widget>
-        <widget class="QWidget" name="historyTab">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <attribute name="title">
-          <string>History</string>
-         </attribute>
-        </widget>
-        <widget class="QWidget" name="otherContextTab">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <attribute name="title">
-          <string>...</string>
-         </attribute>
-        </widget>
        </widget>
       </widget>
       <widget class="QTabWidget" name="consoleTabs">
@@ -173,14 +157,6 @@
           </widget>
          </item>
         </layout>
-       </widget>
-       <widget class="QWidget" name="tab_2">
-        <property name="enabled">
-         <bool>false</bool>
-        </property>
-        <attribute name="title">
-         <string>...</string>
-        </attribute>
        </widget>
       </widget>
      </widget>
