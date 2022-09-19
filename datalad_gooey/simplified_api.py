@@ -54,6 +54,29 @@ api = dict(
     push=dict(
     ),
     save=dict(
+        name='Save the state in a dataset',
+        exclude_parameters=set((
+            'updated',
+            'message_file',
+        )),
+        parameter_display_names=dict(
+            dataset='Save changes in dataset at',
+            message='Description of change',
+            path='Only save',
+            recursive='Include changes in subdatasets',
+            to_git='Do not put files in annex',
+            version_tag='Tag for saved dataset state',
+            amend='Amend last saved state',
+        ),
+        parameter_order=dict(
+            dataset=0,
+            message=1,
+            path=2,
+            recursive=3,
+            to_git=4,
+            version_tag=5,
+            amend=6,
+        ),
     ),
     update=dict(
     ),
@@ -65,6 +88,8 @@ exclude_parameters = set((
     'result_filter',
     'result_xfm',
     'on_failure',
+    'jobs',
+    'recursion_limit',
 ))
 
 parameter_display_names = dict(
