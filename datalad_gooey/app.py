@@ -47,8 +47,10 @@ class GooeyApp(QObject):
         'contextTabs': QTabWidget,
         'cmdTab': QWidget,
         'clearLogPB': QPushButton,
+        'clearTbPB': QPushButton,
         'fsBrowser': QTreeWidget,
         'logViewer': QPlainTextEdit,
+        'tbViewer': QPlainTextEdit,
         'menuDataset': QMenu,
         'menuView': QMenu,
         'menuUtilities': QMenu,
@@ -144,9 +146,9 @@ class GooeyApp(QObject):
             # if a command crashes, state it in the statusbar
             self.get_widget('statusbar').showMessage(f'`{cmdname}` failed')
             # but also barf the error into the logviewer
-            lv = self.get_widget('logViewer')
+            lv = self.get_widget('tbViewer')
             lv.appendHtml(
-                f'<font color="red">{ce.format_standard()}</font>'
+                f'<br><font color="red">{ce.format_standard()}</font>'
             )
         if not self._cmdexec.n_running:
             self.main_window.setCursor(QCursor(Qt.ArrowCursor))
