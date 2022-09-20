@@ -28,6 +28,8 @@ def get_cmd_params(cmd: Callable) -> List:
     """
     # lifted from setup_parser_for_interface()
     args, varargs, varkw, defaults = getargspec(cmd, include_kwonlyargs=True)
+    if not args:
+        return []
     return list(
         zip_longest(
             # fuse parameters from the back, to match with their respective
