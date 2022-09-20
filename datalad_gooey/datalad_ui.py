@@ -1,5 +1,6 @@
 import threading
 from textwrap import wrap
+from types import MappingProxyType
 from typing import (
     List,
     Tuple,
@@ -25,7 +26,7 @@ class _DataladQtUIBridge(QObject):
     """
     # signal to be emmitted when message() was called
     message_received = Signal(str)
-    question_asked = Signal(dict)
+    question_asked = Signal(MappingProxyType)
 
     def __init__(self, app):
         super().__init__()
@@ -156,14 +157,14 @@ class GooeyUI(DialogUI):
             # acquire the lock before we emit the signal
             # to make sure that our signal is the only one putting an answer in
             # the queue
-            self._uibridge.question_asked.emit(dict(
+            self._uibridge.question_asked.emit(MappingProxyType(dict(
                 title=title,
                 text=text,
                 choices=choices,
                 default=default,
                 hidden=hidden,
                 repeat=repeat,
-            ))
+            )))
             # this will block until the queue has the answer
             ok, answer = self._uibridge.messageq.get()
             if not ok:

@@ -1,5 +1,6 @@
 import logging
 import sys
+from types import MappingProxyType
 from pathlib import Path
 from outdated import check_outdated
 from PySide6.QtWidgets import (
@@ -58,8 +59,8 @@ class GooeyApp(QObject):
         'actionCheck_for_new_version': QAction,
     }
 
-    execute_dataladcmd = Signal(str, dict, dict)
-    configure_dataladcmd = Signal(str, dict)
+    execute_dataladcmd = Signal(str, MappingProxyType, MappingProxyType)
+    configure_dataladcmd = Signal(str, MappingProxyType)
 
     def __init__(self, path: Path = None):
         super().__init__()
@@ -255,6 +256,7 @@ class GooeyApp(QObject):
     def _render_cmd_call(self, cmdname, cmdkwargs):
         """Minimalistic Python-like rendering of commands in the log"""
         lv = self.get_widget('logViewer')
+        cmdkwargs = cmdkwargs.copy()
         ds_path = cmdkwargs.pop('dataset', None)
         if ds_path:
             if hasattr(ds_path, 'pathobj'):

@@ -1,3 +1,4 @@
+from types import MappingProxyType
 from typing import (
     Dict,
 )
@@ -22,7 +23,7 @@ from .active_api import api
 
 class GooeyDataladCmdUI(QObject):
 
-    configured_dataladcmd = Signal(str, dict)
+    configured_dataladcmd = Signal(str, MappingProxyType)
 
     def __init__(self, app, ui_parent: QWidget):
         super().__init__()
@@ -122,11 +123,11 @@ class GooeyDataladCmdUI(QObject):
         from pprint import pprint
         pprint(params)
 
+        self.disable()
         self.configured_dataladcmd.emit(
             self.pform.datalad_cmd_name,
-            params,
+            MappingProxyType(params),
         )
-        self.disable()
 
     @Slot()
     def disable(self):

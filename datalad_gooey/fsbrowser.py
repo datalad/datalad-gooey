@@ -1,6 +1,7 @@
 from functools import lru_cache
 import logging
 from pathlib import Path
+from types import MappingProxyType
 from typing import List
 
 from PySide6.QtCore import (
@@ -100,19 +101,19 @@ class GooeyFilesystemBrowser(QObject):
     def _populate_and_annotate(self, item, no_existing_children):
         self._app.execute_dataladcmd.emit(
             'gooey_lsdir',
-            dict(
+            MappingProxyType(dict(
                 path=item.pathobj,
                 result_renderer='disabled',
                 on_failure='ignore',
                 return_type='generator',
-            ),
-            dict(
+            )),
+            MappingProxyType(dict(
                 preferred_result_interval=0.2,
                 result_override=dict(
                     gooey_parent_item=item,
                     gooey_no_existing_item=no_existing_children,
                 ),
-            ),
+            )),
         )
 
         # for now we register the parent for an annotation update
@@ -267,20 +268,20 @@ class GooeyFilesystemBrowser(QObject):
                     # do not run, if there are no relevant paths to inspect
                     self._app.execute_dataladcmd.emit(
                         'gooey_status_light',
-                        dict(
+                        MappingProxyType(dict(
                             dataset=dsroot,
                             path=[ipath],
                             #annex='basic',
                             result_renderer='disabled',
                             on_failure='ignore',
                             return_type='generator',
-                        ),
-                        dict(
+                        )),
+                        MappingProxyType(dict(
                             preferred_result_interval=3.0,
                             result_override=dict(
                                 gooey_parent_item=item,
                             ),
-                        ),
+                        )),
                     )
 
         # restart annotation watcher
