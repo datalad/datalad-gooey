@@ -113,9 +113,9 @@ class FSBrowserItem(QTreeWidgetItem):
             type_icon = None
             if type_ == 'file':
                 # for files we can further differentiate
-                type_icon = 'file-annex'
+                type_icon = 'file-git'
                 if res.get('key'):
-                    type_icon = 'file-git'
+                    type_icon = 'file-annex'
             self.set_item_type(type_, icon=type_icon)
 
     def update_from_lsdir_result(self, res: Dict):
