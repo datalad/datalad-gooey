@@ -366,17 +366,21 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
         if self._basedir:
             # we have a basedir, so we can be clever
             dialog.setDirectory(str(self._basedir))
-        paths = None
         # we need to turn on 'System' in order to get broken symlinks
         # too
         dialog.setFilter(dialog.filter() | QDir.System)
-        if dialog.exec():
-            paths = dialog.selectedFiles()
-            if paths:
-                # ignores any multi-selection
-                # TODO prevent or support specifically
-                self.set_gooey_param_value(paths[0])
-                self._edit.setModified(True)
+        dialog.finished.connect(self._select_path_receiver)
+        dialog.open()
+
+    def _select_path_receiver(self):
+        """Internal slot to receive the outcome of _select_path() dialog"""
+        dialog = self.sender()
+        paths = dialog.selectedFiles()
+        if paths:
+            # ignores any multi-selection
+            # TODO prevent or support specifically
+            self.set_gooey_param_value(paths[0])
+            self._edit.setModified(True)
 
     def _select_dir(self):
         path = QFileDialog.getExistingDirectory(
