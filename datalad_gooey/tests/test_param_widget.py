@@ -36,8 +36,8 @@ def test_GooeyParamWidgetMixin():
             pw_factory,
             name='peewee',
             docs='EXPLAIN!',
-            value=val,
             default=default,
         )
+        pw.set_gooey_param_value(val)
         # we get the set value back, not the default
         assert pw.get_gooey_param_spec() == {'peewee': val}

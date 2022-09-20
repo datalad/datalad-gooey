@@ -59,6 +59,9 @@ def populate_form_w_params(
     # resolve to the interface class that has all the specification
     cmd_cls = get_wrapped_class(cmd)
 
+    # collect widgets for a later connection setup
+    form_widgets = dict()
+
     # loop over all parameters of the command (with their defaults)
     def _specific_params():
         for pname, pdefault in _get_params(cmd):
@@ -90,17 +93,10 @@ def populate_form_w_params(
             formlayout.parentWidget(),
             param_spec,
             pname,
-            # pass a given value, or indicate that there was none
-            cmdkwargs.get(pname, pw._NoValue),
             # will also be _NoValue, if there was none
             pdefault,
-            # pass the full argspec too, to make it possible for
-            # some widget to act clever based on other parameter
-            # settings that are already known at setup stage
-            # (e.g. setting the base dir of a file selector based
-            # on a `dataset` argument)
-            allargs=cmdkwargs,
         )
+        form_widgets[pname] = pwidget
         # query for a known display name
         # first in command-specific spec
         display_name = cmd_param_display_names.get(
@@ -116,6 +112,21 @@ def populate_form_w_params(
         display_label = QLabel(display_name)
         display_label.setToolTip(f'API command parameter: `{pname}`')
         formlayout.addRow(display_label, pwidget)
+
+    # wire widgets up to self update on changes in other widget
+    # use case: dataset context change
+    # so it could be just the dataset widget sending, and the other receiving.
+    # but for now wire all with all others
+    for pname1, pwidget1 in form_widgets.items():
+        for pname2, pwidget2 in form_widgets.items():
+            if pname1 == pname2:
+                continue
+            pwidget1.value_changed.connect(
+                pwidget2.init_gooey_from_other_param)
+    # when all is wired up, set the values that need setting
+    for pname, pwidget in form_widgets.items():
+        if pname in cmdkwargs:
+            pwidget.set_gooey_param_value(cmdkwargs[pname])
 
 
 #
@@ -148,9 +159,7 @@ def _get_parameter_widget(
         parent: QWidget,
         param: Parameter,
         name: str,
-        value: Any = pw._NoValue,
-        default: Any = pw._NoValue,
-        allargs: Dict or None = None) -> QWidget:
+        default: Any = pw._NoValue) -> QWidget:
     """Populate a given layout with a data entry widget for a command parameter
 
     `value` is an explicit setting requested by the caller. A value of
@@ -165,17 +174,14 @@ def _get_parameter_widget(
         default,
         param.constraints,
         param.cmd_kwargs,
-        allargs if allargs else dict(),
         basedir)
     return pw.load_parameter_widget(
         parent,
         pwid_factory,
         name=name,
         docs=param._doc,
-        value=value,
         default=default,
         validator=param.constraints,
-        allargs=allargs,
     )
 
 
@@ -184,7 +190,6 @@ def _get_parameter_widget_factory(
         default: Any,
         constraints: Callable or None,
         argparse_spec: Dict,
-        allargs: Dict,
         basedir: Path) -> Callable:
     """Translate DataLad command parameter specs into Gooey input widgets"""
     # for now just one to play with
@@ -202,10 +207,6 @@ def _get_parameter_widget_factory(
     #if name == 'path':
     #    return get_pathselection_widget
 
-    dspath = allargs.get('dataset')
-    if hasattr(dspath, 'pathobj'):
-        # matches a dataset/repo instance
-        dspath = dspath.pathobj
     # if we have no idea, use a simple line edit
     type_widget = pw.StrParamWidget
     if name == 'dataset':
@@ -215,7 +216,7 @@ def _get_parameter_widget_factory(
             basedir=basedir)
     if name == 'path':
         type_widget = functools.partial(
-            pw.PathParamWidget, basedir=dspath or basedir)
+            pw.PathParamWidget, basedir=basedir)
     if argparse_action in ('store_true', 'store_false'):
         type_widget = pw.BoolParamWidget
     elif isinstance(constraints, EnsureChoice) and argparse_action is None:

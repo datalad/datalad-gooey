@@ -7,6 +7,7 @@ from typing import (
 from PySide6.QtCore import (
     QDir,
     Qt,
+    Signal,
 )
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -38,17 +39,38 @@ class GooeyParamWidgetMixin:
     """API mixin for QWidget to get/set parameter specifications
 
     Any parameter widget implementation should also derive from the class,
-    and implement, at minimum, `set_gooey_param_value()` and
+    and implement, at minimum, `_set_gooey_param_value()` and
     `get_gooey_param_value()` for compatibility with the command parameter
     UI generator.
 
     The main API used by the GUI generator are `set_gooey_param_spec()`
-    and `get_gooey_param_spec()`. The take care of providing a standard
-    widget behavior across all widget types, such as, disabling a widget
-    when a specific value is already set, and not returning values if
+    and `get_gooey_param_spec()`. They take care of providing a standard
+    widget behavior across all widget types, such as, not returning values if
     they do not deviate from the default.
     """
+
+    value_changed = Signal(dict)
+    """Signal to be emited whenever a parameter value is changed. The signal
+    payload type matches the return value of `get_gooey_param_spec()`"""
+
     def set_gooey_param_value(self, value):
+        """Implement to set a particular value in the target widget.
+
+        The `value_changed` signal is emitted a the given value differs
+        from the current value.
+        """
+        # what we had
+        try:
+            prev = self.get_gooey_param_value()
+        except ValueError:
+            prev = _NoValue
+        # let widget implementation actually set the value
+        self._set_gooey_param_value(value)
+        if prev != value:
+            # an actual change, emit corresponding signal
+            self.emit_gooey_value_changed()
+
+    def _set_gooey_param_value(self, value):
         """Implement to set a particular value in the target widget.
 
         By default, this method is also used to set a default value.
@@ -69,41 +91,33 @@ class GooeyParamWidgetMixin:
         raise NotImplementedError
 
     def set_gooey_param_default(self, value):
-        """Set a parameter default value in the widget
-
-        This implementation uses `set_gooey_param_value()` to perform
-        this operation. Reimplement as necessary.
+        """Implement to set a parameter default value in the widget
         """
-        self._gooey_param_value = value
-        self.set_gooey_param_value(value)
+        pass
 
     def set_gooey_param_spec(
-            self, name: str, value=_NoValue, default=_NoValue):
+            self, name: str, default=_NoValue):
         """Called by the command UI generator to set parameter
-        name, a fixed preset value, and an editable default.
+        name, and a default.
         """
         self._gooey_param_name = name
-        # store for later inspection by get_gooey_param_spec()
+        # always store here for later inspection by get_gooey_param_spec()
         self._gooey_param_default = default
-        if value is not _NoValue:
-            self.set_gooey_param_value(value)
-            # no further edits, the caller wanted it to be this
-            self.setDisabled(True)
-        elif default is not _NoValue:
-            self.set_gooey_param_default(default)
+        self.set_gooey_param_default(default)
 
     def get_gooey_param_spec(self) -> Dict:
         """Called by the command UI generator to get a parameter specification
 
-        Return a dict that is either empty (when no value was gathered,
-        or the gather value is not different from the default), or
+        Return a mapping of the parameter name to the gathered value or _NoValue
+        when no value was gathered, or the gather value is not different from
+        the default)
         is a mapping of parameter name to the gather value.
         """
         try:
             val = self.get_gooey_param_value()
         except ValueError:
             # class signals that no value was set
-            return {}
+            return {self._gooey_param_name: _NoValue}
         return {self._gooey_param_name: val} \
             if val != self._gooey_param_default \
             else {}
@@ -113,17 +127,6 @@ class GooeyParamWidgetMixin:
         for input validation
         """
         self._gooey_param_validator = validator
-
-    def set_gooey_cmdkwargs(self, kwargs: Dict) -> None:
-        """Set a mapping of preset parameters for the to-be-configured command
-
-        A widget can use this information to tailor its own presets based
-        on what is known about the command execution prior configuration. For
-        example, a set `dataset` argument could be used to preset the base
-        directory for "file-open" dialogs to avoid unnecessary user actions
-        for traversing manually to a likely starting point.
-        """
-        self._gooey_cmdkwargs = kwargs
 
     def set_gooey_param_docs(self, docs: str) -> None:
         """Present documentation on the parameter in the widget
@@ -135,26 +138,46 @@ class GooeyParamWidgetMixin:
         # having to integrate potentially lengthy text into the layout
         self.setToolTip(docs)
 
+    def init_gooey_from_other_param(self, spec: Dict) -> None:
+        """Slot to receive changes of other parameter values
+
+        Can be implemented to act on context changes that require a
+        reinitialization of a widget. For example, update a list
+        of remotes after changing the reference dataset.
+
+        Parameters
+        ----------
+        spec: dict
+          Mapping of parameter names to new values, in the same format
+          and semantics as the return value of get_gooey_param_spec().
+        """
+        pass
+
+    def emit_gooey_value_changed(self):
+        """Slot to connect "changed" signals of underlying input widgets too
+
+        It emits the standard Gooey `value_changed` signal with the
+        current Gooey `param_spec` as value.
+        """
+        self.value_changed.emit(self.get_gooey_param_spec())
+
 
 def load_parameter_widget(
         parent: QWidget,
         pwid_factory: Callable,
         name: str,
         docs: str,
-        value: Any = _NoValue,
         default: Any = _NoValue,
-        validator: Callable or None = None,
-        allargs: Dict or None = None) -> QWidget:
+        validator: Callable or None = None) -> QWidget:
     """ """
     pwid = pwid_factory(parent=parent)
     if validator:
         pwid.set_gooey_param_validator(validator)
-    pwid.set_gooey_cmdkwargs(allargs)
     pwid.set_gooey_param_docs(docs)
-    # set any default or value last, as they might need a validator,
+    # set any default last, as they might need a validator,
     # docs, and all other bits in place already for an editor or
     # validation to work
-    pwid.set_gooey_param_spec(name, value, default)
+    pwid.set_gooey_param_spec(name, default)
     return pwid
 
 
@@ -172,7 +195,7 @@ class ChoiceParamWidget(QComboBox, GooeyParamWidgetMixin):
                 # to avoid tricky conversion via str
                 self.addItem(self._gooey_map_val2label(c), userData=c)
 
-    def set_gooey_param_value(self, value):
+    def _set_gooey_param_value(self, value):
         self.setCurrentText(self._gooey_map_val2label(value))
 
     def get_gooey_param_value(self):
@@ -198,7 +221,7 @@ class PosIntParamWidget(QSpinBox, GooeyParamWidgetMixin):
             pass
         self._allow_none = allow_none
 
-    def set_gooey_param_value(self, value):
+    def _set_gooey_param_value(self, value):
         # generally assumed to be int and fit in the range
         self.setValue(-1 if value is None and self._allow_none else value)
 
@@ -209,7 +232,7 @@ class PosIntParamWidget(QSpinBox, GooeyParamWidgetMixin):
 
 
 class BoolParamWidget(QCheckBox, GooeyParamWidgetMixin):
-    def set_gooey_param_value(self, value):
+    def _set_gooey_param_value(self, value):
         if value not in (True, False):
             # if the value is not representable by a checkbox
             # leave it in "partiallychecked". In cases where the
@@ -235,11 +258,13 @@ class BoolParamWidget(QCheckBox, GooeyParamWidgetMixin):
 
 
 class StrParamWidget(QLineEdit, GooeyParamWidgetMixin):
-    def set_gooey_param_value(self, value):
+    def _set_gooey_param_value(self, value):
         self.setText(str(value))
+        self.setModified(True)
 
     def set_gooey_param_default(self, value):
-        self.setPlaceholderText(str(value))
+        if value != _NoValue:
+            self.setPlaceholderText(str(value))
 
     def get_gooey_param_value(self):
         # return the value if it was set be the caller, or modified
@@ -279,6 +304,7 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
             # https://github.com/datalad/datalad-gooey/issues/106
             self._edit.setDisabled(True)
         hl.addWidget(self._edit)
+        self._edit.editingFinished.connect(self.emit_gooey_value_changed)
 
         # next to the line edit, we place to small button to facilitate
         # selection of file/directory paths by a browser dialog.
@@ -309,12 +335,12 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
             hl.addWidget(dir_button)
             dir_button.clicked.connect(self._select_dir)
 
-    def set_gooey_param_value(self, value):
+    def _set_gooey_param_value(self, value):
         self._edit.setText(str(value))
 
     def set_gooey_param_default(self, value):
         placeholder = 'Select path'
-        if value is not None:
+        if value not in (_NoValue, None):
             placeholder += f'(default: {value})'
         self._edit.setPlaceholderText(placeholder)
 
@@ -360,3 +386,11 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
         if path:
             self.set_gooey_param_value(path)
             self._edit.setModified(True)
+
+    def init_gooey_from_other_param(self, spec: Dict) -> None:
+        if self._gooey_param_name == 'dataset':
+            # prevent update from self
+            return
+
+        if 'dataset' in spec:
+            self._basedir = spec['dataset']

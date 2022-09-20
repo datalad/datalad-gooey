@@ -105,6 +105,7 @@ class GooeyDataladCmdUI(QObject):
 
     @Slot()
     def _retrieve_input(self):
+        from .param_widgets import _NoValue
         params = dict()
         for i in range(self.pform.rowCount()):
             # the things is wrapped into a QWidgetItem layout class, hence .wid
@@ -112,7 +113,10 @@ class GooeyDataladCmdUI(QObject):
             # _get_datalad_param_spec() is our custom private adhoc method
             # expected to return a dict with a parameter setting, or an
             # empty dict, when the default shall be used.
-            params.update(field_widget.get_gooey_param_spec())
+            params.update({
+                k: v for k, v in field_widget.get_gooey_param_spec().items()
+                if v is not _NoValue
+            })
 
         # take a peek, TODO remove
         from pprint import pprint
