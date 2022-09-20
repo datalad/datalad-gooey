@@ -337,6 +337,7 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
 
     def _set_gooey_param_value(self, value):
         self._edit.setText(str(value))
+        self._edit.setModified(True)
 
     def set_gooey_param_default(self, value):
         placeholder = 'Select path'
