@@ -158,6 +158,49 @@
          </item>
         </layout>
        </widget>
+       <widget class="QWidget" name="tab2">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;View Tracebacks of failed command executions&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <attribute name="title">
+         <string>Traceback</string>
+        </attribute>
+        <widget class="QPlainTextEdit" name="tbViewer">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>10</y>
+           <width>760</width>
+           <height>200</height>
+          </rect>
+         </property>
+         <property name="acceptDrops">
+          <bool>false</bool>
+         </property>
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;View tracebacks of failed commands&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="whatsThis">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Traceback Viewer for details on failures&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="verticalScrollBarPolicy">
+          <enum>Qt::ScrollBarAlwaysOn</enum>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="clearTbPB">
+         <property name="geometry">
+          <rect>
+           <x>648</x>
+           <y>215</y>
+           <width>121</width>
+           <height>26</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Clear Traceback</string>
+         </property>
+        </widget>
+       </widget>
       </widget>
      </widget>
     </item>
