@@ -148,7 +148,7 @@ class GooeyApp(QObject):
             # but also barf the error into the logviewer
             lv = self.get_widget('tbViewer')
             lv.appendHtml(
-                f'<br><font color="red">{ce.format_standard()}</font>'
+                f'<br><font color="red"><pre>{ce.format_standard()}</pre></font>'
             )
         if not self._cmdexec.n_running:
             self.main_window.setCursor(QCursor(Qt.ArrowCursor))
