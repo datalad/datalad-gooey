@@ -9,7 +9,10 @@ from datalad.interface.base import (
 )
 from datalad.utils import get_wrapped_class
 
-from .api_utils import get_cmd_displayname
+from .api_utils import (
+    get_cmd_displayname,
+    get_cmd_params,
+)
 
 
 # mapping of command interface classes to interface group titles
