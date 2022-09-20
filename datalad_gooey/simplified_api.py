@@ -149,7 +149,7 @@ directory_in_ds_api = {
 }
 file_api = None
 file_in_ds_api = {
-    c: s for c, s in api.items() if c in ('save',)
+    c: s for c, s in api.items() if c in ('save', 'get', 'drop')
 }
 annexed_file_api = {
     c: s for c, s in api.items()
