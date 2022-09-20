@@ -151,7 +151,7 @@ class GooeyParamWidgetMixin:
         It emits the standard Gooey `value_changed` signal with the
         current Gooey `param_spec` as value.
         """
-        self.value_changed.emit(self.get_gooey_param_spec())
+        self.value_changed.emit(MappingProxyType(self.get_gooey_param_spec()))
 
 
 def load_parameter_widget(

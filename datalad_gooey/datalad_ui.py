@@ -157,14 +157,14 @@ class GooeyUI(DialogUI):
             # acquire the lock before we emit the signal
             # to make sure that our signal is the only one putting an answer in
             # the queue
-            self._uibridge.question_asked.emit(dict(
+            self._uibridge.question_asked.emit(MappingProxyType(dict(
                 title=title,
                 text=text,
                 choices=choices,
                 default=default,
                 hidden=hidden,
                 repeat=repeat,
-            ))
+            )))
             # this will block until the queue has the answer
             ok, answer = self._uibridge.messageq.get()
             if not ok:

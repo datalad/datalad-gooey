@@ -69,8 +69,8 @@ class GooeyDataladCmdExec(QObject):
 
     @Slot(str, dict)
     def execute(self, cmd: str,
-                kwargs: Dict or None = None,
-                exec_params: Dict or None = None):
+                kwargs: MappingProxyType or None = None,
+                exec_params: MappingProxyType or None = None):
         if kwargs is None:
             kwargs = dict()
         if exec_params is None:
@@ -89,8 +89,13 @@ class GooeyDataladCmdExec(QObject):
             exec_params,
         ))
 
-    def _cmdexec_thread(self, cmdname: str, cmdkwargs: Dict, exec_params: Dict):
+    def _cmdexec_thread(
+            self, cmdname: str,
+            cmdkwargs: MappingProxyType,
+            exec_params: MappingProxyType):
         """The code is executed in a worker thread"""
+        # we need to amend the record below, make a mutable version
+        cmdkwargs = cmdkwargs.copy()
         print('EXECINTHREAD', cmdname, cmdkwargs, exec_params)
         preferred_result_interval = exec_params.get(
             'preferred_result_interval', 1.0)
@@ -113,26 +118,38 @@ class GooeyDataladCmdExec(QObject):
                 CapturedException(e),
             )
             return
+        try:
+            # the following is trivial, but we wrap it nevertheless to prevent
+            # a silent crash of the worker thread
+            self.execution_started.emit(
+                thread_id,
+                cmdname,
+                cmdkwargs,
+                exec_params,
+            )
+            # enforce return_type='generator' to get the most responsive
+            # any command could be
+            cmdkwargs['return_type'] = 'generator'
+            # Unless explicitly specified, force result records instead of the
+            # command's default transformation which might give Dataset
+            # instances for example.
+            if 'result_xfm' not in cmdkwargs:
+                cmdkwargs['result_xfm'] = None
 
-        self.execution_started.emit(
-            thread_id,
-            cmdname,
-            cmdkwargs,
-            exec_params,
-        )
-        # enforce return_type='generator' to get the most responsive
-        # any command could be
-        cmdkwargs['return_type'] = 'generator'
-        # Unless explicitly specified, force result records instead of the
-        # command's default transformation which might give Dataset instances
-        # for example.
-        if 'result_xfm' not in cmdkwargs:
-            cmdkwargs['result_xfm'] = None
-
-        if 'dataset' in cmdkwargs:
-            # Pass actual instance, to have path arguments resolved against it
-            # instead of Gooey's CWD.
-            cmdkwargs['dataset'] = dlapi.Dataset(cmdkwargs['dataset'])
+            if 'dataset' in cmdkwargs:
+                # Pass actual instance, to have path arguments resolvedi
+                # against it instead of Gooey's CWD.
+                cmdkwargs['dataset'] = dlapi.Dataset(cmdkwargs['dataset'])
+        except Exception as e:
+            ce = CapturedException(e)
+            self.execution_failed.emit(
+                thread_id,
+                cmdname,
+                cmdkwargs,
+                exec_params,
+                ce
+            )
+            return
         gathered_results = []
         last_report_ts = time()
         try:

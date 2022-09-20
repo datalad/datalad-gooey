@@ -123,11 +123,11 @@ class GooeyDataladCmdUI(QObject):
         from pprint import pprint
         pprint(params)
 
+        self.disable()
         self.configured_dataladcmd.emit(
             self.pform.datalad_cmd_name,
-            params,
+            MappingProxyType(params),
         )
-        self.disable()
 
     @Slot()
     def disable(self):
