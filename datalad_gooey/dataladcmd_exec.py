@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 import threading
 from time import time
+from types import MappingProxyType
 from typing import (
     Dict,
 )
@@ -28,10 +29,10 @@ class GooeyDataladCmdExec(QObject):
     and Qt-signal result reporting
     """
     # thread_id, cmdname, cmdargs/kwargs, exec_params
-    execution_started = Signal(str, str, dict, dict)
-    execution_finished = Signal(str, str, dict, dict)
+    execution_started = Signal(str, str, MappingProxyType, MappingProxyType)
+    execution_finished = Signal(str, str, MappingProxyType, MappingProxyType)
     # thread_id, cmdname, cmdargs/kwargs, exec_params, CapturedException
-    execution_failed = Signal(str, str, dict, dict, CapturedException)
+    execution_failed = Signal(str, str, MappingProxyType, MappingProxyType, CapturedException)
     results_received = Signal(Interface, list)
 
     def __init__(self):

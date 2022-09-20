@@ -1,5 +1,6 @@
 import threading
 from textwrap import wrap
+from types import MappingProxyType
 from typing import (
     List,
     Tuple,
@@ -25,7 +26,7 @@ class _DataladQtUIBridge(QObject):
     """
     # signal to be emmitted when message() was called
     message_received = Signal(str)
-    question_asked = Signal(dict)
+    question_asked = Signal(MappingProxyType)
 
     def __init__(self, app):
         super().__init__()

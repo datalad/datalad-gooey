@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from types import MappingProxyType
 from typing import (
     Any,
     Dict,
@@ -40,7 +41,7 @@ class GooeyParamWidgetMixin:
     they do not deviate from the default.
     """
 
-    value_changed = Signal(dict)
+    value_changed = Signal(MappingProxyType)
     """Signal to be emited whenever a parameter value is changed. The signal
     payload type matches the return value of `get_gooey_param_spec()`"""
 
