@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=DataLad Gooey
+GenericName=Data management system
+Comment=Manage and work with DataLad datasets
+Comment[de]=Nutzen und verwalten von DataLad Datasets
+Exec=datalad gooey %f
+Terminal=false
+Icon=datalad-gooey
+Categories=Network;Development;Science
+Keywords=rdm;git-annex;git
