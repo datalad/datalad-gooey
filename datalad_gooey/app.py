@@ -256,6 +256,7 @@ class GooeyApp(QObject):
     def _render_cmd_call(self, cmdname, cmdkwargs):
         """Minimalistic Python-like rendering of commands in the log"""
         lv = self.get_widget('logViewer')
+        cmdkwargs = cmdkwargs.copy()
         ds_path = cmdkwargs.pop('dataset', None)
         if ds_path:
             if hasattr(ds_path, 'pathobj'):
