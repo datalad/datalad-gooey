@@ -38,11 +38,13 @@ class MyItemDelegate(QStyledItemDelegate):
             mviw._editor_factory,
             name=mviw._gooey_param_name,
             docs=mviw._editor_param_docs,
-            value=getattr(mviw, 'editor_param_value', _NoValue),
             default=getattr(mviw, 'editor_param_default', _NoValue),
             #validator=mviw._editor_validator,
-            #allargs=mviw._editor_allargs,
         )
+        value = getattr(mviw, 'editor_param_value', _NoValue)
+        if value != _NoValue:
+            wid.set_gooey_param_value(value)
+        wid.init_gooey_from_other_param(mviw._editor_init)
         # we draw on top of the selected item, and having the highlighting
         # "shine" through is not nice
         wid.setAutoFillBackground(True)
@@ -88,6 +90,9 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
     def __init__(self, editor_factory, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._editor_factory = editor_factory
+        # maintained via init_gooey_from_other_param()
+        self._editor_init = dict()
+
         layout = QVBoxLayout()
         # tight layout
         layout.setContentsMargins(0, 0, 0, 0)
@@ -151,7 +156,7 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
             self._removeitem_button.hide()
             self._lw.hide()
 
-    def set_gooey_param_value(self, value):
+    def _set_gooey_param_value(self, value):
         # we want to support multi-value setting
         for val in ensure_list(value):
             item = self._add_item()
@@ -176,3 +181,10 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
 
     def set_gooey_param_docs(self, docs: str) -> None:
         self._editor_param_docs = docs
+
+    def init_gooey_from_other_param(self, spec):
+        # we just keep the union of all reported changes, i.e.
+        # the latest info for all parameters that ever changed.
+        # this is then passed to the editor widget, after its
+        # creation
+        self._editor_init.update(spec)
