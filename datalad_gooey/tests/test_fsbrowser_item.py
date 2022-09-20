@@ -67,7 +67,7 @@ def test_update_from_lsdir_result():
         fsb_item = FSBrowserItem(res['path'])
         fsb_item.update_from_lsdir_result(res)
         # check if item type is same as result type
-        assert_equal(fsb_item.data(1, Qt.EditRole), res['type'])
+        assert_equal(fsb_item.datalad_type, res['type'])
         # test status 'error'
         if res['status'] == 'error'\
             and res['message'] == 'Permissions denied':
