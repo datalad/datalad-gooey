@@ -15,7 +15,7 @@ api = dict(
         parameter_display_names=dict(
             source='Clone from',
             path='Clone into',
-            dataset='Register clone in dataset',
+            dataset='Register in superdataset',
         ),
         parameter_order=dict(
             source=0,
@@ -33,7 +33,7 @@ api = dict(
         parameter_display_names=dict(
             force='OK if target directory not empty',
             path='Create at',
-            dataset='Register in dataset',
+            dataset='Register in superdataset',
         ),
         parameter_order=dict(
             path=0,
