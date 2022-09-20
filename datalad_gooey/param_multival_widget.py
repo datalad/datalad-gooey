@@ -18,8 +18,8 @@ from datalad.utils import ensure_list
 from .param_widgets import (
     GooeyParamWidgetMixin,
     load_parameter_widget,
-    _NoValue,
 )
+from .utils import _NoValue
 
 
 class MyItemDelegate(QStyledItemDelegate):

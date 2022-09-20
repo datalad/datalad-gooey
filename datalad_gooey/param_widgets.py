@@ -23,16 +23,7 @@ from PySide6.QtWidgets import (
 from datalad import cfg as dlcfg
 
 from .resource_provider import gooey_resources
-
-
-class _NoValue:
-    """Type to annotate the absence of a value
-
-    For example in a list of parameter defaults. In general `None` cannot
-    be used, as it may be an actual value, hence we use a local, private
-    type.
-    """
-    pass
+from .utils import _NoValue
 
 
 class GooeyParamWidgetMixin:

@@ -3,13 +3,11 @@ from collections.abc import Callable
 import functools
 from itertools import (
     chain,
-    zip_longest,
 )
 from pathlib import Path
 from typing import (
     Any,
     Dict,
-    List,
 )
 from PySide6.QtWidgets import (
     QFormLayout,
@@ -22,7 +20,6 @@ from datalad.interface.common_opts import eval_params
 from datalad.support.constraints import EnsureChoice
 from datalad.support.param import Parameter
 from datalad.utils import (
-    getargspec,
     get_wrapped_class,
 )
 
@@ -34,6 +31,8 @@ from .active_api import (
     exclude_parameters,
     parameter_display_names,
 )
+from .api_utils import get_cmd_params
+from .utils import _NoValue
 
 __all__ = ['populate_form_w_params']
 
@@ -64,7 +63,7 @@ def populate_form_w_params(
 
     # loop over all parameters of the command (with their defaults)
     def _specific_params():
-        for pname, pdefault in _get_params(cmd):
+        for pname, pdefault in get_cmd_params(cmd):
             yield pname, pdefault, cmd_cls._params_[pname]
 
     # loop over all generic
@@ -72,7 +71,7 @@ def populate_form_w_params(
         for pname, param in eval_params.items():
             yield (
                 pname,
-                param.cmd_kwargs.get('default', pw._NoValue), \
+                param.cmd_kwargs.get('default', _NoValue), \
                 param,
             )
     for pname, pdefault, param_spec in sorted(
@@ -132,27 +131,6 @@ def populate_form_w_params(
 #
 # Internal helpers
 #
-
-def _get_params(cmd) -> List:
-    """Take a callable and return a list of parameter names, and their defaults
-
-    Parameter names and defaults are returned as 2-tuples. If a parameter has
-    no default, the special value `_NoValue` is used.
-    """
-    # lifted from setup_parser_for_interface()
-    args, varargs, varkw, defaults = getargspec(cmd, include_kwonlyargs=True)
-    return list(
-        zip_longest(
-            # fuse parameters from the back, to match with their respective
-            # defaults -- if soem have no defaults, they would be the first
-            args[::-1],
-            defaults[::-1],
-            # pad with a dedicate type, to be able to tell if there was a
-            # default or not
-            fillvalue=pw._NoValue)
-    # reverse the order again to match the original order in the signature
-    )[::-1]
-
 
 def _get_parameter_widget(
         basedir: Path,

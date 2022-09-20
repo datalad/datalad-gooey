@@ -9,7 +9,10 @@ from datalad.interface.base import (
 )
 from datalad.utils import get_wrapped_class
 
-from .api_utils import get_cmd_displayname
+from .api_utils import (
+    get_cmd_displayname,
+    get_cmd_params,
+)
 
 
 # mapping of command interface classes to interface group titles
@@ -54,6 +57,15 @@ for mname in dir(dlapi):
     cmd_group = _cmd_group_lookup.get(cls)
     if cmd_group:
         cmd_spec['group'] = cmd_group
+    # order of parameters is defined by order in the signature of the command
+    parameter_order = {p[0]: i for i, p in enumerate(get_cmd_params(m))}
+    # but always put any existing `dataset` parameter first, because (minus a
+    # few exceptions) it will define the scope of a command, and also influence
+    # other parameter choices (list of available remotes, basedir, etc.).
+    # therefore it is useful to have users process this first
+    if 'dataset' in parameter_order:
+        parameter_order['dataset'] = -1
+    cmd_spec['parameter_order'] = parameter_order
 
     api[mname] = cmd_spec
 
