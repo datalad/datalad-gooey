@@ -26,7 +26,7 @@ def test_GooeyStatusLight(path=None):
 
 def test_FSBrowserItem():
     fsb_item = FSBrowserItem(Path.cwd())
-    assert_equal(fsb_item.data(0, FSBrowserItem.PathObjRole), Path.cwd())
+    assert_equal(fsb_item.pathobj, Path.cwd())
     assert_equal(fsb_item.__str__(), f'FSBrowserItem<{Path.cwd()}>')
 
 
