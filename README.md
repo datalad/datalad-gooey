@@ -30,7 +30,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
     <tr>
       <td align="center"><a href="mslw.github.io"><img src="https://avatars.githubusercontent.com/u/11985212?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Michał Szczepanik</b></sub></a><br /><a href="https://github.com/datalad/datalad-gooey/commits?author=mslw" title="Code">💻</a></td>
       <td align="center"><a href="https://github.com/aqw"><img src="https://avatars.githubusercontent.com/u/765557?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Alex Waite</b></sub></a><br /><a href="#userTesting-aqw" title="User Testing">📓</a> <a href="#ideas-aqw" title="Ideas, Planning, & Feedback">🤔</a></td>
-      <td align="center"><a href="manukapp.itch.io"><img src="https://avatars.githubusercontent.com/u/86295664?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Leonardo Muller-Rodriguez</b></sub></a><br /><a href="#userTesting-Manukapp" title="User Testing">📓</a></td>
+      <td align="center"><a href="manukapp.itch.io"><img src="https://avatars.githubusercontent.com/u/86295664?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Leonardo Muller-Rodriguez</b></sub></a><br /><a href="#userTesting-Manukapp" title="User Testing">📓</a> <a href="https://github.com/datalad/datalad-gooey/commits?author=Manukapp" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
