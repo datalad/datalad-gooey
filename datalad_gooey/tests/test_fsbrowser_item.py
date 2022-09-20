@@ -5,8 +5,11 @@ from ..fsbrowser_item import FSBrowserItem
 from datalad.distribution.dataset import Dataset
 from datalad.tests.utils_pytest import (
     assert_equal,
+    assert_in,
+    assert_not_in,
     assert_raises,
     with_tempfile,
+
 )
 from PySide6.QtCore import (
     Qt,
@@ -127,3 +130,31 @@ def test_update_from_status_result():
             assert_equal(fsb_item.childIndicatorPolicy(), 1)
         # test item type
         assert_equal(fsb_item.data(1, Qt.EditRole), res.get('type'))
+
+
+res1 = {
+    'path': 'parent_dir/child1',
+    'type': 'directory',
+    'action': 'gooey-lsdir',
+    'status': 'ok'
+}
+res2 = {
+    'path': 'parent_dir/child2',
+    'type': 'file',
+    'action': 'gooey-lsdir',
+    'status': 'ok'
+}
+def test_item_children():
+    # create parent item and two child items
+    fsb_parent = FSBrowserItem(Path('parent_dir'))
+    fsb_child1 = FSBrowserItem.from_lsdir_result(res1, parent=fsb_parent)
+    fsb_child2 = FSBrowserItem.from_lsdir_result(res2, parent=fsb_parent)
+    # check that child items are in fact children of parent
+    children = list(fsb_parent.children_())
+    assert_in(fsb_child1, children)
+    assert_in(fsb_child2, children)
+    # remove a child and check result
+    fsb_parent.removeChild(fsb_child1)
+    children = list(fsb_parent.children_())
+    assert_not_in(fsb_child1, children)
+    assert_in(fsb_child2, children)
