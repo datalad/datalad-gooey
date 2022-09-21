@@ -31,7 +31,7 @@ class _DataladQtUIBridge(QObject):
     def __init__(self, app):
         super().__init__()
         self._app = app
-        self._conlog = app.get_widget('logViewer')
+        self._conlog = app.get_widget('commandLog')
         # establishing this signal/slot connection is the vehicle
         # with which worker threads can thread-safely send messages
         # to the UI for display

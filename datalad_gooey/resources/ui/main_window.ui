@@ -125,13 +125,13 @@
        <property name="currentIndex">
         <number>0</number>
        </property>
-       <widget class="QWidget" name="tab">
+       <widget class="QWidget" name="tabCommandLog">
         <attribute name="title">
-         <string>Log/Console</string>
+         <string>Command log</string>
         </attribute>
         <layout class="QVBoxLayout" name="verticalLayout_2">
          <item>
-          <widget class="QPlainTextEdit" name="logViewer">
+          <widget class="QPlainTextEdit" name="commandLog">
            <property name="acceptDrops">
             <bool>false</bool>
            </property>
@@ -150,7 +150,7 @@
           </widget>
          </item>
          <item alignment="Qt::AlignRight|Qt::AlignTop">
-          <widget class="QPushButton" name="clearLogPB">
+          <widget class="QPushButton" name="clearCommandLogPB">
            <property name="text">
             <string>Clear Log</string>
            </property>
@@ -158,22 +158,14 @@
          </item>
         </layout>
        </widget>
-       <widget class="QWidget" name="tab2">
+       <widget class="QWidget" name="tabErrorLog">
         <property name="toolTip">
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;View Tracebacks of failed command executions&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <attribute name="title">
-         <string>Traceback</string>
+         <string>Error log</string>
         </attribute>
-        <widget class="QPlainTextEdit" name="tbViewer">
-         <property name="geometry">
-          <rect>
-           <x>10</x>
-           <y>10</y>
-           <width>760</width>
-           <height>200</height>
-          </rect>
-         </property>
+        <widget class="QPlainTextEdit" name="errorLog">
          <property name="acceptDrops">
           <bool>false</bool>
          </property>
@@ -187,17 +179,9 @@
           <enum>Qt::ScrollBarAlwaysOn</enum>
          </property>
         </widget>
-        <widget class="QPushButton" name="clearTbPB">
-         <property name="geometry">
-          <rect>
-           <x>648</x>
-           <y>215</y>
-           <width>121</width>
-           <height>26</height>
-          </rect>
-         </property>
+        <widget class="QPushButton" name="clearErrorLogPB">
          <property name="text">
-          <string>Clear Traceback</string>
+          <string>Clear log</string>
          </property>
         </widget>
        </widget>

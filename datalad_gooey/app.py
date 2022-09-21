@@ -48,11 +48,11 @@ class GooeyApp(QObject):
     _main_window_widgets = {
         'contextTabs': QTabWidget,
         'cmdTab': QWidget,
-        'clearLogPB': QPushButton,
-        'clearTbPB': QPushButton,
+        'clearCommandLogPB': QPushButton,
+        'clearErrorLogPB': QPushButton,
         'fsBrowser': QTreeWidget,
-        'logViewer': QPlainTextEdit,
-        'tbViewer': QPlainTextEdit,
+        'commandLog': QPlainTextEdit,
+        'errorLog': QPlainTextEdit,
         'menuDataset': QMenu,
         'menuView': QMenu,
         'menuUtilities': QMenu,
@@ -126,9 +126,9 @@ class GooeyApp(QObject):
         # necessary
         self.get_widget('menuDataset').aboutToShow.connect(
             self._populate_dataset_menu)
-        # connect pushbutton clicked signal to clear slot of logViewer
-        self.get_widget('clearLogPB').clicked.connect(
-            self.get_widget('logViewer').clear)
+        # connect pushbutton clicked signal to clear slot of commandLog
+        self.get_widget('clearCommandLogPB').clicked.connect(
+            self.get_widget('commandLog').clear)
         self.main_window.actionCheck_for_new_version.triggered.connect(
             self._check_new_version)
         # reset the command configuration tab whenever the item selection in
@@ -155,7 +155,7 @@ class GooeyApp(QObject):
             # if a command crashes, state it in the statusbar
             self.get_widget('statusbar').showMessage(f'`{cmdname}` failed')
             # but also barf the error into the logviewer
-            lv = self.get_widget('tbViewer')
+            lv = self.get_widget('errorLog')
             lv.appendHtml(
                 f'<br><font color="red"><pre>{ce.format_standard()}</pre></font>'
             )
@@ -277,7 +277,7 @@ class GooeyApp(QObject):
 
     def _render_cmd_call(self, cmdname, cmdkwargs):
         """Minimalistic Python-like rendering of commands in the log"""
-        lv = self.get_widget('logViewer')
+        lv = self.get_widget('commandLog')
         cmdkwargs = cmdkwargs.copy()
         ds_path = cmdkwargs.pop('dataset', None)
         if ds_path:
