@@ -8,7 +8,6 @@ from datalad.tests.utils_pytest import (
     assert_in,
     assert_not_in,
     assert_raises,
-    with_tempfile,
 
 )
 from PySide6.QtCore import (
@@ -18,9 +17,8 @@ from PySide6.QtCore import (
 from ..status_light import GooeyStatusLight
 
 
-@with_tempfile
-def test_GooeyStatusLight(path=None):
-    ds = Dataset(path).create()
+def test_GooeyStatusLight(tmp_path):
+    ds = Dataset(tmp_path).create()
     GooeyStatusLight.__call__(dataset=ds, path=ds.pathobj)
 
 
