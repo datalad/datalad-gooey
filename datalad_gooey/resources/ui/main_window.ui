@@ -317,5 +317,37 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>clearCommandLogPB</sender>
+   <signal>clicked()</signal>
+   <receiver>commandLog</receiver>
+   <slot>clear()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>749</x>
+     <y>547</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>669</x>
+     <y>505</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>clearErrorLogPB</sender>
+   <signal>clicked()</signal>
+   <receiver>errorLog</receiver>
+   <slot>clear()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>735</x>
+     <y>545</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>674</x>
+     <y>487</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
 </ui>

@@ -48,8 +48,6 @@ class GooeyApp(QObject):
     _main_window_widgets = {
         'contextTabs': QTabWidget,
         'cmdTab': QWidget,
-        'clearCommandLogPB': QPushButton,
-        'clearErrorLogPB': QPushButton,
         'fsBrowser': QTreeWidget,
         'commandLog': QPlainTextEdit,
         'errorLog': QPlainTextEdit,
@@ -126,9 +124,6 @@ class GooeyApp(QObject):
         # necessary
         self.get_widget('menuDataset').aboutToShow.connect(
             self._populate_dataset_menu)
-        # connect pushbutton clicked signal to clear slot of commandLog
-        self.get_widget('clearCommandLogPB').clicked.connect(
-            self.get_widget('commandLog').clear)
         self.main_window.actionCheck_for_new_version.triggered.connect(
             self._check_new_version)
         # reset the command configuration tab whenever the item selection in
