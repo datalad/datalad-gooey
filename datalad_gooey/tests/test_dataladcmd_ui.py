@@ -9,6 +9,7 @@ from datalad.tests.utils_pytest import (
     assert_equal,
     assert_false,
     assert_in,
+    assert_is_not_none,
     assert_true,
 )
 
@@ -28,10 +29,8 @@ def test_GooeyDataladCmdUI(gooey_app, *, qtbot):
 
     # click OK and see the correct signal:
     buttonbox = cmdui.pwidget.findChild(QDialogButtonBox, 'cmdTabButtonBox')
-    ok_button = [b for b in buttonbox.findChildren(QPushButton)
-                 if b.text() == "OK"]
-    assert_equal(len(ok_button), 1)
-    ok_button = ok_button[0]
+    ok_button = buttonbox.button(QDialogButtonBox.StandardButton.Ok)
+    assert_is_not_none(ok_button)
 
     with qtbot.waitSignal(cmdui.configured_dataladcmd) as blocker:
         qtbot.mouseClick(ok_button, Qt.LeftButton)
