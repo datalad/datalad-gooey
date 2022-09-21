@@ -10,41 +10,36 @@ from datalad.tests.utils_pytest import (
     assert_false,
     assert_in,
     assert_true,
-    with_tempfile,
 )
 
-from .utils import gooey_app
 
+def test_GooeyDataladCmdUI(gooey_app, *, qtbot):
+    qtbot.addWidget(gooey_app.main_window)
+    cmdui = GooeyDataladCmdUI(gooey_app, gooey_app.get_widget('cmdTab'))
 
-@with_tempfile(mkdir=True)
-def test_GooeyDataladCmdUI(rootpath=None, *, qtbot):
+    cmdui.configure('wtf', {})
 
-    with gooey_app(rootpath) as gooey:
-        qtbot.addWidget(gooey.main_window)
-        cmdui = GooeyDataladCmdUI(gooey, gooey.get_widget('cmdTab'))
+    # command tab is set up:
+    assert_true(cmdui.pwidget.isEnabled())
+    assert_equal(
+        gooey_app.get_widget('contextTabs').currentWidget().objectName(),
+        "cmdTab")
+    assert_equal(cmdui._cmd_title.text().lower(), "wtf")
 
-        cmdui.configure('wtf', {})
+    # click OK and see the correct signal:
+    buttonbox = cmdui.pwidget.findChild(QDialogButtonBox, 'cmdTabButtonBox')
+    ok_button = [b for b in buttonbox.findChildren(QPushButton)
+                 if b.text() == "OK"]
+    assert_equal(len(ok_button), 1)
+    ok_button = ok_button[0]
 
-        # command tab is set up:
-        assert_true(cmdui.pwidget.isEnabled())
-        assert_equal(gooey.get_widget('contextTabs').currentWidget().objectName(),
-                     "cmdTab")
-        assert_equal(cmdui._cmd_title.text().lower(), "wtf")
+    with qtbot.waitSignal(cmdui.configured_dataladcmd) as blocker:
+        qtbot.mouseClick(ok_button, Qt.LeftButton)
 
-        # click OK and see the correct signal:
-        buttonbox = cmdui.pwidget.findChild(QDialogButtonBox, 'cmdTabButtonBox')
-        ok_button = [b for b in buttonbox.findChildren(QPushButton)
-                     if b.text() == "OK"]
-        assert_equal(len(ok_button), 1)
-        ok_button = ok_button[0]
+    assert_equal(blocker.args[0], 'wtf')
+    assert_in("decor", blocker.args[1].keys())
 
-        with qtbot.waitSignal(cmdui.configured_dataladcmd) as blocker:
-            qtbot.mouseClick(ok_button, Qt.LeftButton)
-
-        assert_equal(blocker.args[0], 'wtf')
-        assert_in("decor", blocker.args[1].keys())
-
-        # reset_form
-        cmdui.reset_form()
-        assert_equal(cmdui._cmd_title.text().lower(), "")
-        assert_false(cmdui.pwidget.isEnabled())
+    # reset_form
+    cmdui.reset_form()
+    assert_equal(cmdui._cmd_title.text().lower(), "")
+    assert_false(cmdui.pwidget.isEnabled())
