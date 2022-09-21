@@ -115,6 +115,7 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
         button_layout.addWidget(removeitem_button)
         layout.addLayout(button_layout, 1)
 
+        self._additem_button = additem_button
         self._removeitem_button = removeitem_button
 
         # define initial widget state
@@ -181,6 +182,8 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
 
     def set_gooey_param_docs(self, docs: str) -> None:
         self._editor_param_docs = docs
+        # the "+" button is always visible. Use it to make the docs accessible
+        self._additem_button.setToolTip(docs)
 
     def init_gooey_from_other_param(self, spec):
         # we just keep the union of all reported changes, i.e.
