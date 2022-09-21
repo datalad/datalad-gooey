@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Dict
 
 from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import (
@@ -30,3 +31,24 @@ def load_ui(name, parent=None):
         raise RuntimeError(
             f"Cannot load UI {ui_file_name}: {loader.errorString()}")
     return ui
+
+
+def render_cmd_call(cmdname: str, cmdkwargs: Dict):
+    """Minimalistic Python-like rendering of commands for the logs"""
+    cmdkwargs = cmdkwargs.copy()
+    ds_path = cmdkwargs.pop('dataset', None)
+    if ds_path:
+        if hasattr(ds_path, 'pathobj'):
+            ds_path = ds_path.path
+        ds_path = str(ds_path)
+    # show commands running on datasets as dataset method calls
+    rendered = "<b>Running:</b> "
+    rendered += f"<code>Dataset({ds_path!r})." if ds_path else ''
+    rendered += f"{cmdname}<nobr>("
+    rendered += ', '.join(
+        f"<i>{k}</i>={v!r}"
+        for k, v in cmdkwargs.items()
+        if k not in ('return_type', 'result_xfm')
+    )
+    rendered += ")</code>"
+    return rendered

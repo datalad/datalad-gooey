@@ -30,7 +30,10 @@ from datalad import __version__ as dlversion
 import datalad.ui as dlui
 from datalad.utils import chpwd
 
-from .utils import load_ui
+from .utils import (
+    load_ui,
+    render_cmd_call,
+)
 from .datalad_ui import GooeyUI
 from .dataladcmd_exec import GooeyDataladCmdExec
 from .dataladcmd_ui import GooeyDataladCmdUI
@@ -111,8 +114,6 @@ class GooeyApp(QObject):
         self.configure_dataladcmd.connect(self._cmdui.configure)
         # when a command was configured, pass it to the executor
         self._cmdui.configured_dataladcmd.connect(self._cmdexec.execute)
-        # and give a visual indication of what exactly is happening
-        self._cmdui.configured_dataladcmd.connect(self._render_cmd_call)
 
         self.get_widget('statusbar').addPermanentWidget(
             self._cmdexec.activity_widget)
@@ -139,6 +140,11 @@ class GooeyApp(QObject):
 
     def _setup_ongoing_cmdexec(self, thread_id, cmdname, cmdargs, exec_params):
         self.get_widget('statusbar').showMessage(f'Started `{cmdname}`')
+        # and give a persistent visual indication of what exactly is happening
+        # in the log
+        self.get_widget('commandLog').appendHtml(
+            f"<hr>{render_cmd_call(cmdname, cmdargs)}<hr>"
+        )
         self.main_window.setCursor(QCursor(Qt.BusyCursor))
 
     def _setup_stopped_cmdexec(
@@ -148,11 +154,14 @@ class GooeyApp(QObject):
                                                      timeout=1000)
         else:
             # if a command crashes, state it in the statusbar
-            self.get_widget('statusbar').showMessage(f'`{cmdname}` failed')
+            self.get_widget('statusbar').showMessage(
+                f'`{cmdname}` failed (see error log for details)')
             # but also barf the error into the logviewer
             lv = self.get_widget('errorLog')
             lv.appendHtml(
-                f'<br><font color="red"><pre>{ce.format_standard()}</pre></font>'
+                f"{render_cmd_call(cmdname, cmdargs)} <b>failed!</b>")
+            lv.appendHtml(
+                f'<font color="red"><pre>{ce.format_standard()}</pre></font>'
             )
         if not self._cmdexec.n_running:
             self.main_window.setCursor(QCursor(Qt.ArrowCursor))
@@ -269,27 +278,6 @@ class GooeyApp(QObject):
                             'Missing `pyqtdarktheme` installation.')
                 return
             qtapp.setStyleSheet(qdarktheme.load_stylesheet(uitheme))
-
-    def _render_cmd_call(self, cmdname, cmdkwargs):
-        """Minimalistic Python-like rendering of commands in the log"""
-        lv = self.get_widget('commandLog')
-        cmdkwargs = cmdkwargs.copy()
-        ds_path = cmdkwargs.pop('dataset', None)
-        if ds_path:
-            if hasattr(ds_path, 'pathobj'):
-                ds_path = ds_path.path
-            ds_path = str(ds_path)
-        # show commands running on datasets as dataset method calls
-        rendered = "<hr><b>Running:</b> "
-        rendered += f"<code>Dataset({ds_path!r})." if ds_path else ''
-        rendered += f"{cmdname}<nobr>("
-        rendered += ', '.join(
-            f"<i>{k}</i>={v!r}"
-            for k, v in cmdkwargs.items()
-            if k not in ('return_type', 'result_xfm')
-        )
-        rendered += ")</code><hr>"
-        lv.appendHtml(rendered)
 
 
 def main():
