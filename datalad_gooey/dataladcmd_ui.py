@@ -101,6 +101,9 @@ class GooeyDataladCmdUI(QObject):
             get_cmd_displayname(api, cmdname).replace('&', '')
         )
         self._cmd_title.setToolTip(f'API command: `{cmdname}`')
+        # deposit the command name in the widget, to be retrieved later by
+        # retrieve_parameters()
+        self.pform.datalad_cmd_name = cmdname
         # make sure the UI is visible
         self.pwidget.setEnabled(True)
 

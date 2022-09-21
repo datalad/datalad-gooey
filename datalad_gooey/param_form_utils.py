@@ -47,9 +47,6 @@ def populate_form_w_params(
     # localize to potentially delay heavy import
     from datalad import api as dlapi
 
-    # deposit the command name in the widget, to be retrieved later by
-    # retrieve_parameters()
-    formlayout.datalad_cmd_name = cmdname
     # get the matching callable from the DataLad API
     cmd = getattr(dlapi, cmdname)
     cmd_api_spec = api.get(cmdname, {})
