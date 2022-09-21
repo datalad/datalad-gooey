@@ -183,17 +183,17 @@ class ChoiceParamWidget(QComboBox, GooeyParamWidgetMixin):
         super().__init__(parent)
         self.setInsertPolicy(QComboBox.NoInsert)
         if choices:
-            self._add_items(choices)
+            for c in choices:
+                self._add_item(c)
         else:
             # avoid making the impression something could be selected
             self.setPlaceholderText('No known choices')
             self.setDisabled(True)
 
-    def _add_items(self, values: List) -> None:
-        for v in values:
-            # we add items, and we stick their real values in too
-            # to avoid tricky conversion via str
-            self.addItem(self._gooey_map_val2label(v), userData=v)
+    def _add_item(self, value) -> None:
+        # we add items, and we stick their real values in too
+        # to avoid tricky conversion via str
+        self.addItem(self._gooey_map_val2label(value), userData=value)
 
     def _set_gooey_param_value(self, value):
         self.setCurrentText(self._gooey_map_val2label(value))
@@ -395,3 +395,41 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
 
         if 'dataset' in spec:
             self._basedir = spec['dataset']
+
+
+class CfgProcParamWidget(ChoiceParamWidget):
+    """Choice widget with items from `run_procedure(discover=True)`"""
+    def __init__(self, choices=None, parent=None):
+        super().__init__(parent=parent)
+        self.init_gooey_from_other_param({})
+
+    def init_gooey_from_other_param(self, spec: Dict) -> None:
+        if self.count() and 'dataset' not in spec:
+            # we have items and no context change is required
+            return
+
+        # we have no items yet, or the dataset has changed: query!
+        # reset first
+        while self.count():
+            self.removeItem(0)
+        from datalad.local.run_procedure import RunProcedure
+        for res in RunProcedure.__call__(
+            dataset=spec.get('dataset'),
+            discover=True,
+            return_type='generator',
+            result_renderer='disabled',
+            on_failure='ignore',
+        ):
+            proc_name = res.get('procedure_name', '')
+            if res.get('status') != 'ok' \
+                    or not proc_name.startswith('cfg_'):
+                # not a good config procedure
+                continue
+            self._add_item(proc_name)
+        if self.count():
+            self.setEnabled(True)
+            self.setPlaceholderText('Select procedure')
+
+    def _gooey_map_val2label(self, val):
+        # strip 'cfg_' prefix
+        return val[4:].replace('cfg_', '') if val else ''
