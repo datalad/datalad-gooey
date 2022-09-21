@@ -350,7 +350,7 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
         # by the user -- otherwise stay silent and let the command
         # use its default
         edit = self._edit
-        if edit.isEnabled() and not edit.isModified() :
+        if not edit.isModified():
             raise ValueError
         return edit.text()
 
