@@ -13,7 +13,7 @@ from .api_utils import (
     get_cmd_displayname,
     get_cmd_params,
 )
-
+from .simplified_api import api as simple_api
 
 # mapping of command interface classes to interface group titles
 _cmd_group_lookup = {
@@ -66,6 +66,12 @@ for mname in dir(dlapi):
     if 'dataset' in parameter_order:
         parameter_order['dataset'] = -1
     cmd_spec['parameter_order'] = parameter_order
+
+    # inherit the hand-crafted constraints of the simple api, if possible
+    simple_cmd_constraints = simple_api.get(
+        mname, {}).get('parameter_constraints')
+    if simple_cmd_constraints:
+        cmd_spec['parameter_constraints'] = simple_cmd_constraints
 
     api[mname] = cmd_spec
 
