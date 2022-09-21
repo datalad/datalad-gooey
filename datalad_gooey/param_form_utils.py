@@ -33,6 +33,7 @@ from .active_api import (
 )
 from .api_utils import get_cmd_params
 from .utils import _NoValue
+from .constraints import EnsureDatasetSiblingName
 
 __all__ = ['populate_form_w_params']
 
@@ -81,8 +82,13 @@ def populate_form_w_params(
                 x[0])):
         if pname in exclude_parameters:
             continue
-        if pname in cmd_api_spec.get('exclude_parameters', set()):
+        if pname in cmd_api_spec.get('exclude_parameters', []):
             continue
+        if pname in cmd_api_spec.get('parameter_constraints', []):
+            # we have a better idea in gooey then what the original
+            # command knows
+            param_spec.constraints = \
+                cmd_api_spec['parameter_constraints'][pname]
         # populate the layout with widgets for each of them
         pwidget = _get_parameter_widget(
             basedir,
@@ -196,6 +202,8 @@ def _get_parameter_widget_factory(
     elif name == 'cfg_proc':
         type_widget = pw.CfgProcParamWidget
     # now parameters where we make decisions based on their configuration
+    elif isinstance(constraints, EnsureDatasetSiblingName):
+        type_widget = pw.SiblingChoiceParamWidget
     elif argparse_action in ('store_true', 'store_false'):
         type_widget = pw.BoolParamWidget
     elif isinstance(constraints, EnsureChoice) and argparse_action is None:

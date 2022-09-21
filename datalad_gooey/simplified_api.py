@@ -1,3 +1,5 @@
+from .constraints import EnsureDatasetSiblingName
+
 # each item is a command that is allowed in the API
 # the key is the command name in the Python API.
 # the values are dicts with the following keys
@@ -79,6 +81,9 @@ api = dict(
         exclude_parameters=set((
             'since',
         )),
+        parameter_constraints=dict(
+            to=EnsureDatasetSiblingName(),
+        ),
     ),
     save=dict(
         name='&Save the state in a dataset',
@@ -114,6 +119,9 @@ api = dict(
             'follow',
             'reobtain_data',
         )),
+        parameter_constraints=dict(
+            sibling=EnsureDatasetSiblingName(),
+        ),
     ),
 )
 

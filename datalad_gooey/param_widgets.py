@@ -433,3 +433,50 @@ class CfgProcParamWidget(ChoiceParamWidget):
     def _gooey_map_val2label(self, val):
         # strip 'cfg_' prefix
         return val[4:].replace('cfg_', '') if val else ''
+
+
+class SiblingChoiceParamWidget(ChoiceParamWidget):
+    """Choice widget with items from `siblings()`"""
+    def __init__(self, choices=None, parent=None):
+        super().__init__(parent=parent)
+        self.init_gooey_from_other_param({})
+        self._saw_dataset = False
+        self._set_placeholder_msg()
+
+    def _set_placeholder_msg(self):
+        if not self._saw_dataset:
+            self.setPlaceholderText('Select dataset first')
+        elif not self.count():
+            self.setPlaceholderText('No known siblings')
+        else:
+            self.setPlaceholderText('Select sibling')
+
+    def init_gooey_from_other_param(self, spec: Dict) -> None:
+        if 'dataset' not in spec:
+            # we have items and no context change is required
+            return
+
+        self._saw_dataset = True
+        # the dataset has changed: query!
+        # reset first
+        while self.count():
+            self.removeItem(0)
+        from datalad.distribution.siblings import Siblings
+        for res in Siblings.__call__(
+            dataset=spec['dataset'],
+            action='query',
+            return_type='generator',
+            result_renderer='disabled',
+            on_failure='ignore',
+        ):
+            sibling_name = res.get('name')
+            if (not sibling_name or res.get('status') != 'ok'
+                    or res.get('type') != 'sibling'
+                    or (sibling_name == 'here'
+                        and res.get('path') == spec['dataset'])):
+                # not a good sibling
+                continue
+            self._add_item(sibling_name)
+        if self.count():
+            self.setEnabled(True)
+            self._set_placeholder_msg()
