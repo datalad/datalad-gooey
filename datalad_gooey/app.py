@@ -153,13 +153,19 @@ class GooeyApp(QObject):
             self.get_widget('statusbar').showMessage(f'Finished `{cmdname}`',
                                                      timeout=1000)
         else:
+            failed_msg = f"{render_cmd_call(cmdname, cmdargs)} <b>failed!</b>"
             # if a command crashes, state it in the statusbar
             self.get_widget('statusbar').showMessage(
                 f'`{cmdname}` failed (see error log for details)')
+            # leave a brief note in the main log.
+            # this alone would not be enough, because we do not know whether
+            # the command log is visible
+            self.get_widget('commandLog').appendHtml(
+                f"<br>{failed_msg} (see error log for details)"
+            )
             # but also barf the error into the logviewer
             lv = self.get_widget('errorLog')
-            lv.appendHtml(
-                f"{render_cmd_call(cmdname, cmdargs)} <b>failed!</b>")
+            lv.appendHtml(failed_msg)
             lv.appendHtml(
                 f'<font color="red"><pre>{ce.format_standard()}</pre></font>'
             )
