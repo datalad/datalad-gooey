@@ -40,7 +40,7 @@ class GooeyParamWidgetMixin:
     """
 
     value_changed = Signal(MappingProxyType)
-    """Signal to be emited whenever a parameter value is changed. The signal
+    """Signal to be emitted whenever a parameter value is changed. The signal
     payload type matches the return value of `get_gooey_param_spec()`"""
 
     def set_gooey_param_value(self, value):
@@ -110,7 +110,7 @@ class GooeyParamWidgetMixin:
             return {self._gooey_param_name: _NoValue}
         return {self._gooey_param_name: val} \
             if val != self._gooey_param_default \
-            else {}
+            else {self._gooey_param_name: _NoValue}
 
     def set_gooey_param_validator(self, validator: Callable) -> None:
         """Set a validator callable that can be used by the widget
@@ -179,6 +179,9 @@ class ChoiceParamWidget(QComboBox, GooeyParamWidgetMixin):
     def __init__(self, choices=None, parent=None):
         super().__init__(parent)
         self.setInsertPolicy(QComboBox.NoInsert)
+        # TODO: We may need to always have --none-- as an option.
+        #       That's b/c of specs like EnsureChoice('a', 'b') | EnsureNone()
+        #       with default None.
         if choices:
             for c in choices:
                 self._add_item(c)
@@ -197,6 +200,14 @@ class ChoiceParamWidget(QComboBox, GooeyParamWidgetMixin):
 
     def get_gooey_param_value(self):
         return self.currentData()
+
+    def set_gooey_param_spec(self, name: str, default=_NoValue):
+        super().set_gooey_param_spec(name, default)
+        # QComboBox will report the first choice to be selected by default.
+        # Set the specified default instead.
+        if default is _NoValue:
+            default = None
+        self._set_gooey_param_value(default)
 
     def _gooey_map_val2label(self, val):
         return '--none--' if val is None else str(val)
@@ -222,6 +233,14 @@ class PosIntParamWidget(QSpinBox, GooeyParamWidgetMixin):
         # generally assumed to be int and fit in the range
         self.setValue(-1 if value is None and self._allow_none else value)
 
+    def set_gooey_param_spec(self, name: str, default=_NoValue):
+        # QSpinBox' values is set to 0 by default. Hence, we need to overwrite
+        # here.
+        super().set_gooey_param_spec(name, default)
+        if default is _NoValue:
+            default = None
+        self.setValue(default if default is not None else -1)
+
     def get_gooey_param_value(self):
         val = self.value()
         # convert special value -1 back to None
@@ -229,6 +248,12 @@ class PosIntParamWidget(QSpinBox, GooeyParamWidgetMixin):
 
 
 class BoolParamWidget(QCheckBox, GooeyParamWidgetMixin):
+
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        # set to no value initially
+        self._set_gooey_param_value(None)
+
     def _set_gooey_param_value(self, value):
         if value not in (True, False):
             # if the value is not representable by a checkbox
@@ -248,7 +273,7 @@ class BoolParamWidget(QCheckBox, GooeyParamWidgetMixin):
             # TODO error if partiallychecked still (means a
             # value with no default was not set)
             # a default `validator` could handle that
-            # Mixin pics this up and communicates: nothing was set
+            # Mixin picks this up and communicates: nothing was set
             raise ValueError
         # convert to bool
         return state == Qt.Checked
@@ -267,7 +292,7 @@ class StrParamWidget(QLineEdit, GooeyParamWidgetMixin):
         # return the value if it was set be the caller, or modified
         # by the user -- otherwise stay silent and let the command
         # use its default
-        if self.isEnabled() and not self.isModified() :
+        if self.isEnabled() and not self.isModified():
             raise ValueError('Present value was not modified')
         return self.text()
 

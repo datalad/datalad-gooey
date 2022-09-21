@@ -36,7 +36,8 @@ def test_GooeyDataladCmdUI(gooey_app, *, qtbot):
         qtbot.mouseClick(ok_button, Qt.LeftButton)
 
     assert_equal(blocker.args[0], 'wtf')
-    assert_in("decor", blocker.args[1].keys())
+    # no parameters given, means none passed via signal:
+    assert_equal({}, blocker.args[1])
 
     # reset_form
     cmdui.reset_form()
