@@ -187,15 +187,19 @@ def _get_parameter_widget_factory(
 
     # if we have no idea, use a simple line edit
     type_widget = pw.StrParamWidget
+    # no some parameters where we can derive semantics from their name
     if name == 'dataset':
         type_widget = functools.partial(
             pw.PathParamWidget,
             pathtype=QFileDialog.Directory,
             basedir=basedir)
-    if name == 'path':
+    elif name == 'path':
         type_widget = functools.partial(
             pw.PathParamWidget, basedir=basedir)
-    if argparse_action in ('store_true', 'store_false'):
+    elif name == 'cfg_proc':
+        type_widget = pw.CfgProcParamWidget
+    # now parameters where we make decisions based on their configuration
+    elif argparse_action in ('store_true', 'store_false'):
         type_widget = pw.BoolParamWidget
     elif isinstance(constraints, EnsureChoice) and argparse_action is None:
         type_widget = functools.partial(
