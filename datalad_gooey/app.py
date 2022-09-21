@@ -128,9 +128,13 @@ class GooeyApp(QObject):
         self.main_window.actionCheck_for_new_version.triggered.connect(
             self._check_new_version)
         # reset the command configuration tab whenever the item selection in
-        # tree view changed
-        self._fsbrowser._tree.currentItemChanged.connect(
-            lambda cur, prev: self._cmdui.reset_form())
+        # tree view changed.
+        # This behavior was originally requested in
+        # https://github.com/datalad/datalad-gooey/issues/57
+        # but proved to be undesirabled soon after
+        # https://github.com/datalad/datalad-gooey/issues/105
+        #self._fsbrowser._tree.currentItemChanged.connect(
+        #    lambda cur, prev: self._cmdui.reset_form())
 
         self._connect_menu_view(self.get_widget('menuView'))
 
