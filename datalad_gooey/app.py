@@ -253,7 +253,7 @@ class GooeyApp(QObject):
                 import qdarktheme
             except ImportError:
                 lgr.warning('Custom UI theme not supported. '
-                            'Missing `qdarktheme` installation.')
+                            'Missing `pyqtdarktheme` installation.')
                 return
             qtapp.setStyleSheet(qdarktheme.load_stylesheet(uitheme))
 
