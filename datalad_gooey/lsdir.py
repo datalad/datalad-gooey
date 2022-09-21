@@ -88,7 +88,7 @@ def _list(path: Path):
         # not in a dataset
         ce = CapturedException(e)
         lgr.debug(
-            'git-ls-files failed, falling back on manual inspaction: %s',
+            'git-ls-files failed, falling back on manual inspection: %s',
             ce)
         # TODO apply standard filtering of results
         yield from _iterdir(path)
@@ -186,8 +186,13 @@ def _iterdir(path: Path):
         if c.name == '.git':
             # we do not report on this special name
             continue
-        # given that c is from iterdir, it will always exist
-        cmode = c.lstat().st_mode
+        # c could disappear while this is running. Example: temp files managed
+        # by other processes.
+        try:
+            cmode = c.lstat().st_mode
+        except FileNotFoundError as e:
+            CapturedException(e)
+            continue
         if stat.S_ISLNK(cmode):
             ctype = 'symlink'
         elif stat.S_ISDIR(cmode):
