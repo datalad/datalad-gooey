@@ -3,6 +3,7 @@ from types import MappingProxyType
 from typing import (
     Any,
     Dict,
+    List,
 )
 
 from PySide6.QtCore import (
@@ -182,10 +183,17 @@ class ChoiceParamWidget(QComboBox, GooeyParamWidgetMixin):
         super().__init__(parent)
         self.setInsertPolicy(QComboBox.NoInsert)
         if choices:
-            for c in choices:
-                # we add items, and we stick their real values in too
-                # to avoid tricky conversion via str
-                self.addItem(self._gooey_map_val2label(c), userData=c)
+            self._add_items(choices)
+        else:
+            # avoid making the impression something could be selected
+            self.setPlaceholderText('No known choices')
+            self.setDisabled(True)
+
+    def _add_items(self, values: List) -> None:
+        for v in values:
+            # we add items, and we stick their real values in too
+            # to avoid tricky conversion via str
+            self.addItem(self._gooey_map_val2label(v), userData=v)
 
     def _set_gooey_param_value(self, value):
         self.setCurrentText(self._gooey_map_val2label(value))
