@@ -28,6 +28,7 @@ from PySide6.QtGui import (
 from datalad import cfg as dlcfg
 from datalad import __version__ as dlversion
 import datalad.ui as dlui
+from datalad.utils import chpwd
 
 from .utils import load_ui
 from .datalad_ui import GooeyUI
@@ -82,8 +83,11 @@ class GooeyApp(QObject):
                 # HOME is a better choice than CWD in most environments
                 path = Path.home()
 
+        # set path for root item and PWD to give relative paths a reference that makes
+        # sense within the app
+        self._set_root_path(path)
+
         self._dlapi = None
-        self._path = path
         self._main_window = None
         self._cmdexec = GooeyDataladCmdExec()
         self._cmdui = GooeyDataladCmdUI(self, self.get_widget('cmdTab'))
@@ -179,6 +183,20 @@ class GooeyApp(QObject):
             raise RuntimeError(
                 f"Could not locate widget {name} ({wgt_cls.__name__})")
         return wgt
+
+    def _set_root_path(self, path: Path):
+        """Store the application root path and change PWD to it
+
+        Right now this method can only be called once and only before the GUI
+        is actually up.
+        """
+        # TODO we might want to enable *changing* the root dir by calling this
+        # see https://github.com/datalad/datalad-gooey/issues/130
+        # for a use case.
+        # to make this possible, we would need to be able to adjust or reset the
+        # treeview
+        chpwd(path)
+        self._path = path
 
     @property
     def rootpath(self):
