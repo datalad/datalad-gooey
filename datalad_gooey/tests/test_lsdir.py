@@ -47,10 +47,11 @@ def test_lsfiles(path=None):
     # Write results to list
     lsfiles_res = list(GooeyLsDir.__call__(ds.pathobj))
     # In case we are on a crippled filesystem, use content without symlinks
-    if not ds.repo.is_managed_branch():
-        content = dataset_content
-    else:
+    adjusted = False
+    content = dataset_content
+    if ds.repo.is_managed_branch():
         content = adjusted_content
+        adjusted = True
     # Test result outputs
     assert_equal(len(lsfiles_res), len(content))
     for item in lsfiles_res:
@@ -59,6 +60,18 @@ def test_lsfiles(path=None):
                 'path': Path(item.get('path')).name,
                 'type': item.get('type'),
             }, content)
+    # test inaccessible directory
+    if not adjusted:
+        new_dir = Path(path) / 'interim_dir' / 'inaccessible_dir'
+        new_dir.mkdir(parents=True)
+        existing_permissions = stat.S_IMODE(new_dir.stat().st_mode)
+        new_permissions = existing_permissions ^ stat.S_IXUSR ^ stat.S_IRUSR ^ stat.S_IWUSR
+        new_dir.chmod(new_permissions)
+        with assert_raises(IncompleteResultsError):
+            res = list(GooeyLsDir.__call__(Path(path) / 'interim_dir'))
+            assert_equal(len(res), 1)
+            assert_equal(res[0].get('status'), 'error')
+            assert_equal(res[0].get('message'), 'Permissions denied')
         
 
 dir_tree = {
@@ -100,18 +113,6 @@ def test_iterdir(root=None, mockdef=None):
             }, directory_content)
 
 # Test PermissionError directory
-@with_tempfile(mkdir=True)
-def test_inaccessible_directory(temp_dir_name: str = ""):
-    new_dir = Path(temp_dir_name) / 'inaccessible_dir'
-    new_dir.mkdir()
-    existing_permissions = stat.S_IMODE(new_dir.stat().st_mode)
-    new_permissions = existing_permissions ^ stat.S_IXUSR ^ stat.S_IRUSR ^ stat.S_IWUSR
-    new_dir.chmod(new_permissions)
-    with assert_raises(IncompleteResultsError):
-        res = list(GooeyLsDir.__call__(Path(temp_dir_name)))
-        assert_equal(len(res), 1)
-        assert_equal(res[0].get('status'), 'error')
-        assert_equal(res[0].get('message'), 'Permissions denied')
 
 # Test .git
 @with_tempfile(mkdir=True)
