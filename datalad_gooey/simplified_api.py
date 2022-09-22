@@ -77,6 +77,12 @@ api = dict(
             'if_dirty',
             'reckless',
         )),
+        parameter_order=dict(
+            dataset=0,
+            what=1,
+            path=2,
+            recursive=3,
+        ),
     ),
     get=dict(
         name='&Get content',
