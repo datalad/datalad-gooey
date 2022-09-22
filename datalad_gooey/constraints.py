@@ -1,5 +1,9 @@
+from pathlib import Path
 
-from datalad.support.constraints import EnsureStr
+from datalad.support.constraints import (
+    Constraint,
+    EnsureStr,
+)
 
 
 class EnsureDatasetSiblingName(EnsureStr):
@@ -19,3 +23,11 @@ class EnsureDatasetSiblingName(EnsureStr):
 
     def short_description(self):
         return 'sibling name'
+
+
+class EnsureExistingDirectory(Constraint):
+    def __call__(self, value):
+        if not Path(value).is_dir():
+            raise ValueError(
+                f"{value} is not an existing directory")
+        return value
