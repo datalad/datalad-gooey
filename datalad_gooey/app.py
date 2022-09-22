@@ -147,12 +147,16 @@ class GooeyApp(QObject):
 
     def _setup_ongoing_cmdexec(self, thread_id, cmdname, cmdargs, exec_params):
         self.get_widget('statusbar').showMessage(f'Started `{cmdname}`')
+        self.main_window.setCursor(QCursor(Qt.BusyCursor))
         # and give a persistent visual indication of what exactly is happening
         # in the log
+        if cmdname.startswith('gooey_'):
+            # but not for internal calls
+            # https://github.com/datalad/datalad-gooey/issues/182
+            return
         self.get_widget('commandLog').appendHtml(
             f"<hr>{render_cmd_call(cmdname, cmdargs)}<hr>"
         )
-        self.main_window.setCursor(QCursor(Qt.BusyCursor))
 
     def _setup_stopped_cmdexec(
             self, thread_id, cmdname, cmdargs, exec_params, ce=None):
@@ -164,12 +168,14 @@ class GooeyApp(QObject):
             # if a command crashes, state it in the statusbar
             self.get_widget('statusbar').showMessage(
                 f'`{cmdname}` failed (see error log for details)')
-            # leave a brief note in the main log.
-            # this alone would not be enough, because we do not know whether
-            # the command log is visible
-            self.get_widget('commandLog').appendHtml(
-                f"<br>{failed_msg} (see error log for details)"
-            )
+            if not cmdname.startswith('gooey_'):
+                # leave a brief note in the main log (if this was not a helper
+                # call)
+                # this alone would not be enough, because we do not know
+                # whether the command log is visible
+                self.get_widget('commandLog').appendHtml(
+                    f"<br>{failed_msg} (see error log for details)"
+                )
             # but also barf the error into the logviewer
             lv = self.get_widget('errorLog')
             lv.appendHtml(failed_msg)
