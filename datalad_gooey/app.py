@@ -71,11 +71,23 @@ class GooeyApp(QObject):
         # we cannot handle ANSI coloring
         dlcfg.set('datalad.ui.color', 'off', scope='override', force=True)
 
+        # capture what env vars we modified, None means did not exist
+        self._restore_env = {
+            name: environ.get(name)
+            for name in (
+                'GIT_TERMINAL_PROMPT',
+                'SSH_ASKPASS_REQUIRE',
+                'SSH_ASKPASS',
+            )
+        }
         # prevent any terminal-based interaction of Git
         # do it here, not just for command execution to also catch any possible
         # ad-hoc Git calls
-        self._gittermprompt = environ.get('GIT_TERMINAL_PROMPT')
         environ['GIT_TERMINAL_PROMPT'] = '0'
+        # force asking passwords via Gooey
+        # we use SSH* because also Git falls back onto it
+        environ['SSH_ASKPASS_REQUIRE'] = 'force'
+        environ['SSH_ASKPASS'] = 'datalad-gooey-askpass'
 
         # setup themeing before the first dialog goes up
         self._setup_looknfeel()
@@ -182,8 +194,9 @@ class GooeyApp(QObject):
     def deinit(self):
         dlui.ui.set_backend(self._prev_ui_backend)
         # restore any possible term prompt setup
-        if self._gittermprompt:
-            environ['GIT_TERMINAL_PROMPT'] = self._gittermprompt
+        for var, val in self._restore_env.items():
+            if val is not None:
+                environ[var] = val
 
     #@cached_property not available for PY3.7
     @property
