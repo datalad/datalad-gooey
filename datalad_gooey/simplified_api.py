@@ -91,6 +91,18 @@ api = dict(
             'reckless',
             'source',
         )),
+        parameter_display_names=dict(
+            path='Only get',
+            # 'all' because we have no recursion_limit enabled
+            recursive='Also get all subdatasets',
+            get_data='Get file content',
+        ),
+        parameter_order=dict(
+            dataset=0,
+            get_data=1,
+            path=2,
+            recursive=3,
+        ),
     ),
     push=dict(
         name='&Push data/updates to a sibling',
