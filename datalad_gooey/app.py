@@ -1,8 +1,9 @@
 import logging
 import sys
 from types import MappingProxyType
-from pathlib import Path
+from os import environ
 from outdated import check_outdated
+from pathlib import Path
 from PySide6.QtWidgets import (
     QApplication,
     QMenu,
@@ -69,6 +70,12 @@ class GooeyApp(QObject):
         # bend datalad to our needs
         # we cannot handle ANSI coloring
         dlcfg.set('datalad.ui.color', 'off', scope='override', force=True)
+
+        # prevent any terminal-based interaction of Git
+        # do it here, not just for command execution to also catch any possible
+        # ad-hoc Git calls
+        self._gittermprompt = environ.get('GIT_TERMINAL_PROMPT')
+        environ['GIT_TERMINAL_PROMPT'] = '0'
 
         # setup themeing before the first dialog goes up
         self._setup_looknfeel()
@@ -174,6 +181,9 @@ class GooeyApp(QObject):
 
     def deinit(self):
         dlui.ui.set_backend(self._prev_ui_backend)
+        # restore any possible term prompt setup
+        if self._gittermprompt:
+            environ['GIT_TERMINAL_PROMPT'] = self._gittermprompt
 
     #@cached_property not available for PY3.7
     @property
