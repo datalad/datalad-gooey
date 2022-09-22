@@ -333,7 +333,8 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
             dir_button.setToolTip('Choose directory')
             dir_button.setIcon(gooey_resources.get_best_icon('directory'))
             hl.addWidget(dir_button)
-            dir_button.clicked.connect(self._select_dir)
+            dir_button.clicked.connect(
+                lambda: self._select_path(dirs_only=True))
 
     def _set_gooey_param_value(self, value):
         self._edit.setText(str(value))
@@ -359,33 +360,29 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
         # have their own
         self._edit.setToolTip(docs)
 
-    def _select_path(self):
+    def _select_path(self, dirs_only=False):
         dialog = QFileDialog(self)
-        dialog.setFileMode(self._pathtype)
+        dialog.setFileMode(
+            QFileDialog.Directory if dirs_only else self._pathtype)
         dialog.setOption(QFileDialog.DontResolveSymlinks)
         if self._basedir:
             # we have a basedir, so we can be clever
             dialog.setDirectory(str(self._basedir))
-        paths = None
         # we need to turn on 'System' in order to get broken symlinks
         # too
-        dialog.setFilter(dialog.filter() | QDir.System)
-        if dialog.exec():
-            paths = dialog.selectedFiles()
-            if paths:
-                # ignores any multi-selection
-                # TODO prevent or support specifically
-                self.set_gooey_param_value(paths[0])
-                self._edit.setModified(True)
+        if not dirs_only:
+            dialog.setFilter(dialog.filter() | QDir.System)
+        dialog.finished.connect(self._select_path_receiver)
+        dialog.open()
 
-    def _select_dir(self):
-        path = QFileDialog.getExistingDirectory(
-            parent=self,
-            caption='Gimme some!',
-            dir=str(self._basedir),
-        )
-        if path:
-            self.set_gooey_param_value(path)
+    def _select_path_receiver(self):
+        """Internal slot to receive the outcome of _select_path() dialog"""
+        dialog = self.sender()
+        paths = dialog.selectedFiles()
+        if paths:
+            # ignores any multi-selection
+            # TODO prevent or support specifically
+            self.set_gooey_param_value(paths[0])
             self._edit.setModified(True)
 
     def init_gooey_from_other_param(self, spec: Dict) -> None:
