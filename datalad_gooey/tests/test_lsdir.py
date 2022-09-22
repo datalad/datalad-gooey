@@ -1,6 +1,7 @@
 
 from pathlib import Path
 from ..lsdir import GooeyLsDir
+import stat
 from unittest.mock import patch
 
 from datalad.api import create
@@ -102,7 +103,10 @@ def test_iterdir(root=None, mockdef=None):
 @with_tempfile(mkdir=True)
 def test_inaccessible_directory(temp_dir_name: str = ""):
     new_dir = Path(temp_dir_name) / 'inaccessible_dir'
-    new_dir.mkdir(0o444)
+    new_dir.mkdir()
+    existing_permissions = stat.S_IMODE(new_dir.stat().st_mode)
+    new_permissions = existing_permissions ^ stat.S_IXUSR ^ stat.S_IRUSR ^ stat.S_IWUSR
+    new_dir.chmod(new_permissions)
     with assert_raises(IncompleteResultsError):
         res = list(GooeyLsDir.__call__(Path(temp_dir_name)))
         assert_equal(len(res), 1)
