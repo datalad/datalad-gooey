@@ -116,6 +116,8 @@ class FSBrowserItem(QTreeWidgetItem):
                 type_icon = 'file-git'
                 if res.get('key'):
                     type_icon = 'file-annex'
+                    # disambiguate from a file in Git
+                    type_ = 'annexed-file'
             self.set_item_type(type_, icon=type_icon)
 
     def update_from_lsdir_result(self, res: Dict):

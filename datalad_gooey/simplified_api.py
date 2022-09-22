@@ -62,7 +62,7 @@ api = dict(
         name='Create a &WebDAV sibling',
     ),
     drop=dict(
-        name='Dr&op dataset content',
+        name='Dr&op content',
         exclude_parameters=set((
             'check',
             'if_dirty',
@@ -70,7 +70,7 @@ api = dict(
         )),
     ),
     get=dict(
-        name='&Get dataset content',
+        name='&Get content',
         exclude_parameters=set((
             'description',
             'reckless',
@@ -157,7 +157,7 @@ directory_in_ds_api = {
 }
 file_api = None
 file_in_ds_api = {
-    c: s for c, s in api.items() if c in ('save', 'get', 'drop')
+    c: s for c, s in api.items() if c in ('save')
 }
 annexed_file_api = {
     c: s for c, s in api.items()
