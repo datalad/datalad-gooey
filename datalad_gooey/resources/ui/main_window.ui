@@ -94,7 +94,7 @@
                <x>0</x>
                <y>0</y>
                <width>381</width>
-               <height>152</height>
+               <height>142</height>
               </rect>
              </property>
             </widget>
@@ -211,7 +211,7 @@
      <x>0</x>
      <y>0</y>
      <width>800</width>
-     <height>21</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuUtilities">
@@ -253,10 +253,19 @@
     <addaction name="menuInterface"/>
     <addaction name="menuTheme"/>
    </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionReport_a_problem"/>
+    <addaction name="actionAbout"/>
+    <addaction name="actionGetHelp"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuDataset"/>
    <addaction name="menuView"/>
    <addaction name="menuUtilities"/>
+   <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionCheck_for_new_version">
@@ -305,6 +314,21 @@
   <action name="actionViewTheme_dark">
    <property name="text">
     <string>Dark</string>
+   </property>
+  </action>
+  <action name="actionReport_a_problem">
+   <property name="text">
+    <string>Report a problem</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
+  <action name="actionGetHelp">
+   <property name="text">
+    <string>Get help</string>
    </property>
   </action>
  </widget>
