@@ -27,6 +27,11 @@ dataset_content = [
     {'path': 'subds_modified', 'type': 'dataset'},
 ]
 
+adjusted_content = [
+    item for item in dataset_content if item.get('type') != 'symlink'
+]
+
+
 # Test _lsfiles with dataset
 @with_tempfile
 def test_lsfiles(path=None):
@@ -39,15 +44,21 @@ def test_lsfiles(path=None):
         GooeyLsDir.__call__(ds.pathobj)
         _lsfiles.assert_called()
         _iterdir.assert_not_called()
-    # Write results to list and test outputs
+    # Write results to list
     lsfiles_res = list(GooeyLsDir.__call__(ds.pathobj))
-    assert_equal(len(lsfiles_res), len(dataset_content))
+    # In case we are on a crippled filesystem, use content without symlinks
+    if not ds.repo.is_managed_branch():
+        content = dataset_content
+    else:
+        content = adjusted_content
+    # Test result outputs
+    assert_equal(len(lsfiles_res), len(content))
     for item in lsfiles_res:
         assert_in(
             {
                 'path': Path(item.get('path')).name,
                 'type': item.get('type'),
-            }, dataset_content)
+            }, content)
         
 
 dir_tree = {
