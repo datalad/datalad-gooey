@@ -15,7 +15,6 @@ from datalad.tests.utils_pytest import (
 )
 
 dataset_content = [
-    {'path': ' |;&%b5{}\'"<>Δקم๗あ .datc file_modified_', 'type': 'file'},
     {'path': 'directory_untracked', 'type': 'directory'},
     {'path': 'link2dir', 'type': 'symlink'},
     {'path': 'link2subdsdir', 'type': 'symlink'},
@@ -36,8 +35,8 @@ adjusted_content = [
 @with_tempfile
 def test_lsfiles(path=None):
     ds = get_deeply_nested_structure(path)
-    # new_dir = Path(path) / 'inaccessible_dir'
-    # new_dir.mkdir(0o444)
+    abnormal_filename = list(Path(path).glob('*file_modified_'))[0]
+    abnormal_filename.unlink()
     # Since this is a dataset, check that _lsfiles is called and not _iterdir
     with patch("datalad_gooey.lsdir._iterdir") as _iterdir,\
         patch("datalad_gooey.lsdir._lsfiles") as _lsfiles:
