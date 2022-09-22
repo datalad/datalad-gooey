@@ -65,7 +65,31 @@ api = dict(
         name='Create a Git&Hub sibling',
         exclude_parameters=set((
             'dryrun',
+            'github_login',
+            'github_organization',
+            'api'
         )),
+        parameter_display_names=dict(
+            dataset='Dataset',
+            reponame='New repository name on Github',
+            name='Sibling name',
+            private='Make GitHub repo private',
+            existing='If the sibling exists already...',
+            recursive='Create siblings for subdatasets',
+            credential='Name of credential to be used',
+            access_protocol='Access protocol',
+            publish_depends='Add publication dependency to'
+        ),
+        parameter_order=dict(
+            dataset=0,
+            reponame=1,
+            private=2,
+            name=3,
+            access_protocol=4,
+            existing=5,
+            recursive=6,
+            credential=7,
+        ),
     ),
     create_sibling_webdav=dict(
         name='Create a &WebDAV sibling',
