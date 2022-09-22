@@ -159,8 +159,10 @@ parameter_display_names = dict(
 dataset_api = {
     c: s for c, s in api.items()
     if c in (
-        'clone', 'create', 'create_sibling_gitlab', 'create_sibling_gin',
-        'create_sibling_github', 'drop', 'get', 'push', 'save', 'update'
+        'clone', 'create',
+        'create_sibling_gitlab', 'create_sibling_gin',
+        'create_sibling_github', 'create_sibling_webdav',
+        'drop', 'get', 'push', 'save', 'update'
     )
 }
 directory_api = {
