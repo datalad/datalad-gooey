@@ -33,7 +33,10 @@ from .active_api import (
 )
 from .api_utils import get_cmd_params
 from .utils import _NoValue
-from .constraints import EnsureDatasetSiblingName
+from .constraints import (
+    EnsureExistingDirectory,
+    EnsureDatasetSiblingName,
+)
 
 __all__ = ['populate_form_w_params']
 
@@ -190,8 +193,8 @@ def _get_parameter_widget_factory(
 
     # if we have no idea, use a simple line edit
     type_widget = pw.StrParamWidget
-    # no some parameters where we can derive semantics from their name
-    if name == 'dataset':
+    # now some parameters where we can derive semantics from their name
+    if name == 'dataset' or isinstance(constraints, EnsureExistingDirectory):
         type_widget = functools.partial(
             pw.PathParamWidget,
             pathtype=QFileDialog.Directory,
@@ -201,6 +204,8 @@ def _get_parameter_widget_factory(
             pw.PathParamWidget, basedir=basedir)
     elif name == 'cfg_proc':
         type_widget = pw.CfgProcParamWidget
+    elif name == 'recursion_limit':
+        type_widget = functools.partial(pw.PosIntParamWidget, allow_none=True)
     # now parameters where we make decisions based on their configuration
     elif isinstance(constraints, EnsureDatasetSiblingName):
         type_widget = pw.SiblingChoiceParamWidget
@@ -212,8 +217,6 @@ def _get_parameter_widget_factory(
     elif argparse_spec.get('choices'):
         type_widget = functools.partial(
             pw.ChoiceParamWidget, choices=argparse_spec.get('choices'))
-    elif name == 'recursion_limit':
-        type_widget = functools.partial(pw.PosIntParamWidget, allow_none=True)
 
     # we must consider the following nargs spec for widget selection
     # (int, '*', '+'), plus action=append

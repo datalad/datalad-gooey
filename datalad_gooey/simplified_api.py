@@ -1,4 +1,7 @@
-from .constraints import EnsureDatasetSiblingName
+from .constraints import (
+    EnsureDatasetSiblingName,
+    EnsureExistingDirectory,
+)
 
 # each item is a command that is allowed in the API
 # the key is the command name in the Python API.
@@ -24,6 +27,9 @@ api = dict(
             path=1,
             dataset=2,
         ),
+        parameter_constraints=dict(
+            path=EnsureExistingDirectory(),
+        ),
     ),
     create=dict(
         name='C&reate a dataset',
@@ -41,6 +47,9 @@ api = dict(
             path=0,
             annex=1,
             dataset=2,
+        ),
+        parameter_constraints=dict(
+            path=EnsureExistingDirectory(),
         ),
     ),
     create_sibling_gitlab=dict(
