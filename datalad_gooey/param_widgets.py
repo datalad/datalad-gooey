@@ -422,14 +422,12 @@ class CfgProcParamWidget(ChoiceParamWidget):
                     or not proc_name.startswith('cfg_'):
                 # not a good config procedure
                 continue
-            self._add_item(proc_name)
+            # strip 'cfg_' prefix, even when reporting, we do not want it
+            # because commands like `create()` put it back themselves
+            self._add_item(proc_name[4:])
         if self.count():
             self.setEnabled(True)
             self.setPlaceholderText('Select procedure')
-
-    def _gooey_map_val2label(self, val):
-        # strip 'cfg_' prefix
-        return val[4:].replace('cfg_', '') if val else ''
 
 
 class SiblingChoiceParamWidget(ChoiceParamWidget):
