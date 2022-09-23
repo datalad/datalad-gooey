@@ -278,6 +278,10 @@ class BoolParamWidget(QCheckBox, GooeyParamWidgetMixin):
         # convert to bool
         return state == Qt.Checked
 
+    def set_gooey_param_spec(self, name: str, default=_NoValue):
+        super().set_gooey_param_spec(name, default)
+        self._set_gooey_param_value(default)
+
 
 class StrParamWidget(QLineEdit, GooeyParamWidgetMixin):
     def _set_gooey_param_value(self, value):
