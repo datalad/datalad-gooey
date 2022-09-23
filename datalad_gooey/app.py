@@ -130,7 +130,8 @@ class GooeyApp(QObject):
         # looks silly with the uiuiuiuiui, but these are the real names ;-)
         dlui.KNOWN_BACKENDS['gooey'] = GooeyUI
         dlui.ui.set_backend('gooey')
-        dlui.ui.ui.set_app(self)
+        uibridge = dlui.ui.ui.set_app(self)
+        self.get_widget('statusbar').addPermanentWidget(uibridge.progress_bar)
 
         # connect the generic cmd execution signal to the handler
         self.execute_dataladcmd.connect(self._cmdexec.execute)
