@@ -402,7 +402,7 @@ class GooeyFilesystemBrowser(QObject):
         cmdkwargs = dict()
         context = QMenu(parent=self._tree)
         if path_type == 'dataset':
-            from .active_api import dataset_api as cmdapi
+            from .active_suite import dataset_api as cmdapi
             submenu = context.addMenu('Dataset commands')
             cmdkwargs['dataset'] = ipath
         elif path_type == 'directory':
@@ -410,23 +410,23 @@ class GooeyFilesystemBrowser(QObject):
             # path the directory path to the command's `path` argument
             cmdkwargs['path'] = ipath
             if dsroot:
-                from .active_api import directory_in_ds_api as cmdapi
+                from .active_suite import directory_in_ds_api as cmdapi
                 # also pass dsroot
                 cmdkwargs['dataset'] = dsroot
             else:
-                from .active_api import directory_api as cmdapi
+                from .active_suite import directory_api as cmdapi
             submenu = context.addMenu('Directory commands')
         elif path_type in ('file', 'symlink', 'annexed-file'):
             dsroot = get_dataset_root(ipath)
             cmdkwargs['path'] = ipath
             if dsroot:
                 if path_type == 'annexed-file':
-                    from .active_api import annexed_file_api as cmdapi
+                    from .active_suite import annexed_file_api as cmdapi
                 else:
-                    from .active_api import file_in_ds_api as cmdapi
+                    from .active_suite import file_in_ds_api as cmdapi
                 cmdkwargs['dataset'] = dsroot
             else:
-                from .active_api import file_api as cmdapi
+                from .active_suite import file_api as cmdapi
             submenu = context.addMenu('File commands')
         # TODO context menu for annex'ed files
 

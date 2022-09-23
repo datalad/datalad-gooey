@@ -1,9 +1,7 @@
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMenu
 
-from .active_api import (
-    api_group_order,
-)
+from .active_suite import spec as active_suite
 
 
 def add_cmd_actions_to_menu(parent, receiver, api, menu=None, cmdkwargs=None):
@@ -38,7 +36,7 @@ def add_cmd_actions_to_menu(parent, receiver, api, menu=None, cmdkwargs=None):
         # the name of the command is injected into the action
         # as user data. We wrap it in a dict to enable future
         # additional payload
-        adata = dict(__cmd_name__=cmdname)
+        adata = dict(__cmd_name__=cmdname, __api__=api)
         # put on record, if we are generating actions for a specific
         # dataset
         if cmdkwargs is not None:
@@ -61,7 +59,8 @@ def add_cmd_actions_to_menu(parent, receiver, api, menu=None, cmdkwargs=None):
     for group, submenu in sorted(
             submenus.items(),
             # sort items with no sorting indicator last
-            key=lambda x: api_group_order.get(x[0], ('zzzz'))):
+            key=lambda x: active_suite.get('api_group_order', {}).get(
+                x[0], ('zzzz'))):
         # skip menus without actions
         if not submenu.actions():
             continue

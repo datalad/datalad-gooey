@@ -26,11 +26,7 @@ from datalad.utils import (
 
 from . import param_widgets as pw
 from .param_multival_widget import MultiValueInputWidget
-from .active_api import (
-    api,
-    exclude_parameters,
-    parameter_display_names,
-)
+from .active_suite import spec as active_suite
 from .api_utils import get_cmd_params
 from .utils import _NoValue
 from .constraints import (
@@ -42,6 +38,7 @@ __all__ = ['populate_form_w_params']
 
 
 def populate_form_w_params(
+        api,
         basedir: Path,
         formlayout: QFormLayout,
         cmdname: str,
@@ -83,7 +80,7 @@ def populate_form_w_params(
                 cmd_api_spec.get(
                     'parameter_order', {}).get(x[0], 99),
                 x[0])):
-        if pname in exclude_parameters:
+        if pname in active_suite.get('exclude_parameters', []):
             continue
         if pname in cmd_api_spec.get('exclude_parameters', []):
             continue
@@ -107,7 +104,7 @@ def populate_form_w_params(
         display_name = cmd_param_display_names.get(
             pname,
             # fallback to API specific override
-            parameter_display_names.get(
+            active_suite.get('parameter_display_names', {}).get(
                 pname,
                 # last resort:
                 # use capitalized orginal with _ removed as default

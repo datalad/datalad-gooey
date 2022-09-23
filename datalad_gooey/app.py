@@ -57,6 +57,7 @@ class GooeyApp(QObject):
         'errorLog': QPlainTextEdit,
         'menuDataset': QMenu,
         'menuView': QMenu,
+        'menuSuite': QMenu,
         'menuUtilities': QMenu,
         'statusbar': QStatusBar,
         'actionCheck_for_new_version': QAction,
@@ -155,6 +156,8 @@ class GooeyApp(QObject):
         #self._fsbrowser._tree.currentItemChanged.connect(
         #    lambda cur, prev: self._cmdui.reset_form())
 
+        # TODO could be done lazily to save in entrypoint iteration
+        self._setup_suites()
         self._connect_menu_view(self.get_widget('menuView'))
 
     def _setup_ongoing_cmdexec(self, thread_id, cmdname, cmdargs, exec_params):
@@ -243,7 +246,7 @@ class GooeyApp(QObject):
 
     def _populate_dataset_menu(self):
         """Private slot to populate connected QMenus with dataset actions"""
-        from .active_api import dataset_api
+        from .active_suite import dataset_api
         add_cmd_actions_to_menu(
             self, self._cmdui.configure, dataset_api, self.sender())
         # immediately sever the connection to avoid repopulating the menu
@@ -272,7 +275,7 @@ class GooeyApp(QObject):
 
     def _connect_menu_view(self, menu: QMenu):
         for cfgvar, menuname, subject in (
-                ('datalad.gooey.ui-mode', 'menuInterface', 'interface mode'),
+                ('datalad.gooey.active-suite', 'menuSuite', 'suite'),
                 ('datalad.gooey.ui-theme', 'menuTheme', 'theme'),
         ):
             mode = dlcfg.obtain(cfgvar)
@@ -289,6 +292,7 @@ class GooeyApp(QObject):
         action = self.sender()
         cfgvar, subject = action.data()
         mode = action.objectName().split('_')[-1]
+        assert mode
         dlcfg.set(cfgvar, mode, scope='global')
         QMessageBox.information(
             self.main_window, 'Note',
@@ -313,6 +317,22 @@ class GooeyApp(QObject):
                             'Missing `pyqtdarktheme` installation.')
                 return
             qtapp.setStyleSheet(qdarktheme.load_stylesheet(uitheme))
+
+    def _setup_suites(self):
+        # put known suites in menu
+        suite_menu = self.get_widget('menuSuite')
+        from datalad.support.entrypoints import iter_entrypoints
+        for sname, _, suite in iter_entrypoints(
+                'datalad.gooey.suites', load=True):
+            title = suite.get('title')
+            if not title:
+                title = sname.capitalize()
+            description = suite.get('description')
+            action = QAction(title, parent=suite_menu)
+            action.setObjectName(f"actionSetGooeySuite_{sname}")
+            if description:
+                action.setToolTip(description)
+            suite_menu.addAction(action)
 
 
 def main():

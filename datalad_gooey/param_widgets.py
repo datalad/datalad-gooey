@@ -298,7 +298,8 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
 
         # the main widget is a simple line edit
         self._edit = QLineEdit(self)
-        if dlcfg.obtain('datalad.gooey.ui-mode') == 'simplified':
+        # TODO this must be configurable in the suite specification
+        if dlcfg.obtain('datalad.gooey.active-suite') == 'gooey-simplified':
             # in simplified mode we do not allow manual entry of paths
             # to avoid confusions re interpretation of relative paths
             # https://github.com/datalad/datalad-gooey/issues/106

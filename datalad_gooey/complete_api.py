@@ -84,31 +84,31 @@ dataset_api = {
     if name in api
 }
 
-# commands that operate on any directory
-directory_api = api
-# commands that operate on directories in datasets
-directory_in_ds_api = api
-# commands that operate on any file
-file_api = api
-# commands that operate on any file in a dataset
-file_in_ds_api = api
-# command that operate on annex'ed files
-annexed_file_api = api
-
-# these generic parameters never make sense
-exclude_parameters = set((
-    # cmd execution wants a generator
-    'return_type',
-    # could be useful internally, but a user cannot chain commands
-    'result_filter',
-    # we cannot deal with non-dict results, and override any transform
-    'result_xfm',
-))
-
-# generic name overrides
-parameter_display_names = {}
-
-# mapping of group name/title to sort index
-api_group_order = {
-    spec[1]: spec[0] for spec in get_interface_groups()
-}
+gooey_suite = dict(
+    title='Complete',
+    description='Generic access to all command available in this DataLad installation',
+    apis=dict(
+        dataset=dataset_api,
+        directory=api,
+        directory_in_ds=api,
+        file=api,
+        file_in_ds=api,
+        annexed_file=api,
+        other=api,
+    ),
+    # mapping of group name/title to sort index
+    api_group_order={
+        spec[1]: spec[0] for spec in get_interface_groups()
+    },
+    # these generic parameters never make sense
+    exclude_parameters=set((
+        # cmd execution wants a generator
+        'return_type',
+        # could be useful internally, but a user cannot chain commands
+        'result_filter',
+        # we cannot deal with non-dict results, and override any transform
+        'result_xfm',
+    )),
+    # generic name overrides
+    parameter_display_names={},
+)
