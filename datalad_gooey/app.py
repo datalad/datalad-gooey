@@ -56,10 +56,14 @@ class GooeyApp(QObject):
         'commandLog': QPlainTextEdit,
         'errorLog': QPlainTextEdit,
         'menuDataset': QMenu,
+        'menuHelp': QMenu,
         'menuView': QMenu,
         'menuUtilities': QMenu,
         'statusbar': QStatusBar,
         'actionCheck_for_new_version': QAction,
+        'actionReport_a_problem': QAction,
+        'actionAbout': QAction,
+        'actionGetHelp': QAction
     }
 
     execute_dataladcmd = Signal(str, MappingProxyType, MappingProxyType)
@@ -146,6 +150,12 @@ class GooeyApp(QObject):
             self._populate_dataset_menu)
         self.main_window.actionCheck_for_new_version.triggered.connect(
             self._check_new_version)
+        self.main_window.actionReport_a_problem.triggered.connect(
+            self._get_issue_template)
+        self.main_window.actionGetHelp.triggered.connect(
+            self._get_help)
+        self.main_window.actionAbout.triggered.connect(
+            self._get_info)
         # reset the command configuration tab whenever the item selection in
         # tree view changed.
         # This behavior was originally requested in
@@ -268,6 +278,34 @@ class GooeyApp(QObject):
             mbox = QMessageBox.warning
             msg = f'A newer DataLad version {latest} ' \
                   f'is available (installed: {dlversion}).'
+        mbox(self.main_window, title, msg)
+
+    def _get_issue_template(self):
+        mbox = QMessageBox.warning
+        title = 'Oooops'
+        msg = 'Please report unexpected or faulty behavior to us. File a ' \
+              'report with <a href=https://github.com/datalad/datalad-gooey/issues/new?assignees=&labels=&template=issue_template.yml>' \
+              'datalad-gooey </a> or with <a href=https://github.com/datalad/datalad-gooey/issues/new?assignees=&labels=&template=issue_template.yml>' \
+              'DataLad</a>'
+        mbox(self.main_window, title, msg)
+
+    def _get_help(self):
+        mbox = QMessageBox.information
+        title = 'I need help!'
+        msg = 'Find resources to learn more or ask questions here: <ul><li>' \
+              'About this tool:<a href=http://docs.datalad.org/projects/gooey/en/latest>DataLad Gooey Docs</a> </li>' \
+              '<li>General DataLad user tutorials: <a href=http://handbook.datalad.org> handbook.datalad.org </a> </li>' \
+              '<li>Live chat and weekly office hour: <a href=https://matrix.to/#/!NaMjKIhMXhSicFdxAj:matrix.org?via=matrix.waite.eu&via=matrix.org&via=inm7.de>' \
+              'Join us on Matrix </li></ul>'
+        mbox(self.main_window, title, msg)
+
+    def _get_info(self):
+        mbox = QMessageBox.information
+        title = 'About'
+        msg = 'DataLad and DataLad Gooey are free and open source software. ' \
+              'Read the <a href=https://doi.org/10.21105/joss.03262> paper' \
+              '</a>, or find out more at <a href=http://datalad.org>' \
+              'datalad.org</a>.'
         mbox(self.main_window, title, msg)
 
     def _connect_menu_view(self, menu: QMenu):
