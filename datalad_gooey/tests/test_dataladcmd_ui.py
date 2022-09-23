@@ -18,7 +18,7 @@ def test_GooeyDataladCmdUI(gooey_app, *, qtbot):
     qtbot.addWidget(gooey_app.main_window)
     cmdui = GooeyDataladCmdUI(gooey_app, gooey_app.get_widget('cmdTab'))
 
-    cmdui.configure('wtf', {})
+    cmdui.configure({}, 'wtf', {})
 
     # command tab is set up:
     assert_true(cmdui.pwidget.isEnabled())
