@@ -219,6 +219,8 @@ def _get_parameter_widget_factory(
         type_widget = functools.partial(
             pw.PathParamWidget,
             pathtype=QFileDialog.Directory,
+            disable_manual_edit=active_suite.get('options', {}).get(
+                'disable_manual_path_input', False),
             basedir=basedir)
     elif name == 'path':
         type_widget = functools.partial(

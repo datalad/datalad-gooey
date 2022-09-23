@@ -247,6 +247,9 @@ annexed_file_api['get'] = annexed_file_get
 gooey_suite = dict(
     title='Simplified',
     description='Simplified access to the most essential operations',
+    options=dict(
+        disable_manual_path_input=True,
+    ),
     apis=dict(
         dataset=dataset_api,
         directory=directory_api,
