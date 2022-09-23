@@ -1,6 +1,8 @@
 import functools
 from pathlib import Path
 
+from PySide6.QtWidgets import QWidget
+
 from ..param_widgets import (
     BoolParamWidget,
     StrParamWidget,
@@ -28,24 +30,27 @@ def test_GooeyParamWidgetMixin():
             (PathParamWidget, str(Path.cwd()), None),
             # cannot include MultiValueInputWidget, leads to Python segfault
             # on garbage collection?!
-            # (functools.partial(
-            #     MultiValueInputWidget, PathParamWidget),
-            #  [str(Path.cwd()), 'temp'],
-            #  'mypath'),
-            # (functools.partial(
-            #     MultiValueInputWidget, PathParamWidget),
-            #  [str(Path.cwd()), 'temp'],
-            #  None),
+            (functools.partial(
+                MultiValueInputWidget, PathParamWidget),
+             [str(Path.cwd()), 'temp'],
+             'mypath'),
+            (functools.partial(
+                MultiValueInputWidget, PathParamWidget),
+             [str(Path.cwd()), 'temp'],
+             None),
 
     ):
         # this is how all parameter widgets are instantiated
+        parent = QWidget()  # we need parent to stick around,
+                            # so nothing gets picked up by GC
         pw = load_parameter_widget(
-            None,
+            parent,
             pw_factory,
             name='peewee',
             docs='EXPLAIN!',
             default=default,
         )
+
         # If nothing was set yet, we expect `_NoValue` as the "representation of
         # default" here:
         assert pw.get_gooey_param_spec() == {'peewee': _NoValue}, \
