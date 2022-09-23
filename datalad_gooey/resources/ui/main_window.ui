@@ -258,6 +258,7 @@
     <addaction name="actionReport_a_problem"/>
     <addaction name="actionAbout"/>
     <addaction name="actionGetHelp"/>
+    <addaction name="actionDiagnostic_infos"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuDataset"/>
@@ -307,6 +308,11 @@
   <action name="actionGetHelp">
    <property name="text">
     <string>Get help</string>
+   </property>
+  </action>
+  <action name="actionDiagnostic_infos">
+   <property name="text">
+    <string>Diagnostic infos</string>
    </property>
   </action>
  </widget>
