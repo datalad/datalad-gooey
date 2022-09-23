@@ -229,12 +229,23 @@ annexed_file_api = {
 # get of a single annexed files can be simpler
 from copy import deepcopy
 annexed_file_get = deepcopy(annexed_file_api['get'])
-annexed_file_get['exclude_parameters'].add('recursive')
+parameter_constraints=dict(
+            path=EnsureExistingDirectory(),
+        ),
+annexed_file_get['exclude_parameters'].update((
+    # not getting data for an annexed file makes no sense
+    'get_data',
+    # recursion underneath a file is not possible
+    'recursive',
+))
+annexed_file_get['parameter_nargs'] = dict(
+    path=1,
+)
 annexed_file_api['get'] = annexed_file_get
 
 
 gooey_suite = dict(
-    title='Essential',
+    title='Simplified',
     description='Simplified access to the most essential operations',
     apis=dict(
         dataset=dataset_api,

@@ -18,7 +18,6 @@ from PySide6.QtWidgets import (
 
 from datalad.interface.common_opts import eval_params
 from datalad.support.constraints import EnsureChoice
-from datalad.support.param import Parameter
 from datalad.utils import (
     get_wrapped_class,
 )
@@ -30,6 +29,7 @@ from .active_suite import spec as active_suite
 from .api_utils import get_cmd_params
 from .utils import _NoValue
 from .constraints import (
+    Constraint,
     EnsureExistingDirectory,
     EnsureDatasetSiblingName,
 )
@@ -58,6 +58,27 @@ def populate_form_w_params(
 
     # collect widgets for a later connection setup
     form_widgets = dict()
+
+    def _get_nargs(pname, argparse_spec):
+        # TODO we must consider the following action specs for widget selection
+        # - 'store_const'
+        # - 'store_true' and 'store_false'
+        # - 'append'
+        # - 'append_const'
+        # - 'count'
+        # - 'extend'
+        if pname in cmd_api_spec.get('parameter_nargs', []):
+            # take as gospel
+            return cmd_api_spec['parameter_nargs'][pname]
+        elif argparse_spec.get('action') == 'append':
+            return '*'
+        else:
+            nargs = argparse_spec.get('nargs', None)
+            try:
+                nargs = int(nargs)
+            except (ValueError, TypeError):
+                pass
+            return nargs
 
     # loop over all parameters of the command (with their defaults)
     def _specific_params():
@@ -90,13 +111,21 @@ def populate_form_w_params(
             param_spec.constraints = \
                 cmd_api_spec['parameter_constraints'][pname]
         # populate the layout with widgets for each of them
+        # we do not pass Parameter instances further down, but disassemble
+        # and homogenize here
         pwidget = _get_parameter_widget(
-            basedir,
-            formlayout.parentWidget(),
-            param_spec,
-            pname,
+            basedir=basedir,
+            parent=formlayout.parentWidget(),
+            name=pname,
+            constraints=cmd_api_spec['parameter_constraints'][pname]
+            if pname in cmd_api_spec.get('parameter_constraints', [])
+            else param_spec.constraints,
+            nargs=_get_nargs(pname, param_spec.cmd_kwargs),
             # will also be _NoValue, if there was none
-            pdefault,
+            default=pdefault,
+            docs=param_spec._doc,
+            # TODO make obsolete
+            argparse_spec=param_spec.cmd_kwargs,
         )
         form_widgets[pname] = pwidget
         # query for a known display name
@@ -138,9 +167,12 @@ def populate_form_w_params(
 def _get_parameter_widget(
         basedir: Path,
         parent: QWidget,
-        param: Parameter,
         name: str,
-        default: Any = pw._NoValue) -> QWidget:
+        constraints: Constraint,
+        nargs: int or str,
+        default: Any = pw._NoValue,
+        docs: str = '',
+        argparse_spec: Dict = None) -> QWidget:
     """Populate a given layout with a data entry widget for a command parameter
 
     `value` is an explicit setting requested by the caller. A value of
@@ -153,16 +185,18 @@ def _get_parameter_widget(
     pwid_factory = _get_parameter_widget_factory(
         name,
         default,
-        param.constraints,
-        param.cmd_kwargs,
-        basedir)
+        constraints,
+        nargs,
+        basedir,
+        # TODO make obsolete
+        argparse_spec)
     return pw.load_parameter_widget(
         parent,
         pwid_factory,
         name=name,
-        docs=param._doc,
+        docs=docs,
         default=default,
-        validator=param.constraints,
+        validator=constraints,
     )
 
 
@@ -170,24 +204,14 @@ def _get_parameter_widget_factory(
         name: str,
         default: Any,
         constraints: Callable or None,
-        argparse_spec: Dict,
-        basedir: Path) -> Callable:
+        nargs: int or str,
+        basedir: Path,
+        # TODO make obsolete
+        argparse_spec: Dict) -> Callable:
     """Translate DataLad command parameter specs into Gooey input widgets"""
-    # for now just one to play with
-    # TODO each factory must provide a standard widget method
-    # to return the final value, ready to pass onto the respective
-    # parameter of the command call
+    if argparse_spec is None:
+        argparse_spec = {}
     argparse_action = argparse_spec.get('action')
-    # we must consider the following action specs for widget selection
-    # - 'store_const'
-    # - 'store_true' and 'store_false'
-    # - 'append'
-    # - 'append_const'
-    # - 'count'
-    # - 'extend'
-    #if name == 'path':
-    #    return get_pathselection_widget
-
     # if we have no idea, use a simple line edit
     type_widget = pw.StrParamWidget
     # now some parameters where we can derive semantics from their name
@@ -206,11 +230,15 @@ def _get_parameter_widget_factory(
     # now parameters where we make decisions based on their configuration
     elif isinstance(constraints, EnsureDatasetSiblingName):
         type_widget = pw.SiblingChoiceParamWidget
+    # TODO ideally the suite API would normalize this to a EnsureBool
+    # constraint
     elif argparse_action in ('store_true', 'store_false'):
         type_widget = pw.BoolParamWidget
     elif isinstance(constraints, EnsureChoice) and argparse_action is None:
         type_widget = functools.partial(
             pw.ChoiceParamWidget, choices=constraints._allowed)
+    # TODO ideally the suite API would normalize this to a EnsureChoice
+    # constraint
     elif argparse_spec.get('choices'):
         type_widget = functools.partial(
             pw.ChoiceParamWidget, choices=argparse_spec.get('choices'))
@@ -219,12 +247,15 @@ def _get_parameter_widget_factory(
     # (int, '*', '+'), plus action=append
     # in all these cases, we need to expect multiple instances of the data type
     # for which we have selected the input widget above
-    argparse_nargs = argparse_spec.get('nargs')
-    if (argparse_action == 'append'
-            or argparse_nargs in ('+', '*')
-            or isinstance(argparse_nargs, int)):
-        type_widget = functools.partial(
-            # TODO give a fixed N as a parameter too
-            MultiValueInputWidget, type_widget)
+    if isinstance(nargs, int):
+        # we have a concrete number
+        if nargs > 1:
+            type_widget = functools.partial(
+                # TODO give a fixed N as a parameter too
+                MultiValueInputWidget, type_widget)
+    else:
+        if nargs in ('+', '*') or argparse_action == 'append':
+            type_widget = functools.partial(
+                MultiValueInputWidget, type_widget)
 
     return type_widget
