@@ -1,0 +1,66 @@
+name: Gooey issue
+
+# For documentation concerning the Github form schema see
+# https://docs.github.com/en/communities/using-templates-to-encourage-useful-issues-and-pull-requests/syntax-for-githubs-form-schema
+
+description: Gooey issue
+
+body:
+  - type: dropdown
+    attributes:
+      label: Is it a new bug?
+      description: "Before filing an issue, please take some time to
+       browse through [existing issues](https://github.com/datalad/datalad-gooey/issues).
+       If it has been reported already, please add a comment to it instead of
+       opening a new issue."
+      options:
+        - I did not find an existing issue about my problem
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: What is the problem?
+      description: "Please summarize the issue briefly. Add screenshots if they 
+      help to illustrate it, or copy-paste error messages"
+      placeholder: "Example: The App is unresponsive when I click on Help"
+
+  - type: textarea
+    attributes:
+      label: What steps will reproduce the problem?
+      description: "How do you trigger this bug? Please walk us through it step
+       by step."
+      placeholder: |
+        Example:
+        1. Open the App from the Desktop shortcut.
+        2. Select Documents as the root folder.
+        3. Click the Help Tab. The app freezes and becomes unresponsive.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Additional context
+      description: "Is there anything else that would be useful to know in this 
+      context? Please also copy-paste relevant output from the Command log, 
+      Error log, or the background Terminal."
+
+  - type: checkboxes
+    id: installer
+    attributes:
+      label: How did you install the App?
+      options:
+        - label: Via the Windows installer
+        - label: Using pip (``pip install datalad-gooey``)
+        - label: Using brew (``brew install datalad-gooey``)
+        - label: Using conda (``conda install -c forge datalad-gooey``)
+        - label: Not sure
+        - label: Other
+
+  - type: textarea
+    attributes:
+      label: System information
+      description: "Please tell us more about your system, including
+      operating system and software versions. The more information we
+      get, the better. You can copy-paste this information from
+      'Help' -> 'Diagnostic infos'"

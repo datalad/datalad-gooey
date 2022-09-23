@@ -13,6 +13,8 @@ command_suite = (
     "Gooey (GUI)",
     [
         ('datalad_gooey.gooey', 'Gooey'),
+        ('datalad_gooey.askpass', 'GooeyAskPass',
+         'gooey-askpass', 'gooey_askpass'),
         ('datalad_gooey.lsdir', 'GooeyLsDir', 'gooey-lsdir', 'gooey_lsdir'),
         ('datalad_gooey.status_light', 'GooeyStatusLight',
          'gooey-status-light', 'gooey_status_light'),
@@ -20,16 +22,25 @@ command_suite = (
 )
 
 from datalad.support.extensions import register_config
-from datalad.support.constraints import EnsureChoice
+from datalad.support.constraints import (
+    EnsureChoice,
+    EnsureStr,
+)
 register_config(
-    'datalad.gooey.ui-mode',
-    'Which user interface mode to use in the application',
+    'datalad.gooey.active-suite',
+    'Which user interface suite to use in the application',
     description=\
-    "In 'simplified' mode advanced operations operations are hidden "
+    "A suite is a particular set of commands that is available through "
+    "the application. The command interface can be customized, such that "
+    "different features and different levels of complexity can be exposed "
+    "for the same command in different suites. "
+    "Two standard suites are provided, but extension package may provide "
+    "additional suites that can be configured. "
+    "In the 'simplified' suite advanced operations operations are hidden "
     "in the user interface. In 'complete' mode, all functionality "
     'is exposed.',
-    type=EnsureChoice('simplified', 'complete'),
-    default='simplified',
+    type=EnsureStr() | EnsureChoice('gooey-simplified', 'gooey-complete'),
+    default='gooey-simplified',
     scope='global')
 register_config(
     'datalad.gooey.ui-theme',

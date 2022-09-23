@@ -16,6 +16,7 @@ High-level API commands
    :toctree: generated
 
    gooey
+   gooey_askpass
    gooey_lsdir
    gooey_status_light
 
@@ -27,6 +28,7 @@ Command line reference
    :maxdepth: 1
 
    generated/man/datalad-gooey
+   generated/man/datalad-gooey-askpass
    generated/man/datalad-gooey-lsdir
    generated/man/datalad-gooey-status-light
 

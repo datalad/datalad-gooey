@@ -56,10 +56,15 @@ class GooeyApp(QObject):
         'commandLog': QPlainTextEdit,
         'errorLog': QPlainTextEdit,
         'menuDataset': QMenu,
+        'menuHelp': QMenu,
         'menuView': QMenu,
+        'menuSuite': QMenu,
         'menuUtilities': QMenu,
         'statusbar': QStatusBar,
         'actionCheck_for_new_version': QAction,
+        'actionReport_a_problem': QAction,
+        'actionAbout': QAction,
+        'actionGetHelp': QAction
     }
 
     execute_dataladcmd = Signal(str, MappingProxyType, MappingProxyType)
@@ -71,11 +76,23 @@ class GooeyApp(QObject):
         # we cannot handle ANSI coloring
         dlcfg.set('datalad.ui.color', 'off', scope='override', force=True)
 
+        # capture what env vars we modified, None means did not exist
+        self._restore_env = {
+            name: environ.get(name)
+            for name in (
+                'GIT_TERMINAL_PROMPT',
+                'SSH_ASKPASS_REQUIRE',
+                'SSH_ASKPASS',
+            )
+        }
         # prevent any terminal-based interaction of Git
         # do it here, not just for command execution to also catch any possible
         # ad-hoc Git calls
-        self._gittermprompt = environ.get('GIT_TERMINAL_PROMPT')
         environ['GIT_TERMINAL_PROMPT'] = '0'
+        # force asking passwords via Gooey
+        # we use SSH* because also Git falls back onto it
+        environ['SSH_ASKPASS_REQUIRE'] = 'force'
+        environ['SSH_ASKPASS'] = 'datalad-gooey-askpass'
 
         # setup themeing before the first dialog goes up
         self._setup_looknfeel()
@@ -134,6 +151,12 @@ class GooeyApp(QObject):
             self._populate_dataset_menu)
         self.main_window.actionCheck_for_new_version.triggered.connect(
             self._check_new_version)
+        self.main_window.actionReport_a_problem.triggered.connect(
+            self._get_issue_template)
+        self.main_window.actionGetHelp.triggered.connect(
+            self._get_help)
+        self.main_window.actionAbout.triggered.connect(
+            self._get_info)
         # reset the command configuration tab whenever the item selection in
         # tree view changed.
         # This behavior was originally requested in
@@ -143,6 +166,8 @@ class GooeyApp(QObject):
         #self._fsbrowser._tree.currentItemChanged.connect(
         #    lambda cur, prev: self._cmdui.reset_form())
 
+        # TODO could be done lazily to save in entrypoint iteration
+        self._setup_suites()
         self._connect_menu_view(self.get_widget('menuView'))
 
     def _setup_ongoing_cmdexec(self, thread_id, cmdname, cmdargs, exec_params):
@@ -188,8 +213,9 @@ class GooeyApp(QObject):
     def deinit(self):
         dlui.ui.set_backend(self._prev_ui_backend)
         # restore any possible term prompt setup
-        if self._gittermprompt:
-            environ['GIT_TERMINAL_PROMPT'] = self._gittermprompt
+        for var, val in self._restore_env.items():
+            if val is not None:
+                environ[var] = val
 
     #@cached_property not available for PY3.7
     @property
@@ -230,7 +256,7 @@ class GooeyApp(QObject):
 
     def _populate_dataset_menu(self):
         """Private slot to populate connected QMenus with dataset actions"""
-        from .active_api import dataset_api
+        from .active_suite import dataset_api
         add_cmd_actions_to_menu(
             self, self._cmdui.configure, dataset_api, self.sender())
         # immediately sever the connection to avoid repopulating the menu
@@ -257,9 +283,37 @@ class GooeyApp(QObject):
                   f'is available (installed: {dlversion}).'
         mbox(self.main_window, title, msg)
 
+    def _get_issue_template(self):
+        mbox = QMessageBox.warning
+        title = 'Oooops'
+        msg = 'Please report unexpected or faulty behavior to us. File a ' \
+              'report with <a href="https://github.com/datalad/datalad-gooey/issues/new?template=issue_template.yml">' \
+              'datalad-gooey </a> or with <a href="https://github.com/datalad/datalad-gooey/issues/new?assignees=&labels=gooey&template=issue_template_gooey.yml">' \
+              'DataLad</a>'
+        mbox(self.main_window, title, msg)
+
+    def _get_help(self):
+        mbox = QMessageBox.information
+        title = 'I need help!'
+        msg = 'Find resources to learn more or ask questions here: <ul><li>' \
+              'About this tool:<a href=http://docs.datalad.org/projects/gooey/en/latest>DataLad Gooey Docs</a> </li>' \
+              '<li>General DataLad user tutorials: <a href=http://handbook.datalad.org> handbook.datalad.org </a> </li>' \
+              '<li>Live chat and weekly office hour: <a href="https://matrix.to/#/!NaMjKIhMXhSicFdxAj:matrix.org?via=matrix.waite.eu&via=matrix.org&via=inm7.de">' \
+              'Join us on Matrix </li></ul>'
+        mbox(self.main_window, title, msg)
+
+    def _get_info(self):
+        mbox = QMessageBox.information
+        title = 'About'
+        msg = 'DataLad and DataLad Gooey are free and open source software. ' \
+              'Read the <a href=https://doi.org/10.21105/joss.03262> paper' \
+              '</a>, or find out more at <a href=http://datalad.org>' \
+              'datalad.org</a>.'
+        mbox(self.main_window, title, msg)
+
     def _connect_menu_view(self, menu: QMenu):
         for cfgvar, menuname, subject in (
-                ('datalad.gooey.ui-mode', 'menuInterface', 'interface mode'),
+                ('datalad.gooey.active-suite', 'menuSuite', 'suite'),
                 ('datalad.gooey.ui-theme', 'menuTheme', 'theme'),
         ):
             mode = dlcfg.obtain(cfgvar)
@@ -276,6 +330,7 @@ class GooeyApp(QObject):
         action = self.sender()
         cfgvar, subject = action.data()
         mode = action.objectName().split('_')[-1]
+        assert mode
         dlcfg.set(cfgvar, mode, scope='global')
         QMessageBox.information(
             self.main_window, 'Note',
@@ -300,6 +355,22 @@ class GooeyApp(QObject):
                             'Missing `pyqtdarktheme` installation.')
                 return
             qtapp.setStyleSheet(qdarktheme.load_stylesheet(uitheme))
+
+    def _setup_suites(self):
+        # put known suites in menu
+        suite_menu = self.get_widget('menuSuite')
+        from datalad.support.entrypoints import iter_entrypoints
+        for sname, _, suite in iter_entrypoints(
+                'datalad.gooey.suites', load=True):
+            title = suite.get('title')
+            if not title:
+                title = sname.capitalize()
+            description = suite.get('description')
+            action = QAction(title, parent=suite_menu)
+            action.setObjectName(f"actionSetGooeySuite_{sname}")
+            if description:
+                action.setToolTip(description)
+            suite_menu.addAction(action)
 
 
 def main():

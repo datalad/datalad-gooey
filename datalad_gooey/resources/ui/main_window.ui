@@ -93,8 +93,8 @@
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>428</width>
-               <height>185</height>
+               <width>381</width>
+               <height>142</height>
               </rect>
              </property>
             </widget>
@@ -234,7 +234,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>891</width>
+     <width>800</width>
      <height>23</height>
     </rect>
    </property>
@@ -259,12 +259,10 @@
     <property name="title">
      <string>&amp;View</string>
     </property>
-    <widget class="QMenu" name="menuInterface">
+    <widget class="QMenu" name="menuSuite">
      <property name="title">
-      <string>&amp;Interface mode</string>
+      <string>&amp;Suite</string>
      </property>
-     <addaction name="actionInterfaceMode_simplified"/>
-     <addaction name="actionInterfaceMode_complete"/>
     </widget>
     <widget class="QMenu" name="menuTheme">
      <property name="title">
@@ -274,13 +272,22 @@
      <addaction name="actionViewTheme_light"/>
      <addaction name="actionViewTheme_dark"/>
     </widget>
-    <addaction name="menuInterface"/>
+    <addaction name="menuSuite"/>
     <addaction name="menuTheme"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp">
+    <property name="title">
+     <string>Help</string>
+    </property>
+    <addaction name="actionReport_a_problem"/>
+    <addaction name="actionAbout"/>
+    <addaction name="actionGetHelp"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuDataset"/>
    <addaction name="menuView"/>
    <addaction name="menuUtilities"/>
+   <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionCheck_for_new_version">
@@ -291,29 +298,9 @@
     <string>Check for new version</string>
    </property>
   </action>
-  <action name="actionRun_stuff">
-   <property name="text">
-    <string>Run stuff</string>
-   </property>
-  </action>
-  <action name="actionConfigure_stuff">
-   <property name="text">
-    <string>Configure stuff</string>
-   </property>
-  </action>
   <action name="action_Quit">
    <property name="text">
     <string>&amp;Quit</string>
-   </property>
-  </action>
-  <action name="actionInterfaceMode_simplified">
-   <property name="text">
-    <string>Simplified</string>
-   </property>
-  </action>
-  <action name="actionInterfaceMode_complete">
-   <property name="text">
-    <string>Complete</string>
    </property>
   </action>
   <action name="actionViewTheme_system">
@@ -329,6 +316,21 @@
   <action name="actionViewTheme_dark">
    <property name="text">
     <string>Dark</string>
+   </property>
+  </action>
+  <action name="actionReport_a_problem">
+   <property name="text">
+    <string>Report a problem</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
+   </property>
+  </action>
+  <action name="actionGetHelp">
+   <property name="text">
+    <string>Get help</string>
    </property>
   </action>
  </widget>

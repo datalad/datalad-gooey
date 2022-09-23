@@ -10,6 +10,8 @@ from datalad.interface.utils import eval_results
 
 from datalad.interface.results import get_status_dict
 
+from .postinstall import perform_post_install_tasks
+
 import logging
 lgr = logging.getLogger('datalad.ext.gooey.gooey')
 
@@ -48,7 +50,13 @@ class Gooey(Interface):
             # documentation
             doc="""The root location from which the Gooey file explorer will be
             launched (default is current working directory)""",
-        )
+        ),
+        postinstall=Parameter(
+            args=("--postinstall",),
+            doc="Perform post-installation tasks",
+            action="store_true",
+            # default=False,
+        ),
     )
 
     @staticmethod
@@ -58,10 +66,15 @@ class Gooey(Interface):
     @eval_results
     # signature must match parameter list above
     # additional generic arguments are added by decorators
-    def __call__(path: str = None):
+    def __call__(path: str = None, postinstall: bool = False):
         # local import to keep entrypoint import independent of PySide
         # availability
         from .app import GooeyApp, QApplication
+
+        # if requested, perform post-install tasks and exit
+        if postinstall:
+            perform_post_install_tasks()
+            return
 
         qtapp = QApplication(sys.argv)
         gooey = GooeyApp(path)
