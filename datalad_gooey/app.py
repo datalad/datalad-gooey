@@ -20,15 +20,19 @@ from PySide6.QtCore import (
     QObject,
     Qt,
     Signal,
+    Slot,
 )
 from PySide6.QtGui import (
     QAction,
     QCursor,
+    QGuiApplication,
 )
 
 from datalad import cfg as dlcfg
 from datalad import __version__ as dlversion
 import datalad.ui as dlui
+from datalad.interface.base import Interface
+from datalad.local.wtf import _render_report
 from datalad.utils import chpwd
 
 from .utils import (
@@ -63,7 +67,8 @@ class GooeyApp(QObject):
         'actionCheck_for_new_version': QAction,
         'actionReport_a_problem': QAction,
         'actionAbout': QAction,
-        'actionGetHelp': QAction
+        'actionGetHelp': QAction,
+        'actionDiagnostic_infos': QAction,
     }
 
     execute_dataladcmd = Signal(str, MappingProxyType, MappingProxyType)
@@ -144,6 +149,8 @@ class GooeyApp(QObject):
             self._get_help)
         self.main_window.actionAbout.triggered.connect(
             self._get_info)
+        self.main_window.actionDiagnostic_infos.triggered.connect(
+            self._get_diagnostic_info)
         # reset the command configuration tab whenever the item selection in
         # tree view changed.
         # This behavior was originally requested in
@@ -294,6 +301,39 @@ class GooeyApp(QObject):
               '</a>, or find out more at <a href=http://datalad.org>' \
               'datalad.org</a>.'
         mbox(self.main_window, title, msg)
+
+    def _get_diagnostic_info(self):
+        self.execute_dataladcmd.emit(
+            'wtf',
+            MappingProxyType(dict(
+                result_renderer='disabled',
+                on_failure='ignore',
+                return_type='generator',
+            )),
+            MappingProxyType(dict())
+        )
+        self._cmdexec.results_received.connect(
+            self._app_cmdexec_results_handler)
+
+    @Slot(Interface, list)
+    def _app_cmdexec_results_handler(self, cls, res):
+        for r in res:
+            self._wtf_result_receiver(r)
+
+    def _wtf_result_receiver(self, res):
+        if not res['action'] == 'wtf':
+            return
+        if res['status'] != 'ok':
+            msg = "Internal error creating diagnostic information"
+        else:
+            msg = "Diagnostic information was copied to clipboard"
+            infos = _render_report(res)
+            clipboard = QGuiApplication.clipboard()
+            clipboard.setText(
+                f'<details><summary>Diagnostic infos</summary>\n\n'
+                f'```\n {infos}```\n</details>')
+        mbox = QMessageBox.information
+        mbox(self.main_window, 'Diagnostic infos', msg)
 
     def _connect_menu_view(self, menu: QMenu):
         for cfgvar, menuname, subject in (
