@@ -18,13 +18,10 @@ body:
       label: What steps will reproduce the problem?
       description: "How do you trigger this bug? Please walk us through it step
        by step."
-      placeholder: "Example: Open the App from the Desktop shortcut. Select 
-      Documents as the root folder. Click the Help Tab. Boom"
-      value: |
-        1.
-        2. 
-        3.
-        ...
+      placeholder: "Example:
+      1. Open the App from the Desktop shortcut.
+      2. Select Documents as the root folder.
+      3. Click the Help Tab. The app freezes and becomes unresponsive"
     validations:
       required: true
 
@@ -50,7 +47,7 @@ body:
   - type: textarea
     attributes:
       label: System information
-      description: |
-        Please tell us more about your system, including operating system and
-        software versions. The more information we get, the better. You can
-        copy-paste this information from 'Help' -> 'Diagnostic infos' 
+      description: "Please tell us more about your system, including
+      operating system and software versions. The more information we
+      get, the better. You can copy-paste this information from
+      'Help' -> 'Diagnostic infos'"
