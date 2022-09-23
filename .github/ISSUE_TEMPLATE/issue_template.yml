@@ -6,6 +6,18 @@ name: Gooey issue
 description: Gooey issue
 
 body:
+  - type: dropdown
+    attributes:
+      label: Is it a new bug?
+      description: "Before filing an issue, please take some time to
+       browse through [existing issues](https://github.com/datalad/datalad-gooey/issues).
+       If it has been reported already, please add a comment to it instead of
+       opening a new issue."
+      options:
+        - I did not find an existing issue about my problem
+    validations:
+      required: true
+
   - type: textarea
     attributes:
       label: What is the problem?
