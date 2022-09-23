@@ -1,7 +1,8 @@
 from sys import platform
 
-from importlib_resources import files  # from Python 3.10 use importlib.resources
 from platformdirs import user_data_path
+
+from .resource_provider import gooey_resources
 
 
 def perform_post_install_tasks():
@@ -14,7 +15,7 @@ def perform_post_install_tasks():
 
 def create_desktop_file():
     df_name = "datalad-gooey.desktop"
-    template_path = files("datalad_gooey.resources.desktop").joinpath(df_name)
+    template_path = gooey_resources.get_resource_path('desktop') / df_name
     target_path = user_data_path() / "applications" / df_name
 
     if not target_path.parent.exists():
@@ -25,9 +26,7 @@ def create_desktop_file():
 
 
 def copy_icon():
-    source_path = files(
-        "datalad_gooey.resources.icons"
-    ).joinpath('datalad_gooey_logo.svg')
+    source_path = gooey_resources.get_icon_path('datalad_gooey_logo')
     target_path = user_data_path() / "icons" / "datalad-gooey"
 
     if not target_path.parent.exists():
