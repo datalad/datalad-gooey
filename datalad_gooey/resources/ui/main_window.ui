@@ -198,6 +198,13 @@
            </property>
           </widget>
          </item>
+	<item alignment="Qt::AlignRight">
+          <widget class="QPushButton" name="CopyLogPB">
+           <property name="text">
+            <string>Copy Log</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
       </widget>
@@ -355,6 +362,38 @@
     <hint type="destinationlabel">
      <x>674</x>
      <y>487</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>CopyLogPB</sender>
+   <signal>clicked()</signal>
+   <receiver>errorLog</receiver>
+   <slot>selectAll()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>650</x>
+     <y>543</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>400</x>
+     <y>425</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>CopyLogPB</sender>
+   <signal>clicked()</signal>
+   <receiver>errorLog</receiver>
+   <slot>copy()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>650</x>
+     <y>543</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>400</x>
+     <y>425</y>
     </hint>
    </hints>
   </connection>
