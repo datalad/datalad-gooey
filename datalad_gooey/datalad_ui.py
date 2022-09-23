@@ -15,11 +15,14 @@ from PySide6.QtCore import (
 from PySide6.QtWidgets import (
     QInputDialog,
     QLineEdit,
+    QProgressBar,
 )
 
 from datalad.ui.dialog import DialogUI
+from datalad.ui.progressbars import ProgressBarBase
 
-class _DataladQtUIBridge(QObject):
+
+class DataladQtUIBridge(QObject):
     """Private class handling the DataladUI->QtUI bridging
 
     This is meant to be used by the GooeyUI singleton.
@@ -27,6 +30,7 @@ class _DataladQtUIBridge(QObject):
     # signal to be emmitted when message() was called
     message_received = Signal(str)
     question_asked = Signal(MappingProxyType)
+    progress_update_received = Signal()
 
     def __init__(self, app):
         super().__init__()
@@ -42,6 +46,19 @@ class _DataladQtUIBridge(QObject):
         # again
         self.messageq = Queue(maxsize=1)
         self.question_asked.connect(self.get_answer)
+
+        # progress reporting
+        # there is a single progress bar that tracks overall progress.
+        # if multiple processes report progress simultaneously,
+        # if report average progress across all of them
+        self._progress_trackers = {}
+        pbar = QProgressBar(app.main_window)
+        # hide by default
+        pbar.hide()
+        self._progress_bar = pbar
+        self.progress_update_received.connect(self.update_progressbar)
+
+        self._progress_threadlock = threading.Lock()
 
     @Slot(str)
     def show_message(self, msg):
@@ -68,6 +85,53 @@ class _DataladQtUIBridge(QObject):
 
         # place in message Q for the asking thread to retrieve
         self.messageq.put((ok, response))
+
+    @property
+    def progress_bar(self):
+        return self._progress_bar
+
+    def update_progressbar(self):
+        with self._progress_threadlock:
+            if not len(self._progress_trackers):
+                self._progress_bar.hide()
+                return
+
+            progress = [
+                # assuming numbers
+                c / t
+                for c, t in self._progress_trackers.values()
+                # ignore any tracker that has no total
+                # TODO QProgressBar could also be a busy indicator
+                # for those
+                if t
+            ]
+        progress = sum(progress) / len(progress)
+        # default range setup is 0..100
+        self._progress_bar.setValue(progress * 100)
+        self._progress_bar.show()
+
+    def _update_from_progressbar(self, pbar):
+        # called from within exec threads
+        pbar_id = id(pbar)
+        self._progress_trackers[pbar_id] = (pbar.current, pbar.total)
+        self.progress_update_received.emit()
+
+    def start_progress_tracker(self, pbar, initial=0):
+        # called from within exec threads
+        # GooeyUIProgress has applied the update already
+        self._update_from_progressbar(pbar)
+
+    def update_progress_tracker(
+            self, pbar, size, increment=False, total=None):
+        # called from within exec threads
+        # GooeyUIProgress has applied the update already
+        self._update_from_progressbar(pbar)
+
+    def finish_progress_tracker(self, pbar):
+        # called from within exec threads
+        with self._progress_threadlock:
+            del self._progress_trackers[id(pbar)]
+        self.progress_update_received.emit()
 
     def _get_text_answer(self, title: str, label: str, default: str = None,
                          hidden: bool = False) -> Tuple:
@@ -125,9 +189,10 @@ class GooeyUI(DialogUI):
         super().__init__()
         self._app = None
 
-    def set_app(self, gooey_app) -> None:
+    def set_app(self, gooey_app) -> DataladQtUIBridge:
         """Connect the UI to a Gooey app providing the UI to use"""
-        self._uibridge = _DataladQtUIBridge(gooey_app)
+        self._uibridge = DataladQtUIBridge(gooey_app)
+        return self._uibridge
 
     #
     # the datalad API needed
@@ -179,4 +244,27 @@ class GooeyUI(DialogUI):
     #def error
     #def input
     #def yesno
-    #def get_progressbar
+    def get_progressbar(self, *args, **kwargs):
+        # all arguments are ignored
+        return GooeyUIProgress(self._uibridge, *args, **kwargs)
+
+
+class GooeyUIProgress(ProgressBarBase):
+        def __init__(self, uibridge, *args, **kwargs):
+            # some of these do not make sense (e.g. `out`), just pass
+            # them along and forget about them
+            # but it also brings self.total
+            super().__init__(*args, **kwargs)
+            self._uibridge = uibridge
+
+        def start(self, initial=0):
+            super().start(initial=initial)
+            self._uibridge.start_progress_tracker(self, initial)
+
+        def update(self, size, increment=False, total=None):
+            super().update(size, increment=increment, total=total)
+            self._uibridge.update_progress_tracker(
+                self, size, increment=increment, total=total)
+
+        def finish(self, clear=False, partial=False):
+            self._uibridge.finish_progress_tracker(self)
