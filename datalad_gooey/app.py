@@ -32,7 +32,10 @@ from datalad import cfg as dlcfg
 from datalad import __version__ as dlversion
 import datalad.ui as dlui
 from datalad.interface.base import Interface
-from datalad.local.wtf import _render_report
+from datalad.local.wtf import (
+    _render_report,
+    WTF,
+)
 from datalad.utils import chpwd
 
 from .utils import (
@@ -151,6 +154,9 @@ class GooeyApp(QObject):
             self._get_info)
         self.main_window.actionDiagnostic_infos.triggered.connect(
             self._get_diagnostic_info)
+        # connect the diagnostic WTF helper
+        self._cmdexec.results_received.connect(
+            self._app_cmdexec_results_handler)
         # reset the command configuration tab whenever the item selection in
         # tree view changed.
         # This behavior was originally requested in
@@ -310,18 +316,26 @@ class GooeyApp(QObject):
                 on_failure='ignore',
                 return_type='generator',
             )),
-            MappingProxyType(dict())
+            MappingProxyType(dict(
+                preferred_result_interval=0.2,
+                result_override=dict(
+                    secret_handshake=True,
+                ),
+            )),
         )
-        self._cmdexec.results_received.connect(
-            self._app_cmdexec_results_handler)
+
 
     @Slot(Interface, list)
     def _app_cmdexec_results_handler(self, cls, res):
+        if cls != WTF:
+            return
         for r in res:
             self._wtf_result_receiver(r)
 
     def _wtf_result_receiver(self, res):
         if not res['action'] == 'wtf':
+            return
+        if not res.get('secret_handshake'):
             return
         if res['status'] != 'ok':
             msg = "Internal error creating diagnostic information"
