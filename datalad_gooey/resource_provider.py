@@ -24,7 +24,7 @@ class GooeyResources:
 
     def __init__(self):
         self._icons = {}
-        self._ressource_path = Path(__file__).resolve().parent / 'resources'
+        self._resource_path = Path(__file__).resolve().parent / 'resources'
 
     def get_icon(self, name):
         if name is None:
@@ -32,14 +32,19 @@ class GooeyResources:
             return QIcon()
         icon = self._icons.get(name)
         if icon is None:
-            icon = QIcon(str(
-                self._ressource_path / 'icons' / f'{name}.svg'))
+            icon = QIcon(str(self.get_icon_path(name)))
             self._icons[name] = icon
         return icon
 
     def get_best_icon(self, label):
         icon_name = GooeyResources.label_to_name.get(label)
         return self.get_icon(icon_name)
+
+    def get_icon_path(self, name):
+        return self.get_resource_path('icons') / f'{name}.svg'
+
+    def get_resource_path(self, category):
+        return self._resource_path / category
 
 
 gooey_resources = GooeyResources()

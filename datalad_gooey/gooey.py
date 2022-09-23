@@ -10,8 +10,6 @@ from datalad.interface.utils import eval_results
 
 from datalad.interface.results import get_status_dict
 
-from .postinstall import perform_post_install_tasks
-
 import logging
 lgr = logging.getLogger('datalad.ext.gooey.gooey')
 
@@ -73,6 +71,8 @@ class Gooey(Interface):
 
         # if requested, perform post-install tasks and exit
         if postinstall:
+            # prevent top-level import of Qt stuff
+            from .postinstall import perform_post_install_tasks
             perform_post_install_tasks()
             return
 
