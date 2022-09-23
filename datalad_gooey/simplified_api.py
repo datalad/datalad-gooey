@@ -202,22 +202,6 @@ api = dict(
     ),
 )
 
-exclude_parameters = set((
-    'result_renderer',
-    'return_type',
-    'result_filter',
-    'result_xfm',
-    'on_failure',
-    'jobs',
-    'recursion_limit',
-))
-
-parameter_display_names = dict(
-    annex='Dataset with file annex',
-    cfg_proc='Configuration procedure(s)',
-    dataset='Dataset location',
-)
-
 dataset_api = {
     c: s for c, s in api.items()
     if c in (
@@ -242,6 +226,52 @@ annexed_file_api = {
     c: s for c, s in api.items()
     if c in ('drop', 'get', 'push', 'save')
 }
+# get of a single annexed files can be simpler
+from copy import deepcopy
+annexed_file_get = deepcopy(annexed_file_api['get'])
+parameter_constraints=dict(
+            path=EnsureExistingDirectory(),
+        ),
+annexed_file_get['exclude_parameters'].update((
+    # not getting data for an annexed file makes no sense
+    'get_data',
+    # recursion underneath a file is not possible
+    'recursive',
+))
+annexed_file_get['parameter_nargs'] = dict(
+    path=1,
+)
+annexed_file_api['get'] = annexed_file_get
 
-# simplified API has no groups
-api_group_order = {}
+
+gooey_suite = dict(
+    title='Simplified',
+    description='Simplified access to the most essential operations',
+    options=dict(
+        disable_manual_path_input=True,
+    ),
+    apis=dict(
+        dataset=dataset_api,
+        directory=directory_api,
+        directory_in_ds=directory_in_ds_api,
+        file=file_api,
+        file_in_ds=file_in_ds_api,
+        annexed_file=annexed_file_api,
+    ),
+    # simplified API has no groups
+    api_group_order={},
+    exclude_parameters=set((
+        'result_renderer',
+        'return_type',
+        'result_filter',
+        'result_xfm',
+        'on_failure',
+        'jobs',
+        'recursion_limit',
+    )),
+    parameter_display_names=dict(
+        annex='Dataset with file annex',
+        cfg_proc='Configuration procedure(s)',
+        dataset='Dataset location',
+    ),
+)

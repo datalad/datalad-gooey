@@ -235,12 +235,10 @@
     <property name="title">
      <string>&amp;View</string>
     </property>
-    <widget class="QMenu" name="menuInterface">
+    <widget class="QMenu" name="menuSuite">
      <property name="title">
-      <string>&amp;Interface mode</string>
+      <string>&amp;Suite</string>
      </property>
-     <addaction name="actionInterfaceMode_simplified"/>
-     <addaction name="actionInterfaceMode_complete"/>
     </widget>
     <widget class="QMenu" name="menuTheme">
      <property name="title">
@@ -250,7 +248,7 @@
      <addaction name="actionViewTheme_light"/>
      <addaction name="actionViewTheme_dark"/>
     </widget>
-    <addaction name="menuInterface"/>
+    <addaction name="menuSuite"/>
     <addaction name="menuTheme"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
@@ -276,29 +274,9 @@
     <string>Check for new version</string>
    </property>
   </action>
-  <action name="actionRun_stuff">
-   <property name="text">
-    <string>Run stuff</string>
-   </property>
-  </action>
-  <action name="actionConfigure_stuff">
-   <property name="text">
-    <string>Configure stuff</string>
-   </property>
-  </action>
   <action name="action_Quit">
    <property name="text">
     <string>&amp;Quit</string>
-   </property>
-  </action>
-  <action name="actionInterfaceMode_simplified">
-   <property name="text">
-    <string>Simplified</string>
-   </property>
-  </action>
-  <action name="actionInterfaceMode_complete">
-   <property name="text">
-    <string>Complete</string>
    </property>
   </action>
   <action name="actionViewTheme_system">

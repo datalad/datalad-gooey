@@ -3,7 +3,6 @@ from types import MappingProxyType
 from typing import (
     Any,
     Dict,
-    List,
 )
 
 from PySide6.QtCore import (
@@ -21,8 +20,6 @@ from PySide6.QtWidgets import (
     QToolButton,
     QWidget,
 )
-
-from datalad import cfg as dlcfg
 
 from .resource_provider import gooey_resources
 from .utils import _NoValue
@@ -278,6 +275,7 @@ class StrParamWidget(QLineEdit, GooeyParamWidgetMixin):
 class PathParamWidget(QWidget, GooeyParamWidgetMixin):
     def __init__(self, basedir=None,
                  pathtype: QFileDialog.FileMode = QFileDialog.AnyFile,
+                 disable_manual_edit: bool = False,
                  parent=None):
         """Supported `pathtype` values are
 
@@ -298,8 +296,8 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
 
         # the main widget is a simple line edit
         self._edit = QLineEdit(self)
-        if dlcfg.obtain('datalad.gooey.ui-mode') == 'simplified':
-            # in simplified mode we do not allow manual entry of paths
+        if disable_manual_edit:
+            # in e.g. simplified mode we do not allow manual entry of paths
             # to avoid confusions re interpretation of relative paths
             # https://github.com/datalad/datalad-gooey/issues/106
             self._edit.setDisabled(True)

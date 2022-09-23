@@ -31,3 +31,6 @@ class EnsureExistingDirectory(Constraint):
             raise ValueError(
                 f"{value} is not an existing directory")
         return value
+
+    def short_description(self):
+        return 'existing directory'

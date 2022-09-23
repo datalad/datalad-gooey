@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 
 from .param_form_utils import populate_form_w_params
 from .api_utils import get_cmd_displayname
-from .active_api import api
+from .active_suite import spec as active_suite
 
 
 class GooeyDataladCmdUI(QObject):
@@ -63,6 +63,7 @@ class GooeyDataladCmdUI(QObject):
     @Slot(str, dict)
     def configure(
             self,
+            api=None,
             cmdname: str = None,
             cmdkwargs: Dict or None = None):
         if cmdkwargs is None:
@@ -73,14 +74,17 @@ class GooeyDataladCmdUI(QObject):
         # we can use this to update the method parameter values
         # with information from menu-items, or tree nodes clicked
         sender = self.sender()
-        if sender is not None:
-            if cmdname is None and isinstance(sender, QAction):
+        if sender is not None and isinstance(sender, QAction):
+            if api is None:
+                api = sender.data().get('__api__')
+            if cmdname is None:
                 cmdname = sender.data().get('__cmd_name__')
                 # pull in any signal-provided kwargs for the command
                 # unless they have been also specified directly to the method
                 cmdkwargs = {
                     k: v for k, v in sender.data().items()
-                    if k != '__cmd_name__' and k not in cmdkwargs
+                    if k not in ('__cmd_name__', '__api')
+                    and k not in cmdkwargs
                 }
 
         assert cmdname is not None, \
@@ -90,6 +94,7 @@ class GooeyDataladCmdUI(QObject):
 
         self.reset_form()
         populate_form_w_params(
+            api,
             self._app.rootpath,
             self.pform,
             cmdname,
