@@ -11,9 +11,11 @@ from datalad.tests.utils_pytest import (
     assert_in,
     assert_raises,
     get_deeply_nested_structure,
+    has_symlink_capability,
     with_tempfile,
     with_tree,
 )
+
 
 dataset_content = [
     {'path': 'directory_untracked', 'type': 'directory'},
@@ -26,12 +28,9 @@ dataset_content = [
     {'path': '.gitmodules', 'type': 'file'},
     {'path': 'subds_modified', 'type': 'dataset'},
 ]
-
-adjusted_content = [
+content_wo_symlinks = [
     item for item in dataset_content if item.get('type') != 'symlink'
 ]
-
-
 # Test _lsfiles with dataset
 @with_tempfile
 def test_lsfiles(path=None):
@@ -46,12 +45,11 @@ def test_lsfiles(path=None):
         _iterdir.assert_not_called()
     # Write results to list
     lsfiles_res = list(GooeyLsDir.__call__(ds.pathobj))
-    # In case we are on a crippled filesystem, use content without symlinks
-    adjusted = False
+    # In case we are on a filesystem without symlink capability,
+    # use content without symlinks
     content = dataset_content
-    if ds.repo.is_managed_branch():
-        content = adjusted_content
-        adjusted = True
+    if not has_symlink_capability():
+        content = content_wo_symlinks    
     # Test result outputs
     assert_equal(len(lsfiles_res), len(content))
     for item in lsfiles_res:
@@ -60,8 +58,8 @@ def test_lsfiles(path=None):
                 'path': Path(item.get('path')).name,
                 'type': item.get('type'),
             }, content)
-    # test inaccessible directory
-    if not adjusted:
+    # test inaccessible directory (except on a crippled filesystem)
+    if not ds.repo.is_managed_branch():
         new_dir = Path(path) / 'interim_dir' / 'inaccessible_dir'
         new_dir.mkdir(parents=True)
         existing_permissions = stat.S_IMODE(new_dir.stat().st_mode)
@@ -83,13 +81,11 @@ dir_tree = {
         "random_file2.txt": "some content in file in subdataset",
     }
 }
-
 directory_content = [
     {'path': 'random_file1.txt', 'type': 'file', 'state': 'untracked'},
     {'path': 'subdataset', 'type': 'dataset', 'state': 'untracked'},
     {'path': 'some_dir', 'type': 'directory', 'state': 'untracked'}
 ]
-
 # Test _iterdir with directory tree not in dataset/git repo
 @with_tree(tree=dir_tree)
 def test_iterdir(root=None, mockdef=None):
@@ -112,7 +108,6 @@ def test_iterdir(root=None, mockdef=None):
                 'state': item.get('state'),
             }, directory_content)
 
-# Test PermissionError directory
 
 # Test .git
 @with_tempfile(mkdir=True)
