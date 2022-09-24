@@ -51,10 +51,16 @@ def test_GooeyParamWidgetMixin():
             default=default,
         )
 
-        # If nothing was set yet, we expect `_NoValue` as the "representation of
-        # default" here:
+        # If nothing was set yet, we expect `_NoValue` as the "representation
+        # of default" here:
         assert pw.get_gooey_param_spec() == {'peewee': _NoValue}, \
-            f"Default value not retrieved from {pw_factory.__class__}"
+            f"Default value not retrieved from {pw_factory}"
+        # If nothing other than the default was set yet,
+        # we still expect `_NoValue` as the "representation of default" here:
+        pw.set_gooey_param_value(default)
+        assert pw.get_gooey_param_spec() == {'peewee': _NoValue}, \
+            f"Default value not retrieved from {pw_factory}"
+        # with a different value set, we get the set value back,
+        # not the default
         pw.set_gooey_param_value(val)
-        # we get the set value back, not the default
         assert pw.get_gooey_param_spec() == {'peewee': val}
