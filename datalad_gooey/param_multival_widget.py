@@ -165,9 +165,6 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
             # role specification
             item.setData(Qt.EditRole, val)
 
-    def set_gooey_param_default(self, value):
-        self._editor_param_default = value
-
     def get_gooey_param_value(self):
         if not self._lw.count():
             # do not report an empty list, when no items have been added.

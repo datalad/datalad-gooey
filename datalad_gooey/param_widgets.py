@@ -62,10 +62,6 @@ class GooeyParamWidgetMixin:
 
     def _set_gooey_param_value(self, value):
         """Implement to set a particular value in the target widget.
-
-        By default, this method is also used to set a default value.
-        If that is not desirable for a particular widget type,
-        override `set_gooey_param_default()`.
         """
         raise NotImplementedError
 
@@ -80,11 +76,6 @@ class GooeyParamWidgetMixin:
         """
         raise NotImplementedError
 
-    def set_gooey_param_default(self, value):
-        """Implement to set a parameter default value in the widget
-        """
-        pass
-
     def set_gooey_param_spec(
             self, name: str, default=_NoValue):
         """Called by the command UI generator to set parameter
@@ -93,7 +84,6 @@ class GooeyParamWidgetMixin:
         self._gooey_param_name = name
         # always store here for later inspection by get_gooey_param_spec()
         self._gooey_param_default = default
-        self.set_gooey_param_default(default)
 
     def get_gooey_param_spec(self) -> Dict:
         """Called by the command UI generator to get a parameter specification
@@ -288,10 +278,6 @@ class StrParamWidget(QLineEdit, GooeyParamWidgetMixin):
         self.setText(str(value))
         self.setModified(True)
 
-    def set_gooey_param_default(self, value):
-        if value != _NoValue:
-            self.setPlaceholderText(str(value))
-
     def get_gooey_param_value(self):
         # return the value if it was set be the caller, or modified
         # by the user -- otherwise stay silent and let the command
@@ -366,12 +352,6 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
     def _set_gooey_param_value(self, value):
         self._edit.setText(str(value))
         self._edit.setModified(True)
-
-    def set_gooey_param_default(self, value):
-        placeholder = 'Select path'
-        if value not in (_NoValue, None):
-            placeholder += f'(default: {value})'
-        self._edit.setPlaceholderText(placeholder)
 
     def get_gooey_param_value(self):
         # return the value if it was set be the caller, or modified

@@ -93,6 +93,7 @@ def populate_form_w_params(
                 param.cmd_kwargs.get('default', _NoValue), \
                 param,
             )
+    cmdkwargs_defaults = dict()
     for pname, pdefault, param_spec in sorted(
             # across cmd params, and generic params
             chain(_specific_params(), _generic_params()),
@@ -110,6 +111,7 @@ def populate_form_w_params(
             # command knows
             param_spec.constraints = \
                 cmd_api_spec['parameter_constraints'][pname]
+        cmdkwargs_defaults[pname] = pdefault
         # populate the layout with widgets for each of them
         # we do not pass Parameter instances further down, but disassemble
         # and homogenize here
@@ -155,9 +157,14 @@ def populate_form_w_params(
             pwidget1.value_changed.connect(
                 pwidget2.init_gooey_from_other_param)
     # when all is wired up, set the values that need setting
+    # we set the respective default value to all widgets, and
+    # update it with the given value, if there was any
+    # (the true command parameter default was already set above)
+    cmdkwargs_defaults.update(cmdkwargs)
+
     for pname, pwidget in form_widgets.items():
         if pname in cmdkwargs:
-            pwidget.set_gooey_param_value(cmdkwargs[pname])
+            pwidget.set_gooey_param_value(cmdkwargs_defaults[pname])
 
 
 #
