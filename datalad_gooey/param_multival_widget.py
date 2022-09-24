@@ -44,7 +44,7 @@ class MyItemDelegate(QStyledItemDelegate):
         value = getattr(mviw, 'editor_param_value', _NoValue)
         if value != _NoValue:
             wid.set_gooey_param_value(value)
-        wid.init_gooey_from_other_param(mviw._editor_init)
+        wid.init_gooey_from_params(mviw._editor_init)
         # we draw on top of the selected item, and having the highlighting
         # "shine" through is not nice
         wid.setAutoFillBackground(True)
@@ -90,7 +90,7 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
     def __init__(self, editor_factory, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._editor_factory = editor_factory
-        # maintained via init_gooey_from_other_param()
+        # maintained via init_gooey_from_params()
         self._editor_init = dict()
 
         layout = QVBoxLayout()
@@ -182,7 +182,7 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
         # the "+" button is always visible. Use it to make the docs accessible
         self._additem_button.setToolTip(docs)
 
-    def init_gooey_from_other_param(self, spec):
+    def init_gooey_from_params(self, spec):
         # we just keep the union of all reported changes, i.e.
         # the latest info for all parameters that ever changed.
         # this is then passed to the editor widget, after its

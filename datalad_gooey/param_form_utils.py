@@ -155,7 +155,7 @@ def populate_form_w_params(
             if pname1 == pname2:
                 continue
             pwidget1.value_changed.connect(
-                pwidget2.init_gooey_from_other_param)
+                pwidget2.init_gooey_from_params)
     # when all is wired up, set the values that need setting
     # we set the respective default value to all widgets, and
     # update it with the given value, if there was any

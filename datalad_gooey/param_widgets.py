@@ -118,8 +118,11 @@ class GooeyParamWidgetMixin:
         # having to integrate potentially lengthy text into the layout
         self.setToolTip(docs)
 
-    def init_gooey_from_other_param(self, spec: Dict) -> None:
-        """Slot to receive changes of other parameter values
+    def init_gooey_from_params(self, spec: Dict) -> None:
+        """Slot to receive changes of parameter values (self or other)
+
+        There can be parameter value reports for multiple parameters
+        at once.
 
         Can be implemented to act on context changes that require a
         reinitialization of a widget. For example, update a list
@@ -392,7 +395,7 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
             self.set_gooey_param_value(paths[0])
             self._edit.setModified(True)
 
-    def init_gooey_from_other_param(self, spec: Dict) -> None:
+    def init_gooey_from_params(self, spec: Dict) -> None:
         if self._gooey_param_name == 'dataset':
             # prevent update from self
             return
@@ -405,9 +408,9 @@ class CfgProcParamWidget(ChoiceParamWidget):
     """Choice widget with items from `run_procedure(discover=True)`"""
     def __init__(self, choices=None, parent=None):
         super().__init__(parent=parent)
-        self.init_gooey_from_other_param({})
+        self.init_gooey_from_params({})
 
-    def init_gooey_from_other_param(self, spec: Dict) -> None:
+    def init_gooey_from_params(self, spec: Dict) -> None:
         if self.count() and 'dataset' not in spec:
             # we have items and no context change is required
             return
@@ -441,7 +444,7 @@ class SiblingChoiceParamWidget(ChoiceParamWidget):
     """Choice widget with items from `siblings()`"""
     def __init__(self, choices=None, parent=None):
         super().__init__(parent=parent)
-        self.init_gooey_from_other_param({})
+        self.init_gooey_from_params({})
         self._saw_dataset = False
         self._set_placeholder_msg()
 
@@ -453,7 +456,7 @@ class SiblingChoiceParamWidget(ChoiceParamWidget):
         else:
             self.setPlaceholderText('Select sibling')
 
-    def init_gooey_from_other_param(self, spec: Dict) -> None:
+    def init_gooey_from_params(self, spec: Dict) -> None:
         if 'dataset' not in spec:
             # we have items and no context change is required
             return
