@@ -91,10 +91,6 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
         # we assing the editor factory
         self._lw.setItemDelegate(MyItemDelegate(self))
         self._lw.setToolTip('Double-click to edit items')
-        # set the underlying parameter value, whenever the list
-        # changes
-        self._lw.itemChanged.connect(self._handle_input)
-        self._lw.itemSelectionChanged.connect(self._handle_input)
         layout.addWidget(self._lw)
 
         # now the buttons
@@ -164,12 +160,18 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
     def _handle_input(self):
         val = []
         if self._lw.count():
-            val = [
-                # TODO consider using a different role, here and in setModelData()
-                # TODO check re segfault, better have the 
-                self._lw.item(row).data(Qt.EditRole)
-                for row in range(self._lw.count())
-            ]
+            for row in range(self._lw.count()):
+                item = self._lw.item(row)
+                wid = self._lw.itemWidget(item)
+                if wid:
+                    # an editor is still open, retrieve from editor directly.
+                    # just append, _NoValue handling is below
+                    val.append(wid._gooey_param_value)
+                else:
+                    # TODO consider using a different role, here and in
+                    # setModelData()
+                    # TODO check re segfault
+                    val.append(item.data(Qt.EditRole))
             val = [v for v in val if v is not _NoValue]
         if not val:
             # do not report an empty list, when no valid items exist.
@@ -191,6 +193,7 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
         self._editor_init.update(spec)
 
     def get_gooey_param_spec(self):
+        self._handle_input()
         # we must override, because we need to handle the cases of list vs
         # plain item in default settings.
         # TODO This likely needs more work and awareness of `nargs`, see

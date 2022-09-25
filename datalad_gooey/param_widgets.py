@@ -318,6 +318,7 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
             self._edit.setDisabled(True)
         self._edit.setPlaceholderText('Not set')
         self._edit.textChanged.connect(self._handle_input)
+        self._edit.textEdited.connect(self._handle_input)
         hl.addWidget(self._edit)
 
         # next to the line edit, we place to small button to facilitate
@@ -388,7 +389,7 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
                 # if the selection was canceled, clear the path,
                 # otherwise users have no ability to unset a pervious
                 # selection
-                self._set_gooey_param_value_in_widget(None)
+                self._set_gooey_param_value_in_widget(_NoValue)
             # otherwise just keep the present value as-is
             return
         dialog = self.sender()
