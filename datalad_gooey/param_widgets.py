@@ -410,9 +410,8 @@ class CfgProcParamWidget(ChoiceParamWidget):
     """Choice widget with items from `run_procedure(discover=True)`"""
     def __init__(self, choices=None, parent=None):
         super().__init__(parent=parent)
-        self.init_gooey_from_params({})
 
-    def init_gooey_from_params(self, spec: Dict) -> None:
+    def _init_gooey_from_other_params(self, spec: Dict) -> None:
         if self.count() and 'dataset' not in spec:
             # we have items and no context change is required
             return
