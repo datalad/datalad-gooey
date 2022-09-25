@@ -41,10 +41,6 @@ class MyItemDelegate(QStyledItemDelegate):
             default=getattr(mviw, 'editor_param_default', _NoValue),
             #validator=mviw._editor_validator,
         )
-        value = getattr(mviw, 'editor_param_value', _NoValue)
-        if value != _NoValue:
-            wid.set_gooey_param_value(value)
-        wid.init_gooey_from_params(mviw._editor_init)
         # we draw on top of the selected item, and having the highlighting
         # "shine" through is not nice
         wid.setAutoFillBackground(True)
@@ -62,28 +58,20 @@ class MyItemDelegate(QStyledItemDelegate):
     def setEditorData(self, editor: QWidget, index: QModelIndex):
         # this requires the inverse of the already existing
         # _get_datalad_param_spec() "retriever" methods
-        data = index.data()
-        if data is not _NoValue:
-            editor.set_gooey_param_value(data)
+        edit_init = dict(
+            self._mviw._editor_init,
+            # TODO use custom role for actual dtype
+            **{editor._gooey_param_name: index.data()}
+        )
+        editor.init_gooey_from_params(edit_init)
 
     # called after editing is done
     def setModelData(self,
-                     editor:
-                     QWidget,
+                     editor: QWidget,
                      model: QAbstractItemModel,
                      index: QModelIndex):
-        # this could call the already existing _get_datalad_param_spec()
-        # "retriever" methods
-        got_value = False
-        try:
-            val = editor.get_gooey_param_value()
-            got_value = True
-        except ValueError:
-            # input widget saw no actual input
-            pass
-        if got_value:
-            #  TODO other role than Qt.EditRole?
-            model.setData(index, val)
+        val = editor.get_gooey_param_spec()[editor._gooey_param_name]
+        model.setData(index, val)
 
 
 class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
@@ -103,6 +91,10 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
         # we assing the editor factory
         self._lw.setItemDelegate(MyItemDelegate(self))
         self._lw.setToolTip('Double-click to edit items')
+        # set the underlying parameter value, whenever the list
+        # changes
+        self._lw.itemChanged.connect(self._handle_input)
+        self._lw.itemSelectionChanged.connect(self._handle_input)
         layout.addWidget(self._lw)
 
         # now the buttons
@@ -156,8 +148,12 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
             self._removeitem_button.setDisabled(True)
             self._removeitem_button.hide()
             self._lw.hide()
+            self._set_gooey_param_value(_NoValue)
 
-    def _set_gooey_param_value(self, value):
+    def _set_gooey_param_value_in_widget(self, value):
+        # tabula rasa first, otherwise this would all be
+        # incremental
+        self._lw.clear()
         # we want to support multi-value setting
         for val in ensure_list(value):
             item = self._add_item()
@@ -165,17 +161,21 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
             # role specification
             item.setData(Qt.EditRole, val)
 
-    def get_gooey_param_value(self):
-        if not self._lw.count():
-            # do not report an empty list, when no items have been added.
+    def _handle_input(self):
+        val = []
+        if self._lw.count():
+            val = [
+                # TODO consider using a different role, here and in setModelData()
+                # TODO check re segfault, better have the 
+                self._lw.item(row).data(Qt.EditRole)
+                for row in range(self._lw.count())
+            ]
+            val = [v for v in val if v is not _NoValue]
+        if not val:
+            # do not report an empty list, when no valid items exist.
             # setting a value, even by API would have added one
-            raise ValueError("No items added")
-
-        return [
-            # TODO consider using a different role, here and in setModelData()
-            self._lw.item(row).data(Qt.EditRole)
-            for row in range(self._lw.count())
-        ]
+            val = _NoValue
+        self._set_gooey_param_value(val)
 
     def set_gooey_param_docs(self, docs: str) -> None:
         self._editor_param_docs = docs
@@ -183,8 +183,23 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
         self._additem_button.setToolTip(docs)
 
     def init_gooey_from_params(self, spec):
-        # we just keep the union of all reported changes, i.e.
-        # the latest info for all parameters that ever changed.
-        # this is then passed to the editor widget, after its
-        # creation
+        # first the normal handling
+        super().init_gooey_from_params(spec)
+        # for the editor widget, we just keep the union of all reported
+        # changes, i.e.  the latest info for all parameters that ever changed.
+        # this is then passed to the editor widget, after its creation
         self._editor_init.update(spec)
+
+    def get_gooey_param_spec(self):
+        # we must override, because we need to handle the cases of list vs
+        # plain item in default settings.
+        # TODO This likely needs more work and awareness of `nargs`, see
+        # https://github.com/datalad/datalad-gooey/issues/212#issuecomment-1256950251
+        # https://github.com/datalad/datalad-gooey/issues/212#issuecomment-1257170208
+        val = self._gooey_param_value
+        default = self._gooey_param_default
+        if val == default:
+            val = _NoValue
+        elif val == [default]:
+            val = _NoValue
+        return {self._gooey_param_name: val}

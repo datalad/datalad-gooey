@@ -93,7 +93,6 @@ class GooeyParamWidgetMixin:
         different from the default)
         """
         val = self._gooey_param_value
-        print("CONSIDER", val, self._gooey_param_default)
         return {self._gooey_param_name: val} \
             if val != self._gooey_param_default \
             else {self._gooey_param_name: _NoValue}
@@ -121,7 +120,6 @@ class GooeyParamWidgetMixin:
         # what we have now
         self._gooey_param_value = value
 
-        print("RSTING", value)
         if self._gooey_param_prev_value != value:
             # an actual change, emit corresponding signal
             self.emit_gooey_value_changed()
@@ -196,25 +194,18 @@ class ChoiceParamWidget(QComboBox, GooeyParamWidgetMixin):
             # avoid making the impression something could be selected
             self.setPlaceholderText('No known choices')
             self.setDisabled(True)
+        self.currentIndexChanged.connect(self._handle_input)
+
+    def _set_gooey_param_value_in_widget(self, value):
+        self.setCurrentText(self._gooey_map_val2label(value))
+
+    def _handle_input(self):
+        self._set_gooey_param_value(self.currentData())
 
     def _add_item(self, value) -> None:
         # we add items, and we stick their real values in too
         # to avoid tricky conversion via str
         self.addItem(self._gooey_map_val2label(value), userData=value)
-
-    def _set_gooey_param_value(self, value):
-        self.setCurrentText(self._gooey_map_val2label(value))
-
-    def get_gooey_param_value(self):
-        return self.currentData()
-
-    def set_gooey_param_spec(self, name: str, default=_NoValue):
-        super().set_gooey_param_spec(name, default)
-        # QComboBox will report the first choice to be selected by default.
-        # Set the specified default instead.
-        if default is _NoValue:
-            default = None
-        self._set_gooey_param_value(default)
 
     def _gooey_map_val2label(self, val):
         return '--none--' if val is None else str(val)
@@ -235,73 +226,63 @@ class PosIntParamWidget(QSpinBox, GooeyParamWidgetMixin):
             #self.setMaximum(sys.maxsize)
             pass
         self._allow_none = allow_none
+        self.valueChanged.connect(self._handle_input)
 
-    def _set_gooey_param_value(self, value):
+    def _set_gooey_param_value_in_widget(self, value):
         # generally assumed to be int and fit in the range
         self.setValue(-1 if value is None and self._allow_none else value)
 
-    def set_gooey_param_spec(self, name: str, default=_NoValue):
-        # QSpinBox' values is set to 0 by default. Hence, we need to overwrite
-        # here.
-        super().set_gooey_param_spec(name, default)
-        if default is _NoValue:
-            default = None
-        self.setValue(default if default is not None else -1)
-
-    def get_gooey_param_value(self):
+    def _handle_input(self):
         val = self.value()
         # convert special value -1 back to None
-        return None if val == -1 and self._allow_none else val
+        self._set_gooey_param_value(
+            None if val == -1 and self._allow_none else val
+        )
 
 
 class BoolParamWidget(QCheckBox, GooeyParamWidgetMixin):
 
-    def __init__(self, parent=None) -> None:
+    def __init__(self, allow_none=False, parent=None) -> None:
         super().__init__(parent)
-        # set to no value initially
-        self._set_gooey_param_value(None)
+        if allow_none:
+            self.setTristate(True)
+        self.stateChanged.connect(self._handle_input)
 
-    def _set_gooey_param_value(self, value):
+    def _set_gooey_param_value_in_widget(self, value):
         if value not in (True, False):
             # if the value is not representable by a checkbox
             # leave it in "partiallychecked". In cases where the
             # default is something like `None`, we can distinguish
             # a user not having set anything different from the default,
             # even if the default is not a bool
-            self.setTristate(True)
             self.setCheckState(Qt.PartiallyChecked)
         else:
             # otherwise flip the switch accordingly
             self.setChecked(value)
 
-    def get_gooey_param_value(self):
+    def _handle_input(self):
         state = self.checkState()
-        if state == Qt.PartiallyChecked:
-            # TODO error if partiallychecked still (means a
-            # value with no default was not set)
-            # a default `validator` could handle that
-            # Mixin picks this up and communicates: nothing was set
-            raise ValueError
-        # convert to bool
-        return state == Qt.Checked
-
-    def set_gooey_param_spec(self, name: str, default=_NoValue):
-        super().set_gooey_param_spec(name, default)
-        self._set_gooey_param_value(default)
+        # convert to bool/None
+        self._set_gooey_param_value(
+            None if state == Qt.PartiallyChecked
+            else state == Qt.Checked
+        )
 
 
 class StrParamWidget(QLineEdit, GooeyParamWidgetMixin):
-    def _set_gooey_param_value(self, value):
-        self.setText(str(value))
-        self.setModified(True)
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setPlaceholderText('Not set')
+        self.textChanged.connect(self._handle_input)
 
-    def get_gooey_param_value(self):
-        # return the value if it was set be the caller, or modified
-        # by the user -- otherwise stay silent and let the command
-        # use its default
-        if self.isEnabled() and not self.isModified():
-            raise ValueError('Present value was not modified')
-        return self.text()
+    def _set_gooey_param_value_in_widget(self, value):
+        if value == _NoValue:
+            self.clear()
+        else:
+            self.setText(str(value))
+
+    def _handle_input(self):
+        self._set_gooey_param_value(self.text())
 
 
 class PathParamWidget(QWidget, GooeyParamWidgetMixin):
@@ -333,8 +314,9 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
             # to avoid confusions re interpretation of relative paths
             # https://github.com/datalad/datalad-gooey/issues/106
             self._edit.setDisabled(True)
+        self._edit.setPlaceholderText('Not set')
+        self._edit.textChanged.connect(self._handle_input)
         hl.addWidget(self._edit)
-        self._edit.editingFinished.connect(self.emit_gooey_value_changed)
 
         # next to the line edit, we place to small button to facilitate
         # selection of file/directory paths by a browser dialog.
@@ -366,18 +348,16 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
             dir_button.clicked.connect(
                 lambda: self._select_path(dirs_only=True))
 
-    def _set_gooey_param_value(self, value):
-        self._edit.setText(str(value))
-        self._edit.setModified(True)
+    def _set_gooey_param_value_in_widget(self, value):
+        if value and value is not _NoValue:
+            self._edit.setText(str(value))
+        else:
+            self._edit.clear()
 
-    def get_gooey_param_value(self):
-        # return the value if it was set be the caller, or modified
-        # by the user -- otherwise stay silent and let the command
-        # use its default
-        edit = self._edit
-        if not edit.isModified():
-            raise ValueError
-        return edit.text()
+    def _handle_input(self):
+        val = self._edit.text()
+        # treat an empty path as None
+        self._set_gooey_param_value(val if val else None)
 
     def set_gooey_param_docs(self, docs: str) -> None:
         # only use edit tooltip for the docs, and let the buttons
@@ -399,17 +379,24 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
         dialog.finished.connect(self._select_path_receiver)
         dialog.open()
 
-    def _select_path_receiver(self):
+    def _select_path_receiver(self, result_code: int):
         """Internal slot to receive the outcome of _select_path() dialog"""
+        if not result_code:
+            if not self._edit.isEnabled():
+                # if the selection was canceled, clear the path,
+                # otherwise users have no ability to unset a pervious
+                # selection
+                self._set_gooey_param_value_in_widget(None)
+            # otherwise just keep the present value as-is
+            return
         dialog = self.sender()
         paths = dialog.selectedFiles()
         if paths:
             # ignores any multi-selection
             # TODO prevent or support specifically
-            self.set_gooey_param_value(paths[0])
-            self._edit.setModified(True)
+            self._set_gooey_param_value_in_widget(paths[0])
 
-    def init_gooey_from_params(self, spec: Dict) -> None:
+    def _init_gooey_from_other_params(self, spec: Dict) -> None:
         if self._gooey_param_name == 'dataset':
             # prevent update from self
             return
