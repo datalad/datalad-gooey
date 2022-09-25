@@ -277,7 +277,8 @@ class StrParamWidget(QLineEdit, GooeyParamWidgetMixin):
         self.textChanged.connect(self._handle_input)
 
     def _set_gooey_param_value_in_widget(self, value):
-        if value == _NoValue:
+        if value in (_NoValue, None):
+            # we treat both as "unset"
             self.clear()
         else:
             self.setText(str(value))
