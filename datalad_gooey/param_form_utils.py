@@ -217,6 +217,8 @@ def _get_parameter_widget_factory(
     if argparse_spec is None:
         argparse_spec = {}
     argparse_action = argparse_spec.get('action')
+    disable_manual_path_input = active_suite.get('options', {}).get(
+        'disable_manual_path_input', False)
     # if we have no idea, use a simple line edit
     type_widget = pw.StrParamWidget
     # now some parameters where we can derive semantics from their name
@@ -224,12 +226,13 @@ def _get_parameter_widget_factory(
         type_widget = functools.partial(
             pw.PathParamWidget,
             pathtype=QFileDialog.Directory,
-            disable_manual_edit=active_suite.get('options', {}).get(
-                'disable_manual_path_input', False),
+            disable_manual_edit=disable_manual_path_input,
             basedir=basedir)
     elif name == 'path':
         type_widget = functools.partial(
-            pw.PathParamWidget, basedir=basedir)
+            pw.PathParamWidget,
+            disable_manual_edit=disable_manual_path_input,
+            basedir=basedir)
     elif name == 'cfg_proc':
         type_widget = pw.CfgProcParamWidget
     elif name == 'recursion_limit':
