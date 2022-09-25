@@ -28,53 +28,20 @@ from .utils import _NoValue
 class GooeyParamWidgetMixin:
     """API mixin for QWidget to get/set parameter specifications
 
-    Any parameter widget implementation should also derive from the class,
-    and implement, at minimum, `_set_gooey_param_value()` and
-    `get_gooey_param_value()` for compatibility with the command parameter
-    UI generator.
+    Any parameter widget implementation should also derive from this class,
+    and implement, at minimum, `_set_gooey_param_value_in_widget()` and
+    wire the input widget up in a way that `_set_gooey_param_value()`
+    receives any value a user entered in the widget.
 
-    The main API used by the GUI generator are `set_gooey_param_spec()`
-    and `get_gooey_param_spec()`. They take care of providing a standard
-    widget behavior across all widget types, such as, not returning values if
-    they do not deviate from the default.
+    The main API used by the GUI generator are `set_gooey_param_spec()`,
+    `get_gooey_param_spec()`, and `init_gooey_from_params()`.  They take care
+    of providing a standard widget behavior across all widget types, such as,
+    not returning values if they do not deviate from the default.
     """
 
     value_changed = Signal(MappingProxyType)
     """Signal to be emitted whenever a parameter value is changed. The signal
     payload type matches the return value of `get_gooey_param_spec()`"""
-
-    def set_gooey_param_value(self, value):
-        """Implement to set a particular value in the target widget.
-
-        The `value_changed` signal is emitted a the given value differs
-        from the current value.
-        """
-        # what we had
-        try:
-            prev = self.get_gooey_param_value()
-        except ValueError:
-            prev = _NoValue
-        # let widget implementation actually set the value
-        self._set_gooey_param_value(value)
-        if prev != value:
-            # an actual change, emit corresponding signal
-            self.emit_gooey_value_changed()
-
-    def _set_gooey_param_value(self, value):
-        """Implement to set a particular value in the target widget.
-        """
-        raise NotImplementedError
-
-    def get_gooey_param_value(self):
-        """Implement to get the parameter value from the widget.
-
-        Raises
-        ------
-        ValueError
-          The implementation must raise this exception, when no value
-          has been entered/is available.
-        """
-        raise NotImplementedError
 
     def set_gooey_param_spec(
             self, name: str, default=_NoValue):
@@ -84,23 +51,87 @@ class GooeyParamWidgetMixin:
         self._gooey_param_name = name
         # always store here for later inspection by get_gooey_param_spec()
         self._gooey_param_default = default
+        self._gooey_param_value = _NoValue
+        self._gooey_param_prev_value = _NoValue
+
+    def init_gooey_from_params(self, spec: Dict) -> None:
+        """Slot to receive changes of parameter values (self or other)
+
+        There can be parameter value reports for multiple parameters
+        at once.
+
+        The default implementation calls a widgets implementation of
+        self._init_gooey_from_other_params(), followed by
+        self.set_gooey_param_value() with any value of a key that matches the
+        parameter name, and afterwards call
+        self._set_gooey_param_value_in_widget() to reflect the value change in
+        the widget.
+
+        If a widget prefers or needs to handle updates differently, this
+        method can be reimplemented. Any reimplementation must call
+        self._set_gooey_param_value() though.
+
+        Parameters
+        ----------
+        spec: dict
+          Mapping of parameter names to new values, in the same format
+          and semantics as the return value of get_gooey_param_spec().
+        """
+        # first let a widget reconfigure itself, before a value is set
+        self._init_gooey_from_other_params(spec)
+        if self._gooey_param_name in spec:
+            val = spec[self._gooey_param_name]
+            self._set_gooey_param_value(val)
+            # let widget implementation actually set the value
+            self._set_gooey_param_value_in_widget(val)
 
     def get_gooey_param_spec(self) -> Dict:
         """Called by the command UI generator to get a parameter specification
 
-        Return a mapping of the parameter name to the gathered value or _NoValue
-        when no value was gathered, or the gather value is not different from
-        the default)
-        is a mapping of parameter name to the gather value.
+        Return a mapping of the parameter name to the gathered value or
+        _NoValue when no value was gathered, or the gather value is not
+        different from the default)
         """
-        try:
-            val = self.get_gooey_param_value()
-        except ValueError:
-            # class signals that no value was set
-            return {self._gooey_param_name: _NoValue}
+        val = self._gooey_param_value
+        print("CONSIDER", val, self._gooey_param_default)
         return {self._gooey_param_name: val} \
             if val != self._gooey_param_default \
             else {self._gooey_param_name: _NoValue}
+
+    def emit_gooey_value_changed(self):
+        """Slot to connect "changed" signals of underlying input widgets too
+
+        It emits the standard Gooey `value_changed` signal with the
+        current Gooey `param_spec` as value.
+        """
+        self.value_changed.emit(MappingProxyType(self.get_gooey_param_spec()))
+
+    def _set_gooey_param_value(self, value):
+        """Set a particular value in the widget.
+
+        The `value_changed` signal is emitted a the given value differs
+        from the current value.
+
+        The actual value setting in the widget is performed by
+        _set_gooey_param_value_in_widget() which must be implemented for each
+        widget type.
+        """
+        # what we had
+        self._gooey_param_prev_value = self._gooey_param_value
+        # what we have now
+        self._gooey_param_value = value
+
+        print("RSTING", value)
+        if self._gooey_param_prev_value != value:
+            # an actual change, emit corresponding signal
+            self.emit_gooey_value_changed()
+
+    def _set_gooey_param_value_in_widget(self, value):
+        """Implement to set a particular value in the target widget.
+
+        Any implementation must be able to handle `_NoValue`
+        """
+        raise NotImplementedError
 
     def set_gooey_param_validator(self, validator: Callable) -> None:
         """Set a validator callable that can be used by the widget
@@ -118,31 +149,14 @@ class GooeyParamWidgetMixin:
         # having to integrate potentially lengthy text into the layout
         self.setToolTip(docs)
 
-    def init_gooey_from_params(self, spec: Dict) -> None:
-        """Slot to receive changes of parameter values (self or other)
+    def _init_gooey_from_other_params(self, spec: Dict) -> None:
+        """Implement to init based on other parameter's values
 
-        There can be parameter value reports for multiple parameters
-        at once.
-
-        Can be implemented to act on context changes that require a
+        Can be reimplemented to act on context changes that require a
         reinitialization of a widget. For example, update a list
         of remotes after changing the reference dataset.
-
-        Parameters
-        ----------
-        spec: dict
-          Mapping of parameter names to new values, in the same format
-          and semantics as the return value of get_gooey_param_spec().
         """
         pass
-
-    def emit_gooey_value_changed(self):
-        """Slot to connect "changed" signals of underlying input widgets too
-
-        It emits the standard Gooey `value_changed` signal with the
-        current Gooey `param_spec` as value.
-        """
-        self.value_changed.emit(MappingProxyType(self.get_gooey_param_spec()))
 
 
 def load_parameter_widget(
