@@ -161,10 +161,8 @@ def populate_form_w_params(
     # update it with the given value, if there was any
     # (the true command parameter default was already set above)
     cmdkwargs_defaults.update(cmdkwargs)
-
     for pname, pwidget in form_widgets.items():
-        if pname in cmdkwargs:
-            pwidget.set_gooey_param_value(cmdkwargs_defaults[pname])
+        pwidget.init_gooey_from_params(cmdkwargs_defaults)
 
 
 #
