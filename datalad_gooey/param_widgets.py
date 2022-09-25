@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QSpinBox,
     QToolButton,
     QWidget,
+    QMessageBox,
 )
 
 from .resource_provider import gooey_resources
@@ -445,7 +446,6 @@ class SiblingChoiceParamWidget(ChoiceParamWidget):
     """Choice widget with items from `siblings()`"""
     def __init__(self, choices=None, parent=None):
         super().__init__(parent=parent)
-        self.init_gooey_from_params({})
         self._saw_dataset = False
         self._set_placeholder_msg()
 
@@ -457,7 +457,7 @@ class SiblingChoiceParamWidget(ChoiceParamWidget):
         else:
             self.setPlaceholderText('Select sibling')
 
-    def init_gooey_from_params(self, spec: Dict) -> None:
+    def _init_gooey_from_other_params(self, spec: Dict) -> None:
         if 'dataset' not in spec:
             # we have items and no context change is required
             return
@@ -465,24 +465,43 @@ class SiblingChoiceParamWidget(ChoiceParamWidget):
         self._saw_dataset = True
         # the dataset has changed: query!
         # reset first
-        while self.count():
-            self.removeItem(0)
+        self.clear()
         from datalad.distribution.siblings import Siblings
-        for res in Siblings.__call__(
-            dataset=spec['dataset'],
-            action='query',
-            return_type='generator',
-            result_renderer='disabled',
-            on_failure='ignore',
-        ):
-            sibling_name = res.get('name')
-            if (not sibling_name or res.get('status') != 'ok'
-                    or res.get('type') != 'sibling'
-                    or (sibling_name == 'here'
-                        and res.get('path') == spec['dataset'])):
-                # not a good sibling
-                continue
-            self._add_item(sibling_name)
+        from datalad.support.exceptions import (
+            CapturedException,
+            NoDatasetFound,
+        )
+        try:
+            for res in Siblings.__call__(
+                dataset=spec['dataset'],
+                action='query',
+                return_type='generator',
+                result_renderer='disabled',
+                on_failure='ignore',
+            ):
+                sibling_name = res.get('name')
+                if (not sibling_name or res.get('status') != 'ok'
+                        or res.get('type') != 'sibling'
+                        or (sibling_name == 'here'
+                            # be robust with Path objects
+                            and res.get('path') == str(spec['dataset']))):
+                    # not a good sibling
+                    continue
+                self._add_item(sibling_name)
+        except NoDatasetFound as e:
+            CapturedException(e)
+            # TODO this should happen upon validation of the
+            # `dataset` parameter value
+            QMessageBox.critical(
+                self,
+                'No dataset selected',
+                'The path selected for the <code>dataset</code> parameter '
+                'does not point to a valid dataset. '
+                'Please select another path!'
+            )
+            self._saw_dataset = False
+        # always update the placeholder, even when no items were created,
+        # because we have no seen a dataset, and this is the result
+        self._set_placeholder_msg()
         if self.count():
             self.setEnabled(True)
-            self._set_placeholder_msg()
