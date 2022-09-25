@@ -61,7 +61,8 @@ class MyItemDelegate(QStyledItemDelegate):
         edit_init = dict(
             self._mviw._editor_init,
             # TODO use custom role for actual dtype
-            **{editor._gooey_param_name: index.data()}
+            **{editor._gooey_param_name: index.data(
+                MultiValueInputWidget.NativeObjectRole)}
         )
         editor.init_gooey_from_params(edit_init)
 
@@ -71,10 +72,13 @@ class MyItemDelegate(QStyledItemDelegate):
                      model: QAbstractItemModel,
                      index: QModelIndex):
         val = editor.get_gooey_param_spec()[editor._gooey_param_name]
-        model.setData(index, val)
+        model.setData(index, val, MultiValueInputWidget.NativeObjectRole)
+        model.setData(index, _get_item_display(val), Qt.DisplayRole)
 
 
 class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
+    NativeObjectRole = Qt.UserRole + 233
+
     def __init__(self, editor_factory, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._editor_factory = editor_factory
@@ -114,17 +118,20 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
         removeitem_button.hide()
         self._lw.hide()
 
-    def _add_item(self) -> QListWidgetItem:
+    # * to avoid Qt passing unexpected stuff from signals
+    def _add_item(self, *, data=_NoValue) -> QListWidgetItem:
         newitem = QListWidgetItem(
             # must give custom type
             type=QListWidgetItem.UserType + 234,
         )
-        # TODO if a value is given, we do not want it to be editable
         newitem.setFlags(newitem.flags() | Qt.ItemIsEditable)
         # give it a special value if nothing is set
         # this helps to populate the edit widget with existing
         # values, or not
-        newitem.setData(Qt.EditRole, _NoValue)
+        newitem.setData(
+            MultiValueInputWidget.NativeObjectRole,
+            data)
+        newitem.setData(Qt.DisplayRole, _get_item_display(data))
 
         # put in list
         self._lw.addItem(newitem)
@@ -152,10 +159,7 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
         self._lw.clear()
         # we want to support multi-value setting
         for val in ensure_list(value):
-            item = self._add_item()
-            # TODO another place where we need to think about the underlying
-            # role specification
-            item.setData(Qt.EditRole, val)
+            self._add_item(data=val)
 
     def _handle_input(self):
         val = []
@@ -171,7 +175,8 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
                     # TODO consider using a different role, here and in
                     # setModelData()
                     # TODO check re segfault
-                    val.append(item.data(Qt.EditRole))
+                    val.append(item.data(
+                        MultiValueInputWidget.NativeObjectRole))
             val = [v for v in val if v is not _NoValue]
         if not val:
             # do not report an empty list, when no valid items exist.
@@ -206,3 +211,10 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
         elif val == [default]:
             val = _NoValue
         return {self._gooey_param_name: val}
+
+
+def _get_item_display(value) -> str:
+    if value is _NoValue:
+        return '--not set--'
+    else:
+        return str(value)
