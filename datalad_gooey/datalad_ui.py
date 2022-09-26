@@ -105,6 +105,9 @@ class DataladQtUIBridge(QObject):
                 # for those
                 if t
             ]
+        if not progress:
+            # we have ignore a progress tracker and now we have nothing
+            return
         progress = sum(progress) / len(progress)
         # default range setup is 0..100
         self._progress_bar.setValue(progress * 100)

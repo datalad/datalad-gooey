@@ -40,21 +40,28 @@ def test_GooeyParamWidgetMixin():
              None),
 
     ):
+        pname = 'peewee'
         # this is how all parameter widgets are instantiated
         parent = QWidget()  # we need parent to stick around,
                             # so nothing gets picked up by GC
         pw = load_parameter_widget(
             parent,
             pw_factory,
-            name='peewee',
+            name=pname,
             docs='EXPLAIN!',
             default=default,
         )
 
-        # If nothing was set yet, we expect `_NoValue` as the "representation of
-        # default" here:
-        assert pw.get_gooey_param_spec() == {'peewee': _NoValue}, \
-            f"Default value not retrieved from {pw_factory.__class__}"
-        pw.set_gooey_param_value(val)
-        # we get the set value back, not the default
-        assert pw.get_gooey_param_spec() == {'peewee': val}
+        # If nothing was set yet, we expect `_NoValue` as the "representation
+        # of default" here:
+        assert pw.get_gooey_param_spec() == {pname: _NoValue}, \
+            f"Default value not retrieved from {pw_factory}"
+        # If nothing other than the default was set yet,
+        # we still expect `_NoValue` as the "representation of default" here:
+        pw.init_gooey_from_params({pname: default})
+        assert pw.get_gooey_param_spec() == {pname: _NoValue}, \
+            f"Default value not retrieved from {pw_factory}"
+        # with a different value set, we get the set value back,
+        # not the default
+        pw.init_gooey_from_params({pname: val})
+        assert pw.get_gooey_param_spec() == {pname: val}

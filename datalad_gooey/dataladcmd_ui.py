@@ -79,13 +79,13 @@ class GooeyDataladCmdUI(QObject):
                 api = sender.data().get('__api__')
             if cmdname is None:
                 cmdname = sender.data().get('__cmd_name__')
-                # pull in any signal-provided kwargs for the command
-                # unless they have been also specified directly to the method
-                cmdkwargs = {
-                    k: v for k, v in sender.data().items()
-                    if k not in ('__cmd_name__', '__api')
-                    and k not in cmdkwargs
-                }
+            # pull in any signal-provided kwargs for the command
+            # unless they have been also specified directly to the method
+            cmdkwargs = {
+                k: v for k, v in sender.data().items()
+                if k not in ('__cmd_name__', '__api__')
+                and k not in cmdkwargs
+            }
 
         assert cmdname is not None, \
             "GooeyDataladCmdUI.configure() called without command name"

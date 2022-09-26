@@ -93,6 +93,7 @@ def populate_form_w_params(
                 param.cmd_kwargs.get('default', _NoValue), \
                 param,
             )
+    cmdkwargs_defaults = dict()
     for pname, pdefault, param_spec in sorted(
             # across cmd params, and generic params
             chain(_specific_params(), _generic_params()),
@@ -110,6 +111,7 @@ def populate_form_w_params(
             # command knows
             param_spec.constraints = \
                 cmd_api_spec['parameter_constraints'][pname]
+        cmdkwargs_defaults[pname] = pdefault
         # populate the layout with widgets for each of them
         # we do not pass Parameter instances further down, but disassemble
         # and homogenize here
@@ -153,11 +155,14 @@ def populate_form_w_params(
             if pname1 == pname2:
                 continue
             pwidget1.value_changed.connect(
-                pwidget2.init_gooey_from_other_param)
+                pwidget2.init_gooey_from_params)
     # when all is wired up, set the values that need setting
+    # we set the respective default value to all widgets, and
+    # update it with the given value, if there was any
+    # (the true command parameter default was already set above)
+    cmdkwargs_defaults.update(cmdkwargs)
     for pname, pwidget in form_widgets.items():
-        if pname in cmdkwargs:
-            pwidget.set_gooey_param_value(cmdkwargs[pname])
+        pwidget.init_gooey_from_params(cmdkwargs_defaults)
 
 
 #
@@ -212,6 +217,8 @@ def _get_parameter_widget_factory(
     if argparse_spec is None:
         argparse_spec = {}
     argparse_action = argparse_spec.get('action')
+    disable_manual_path_input = active_suite.get('options', {}).get(
+        'disable_manual_path_input', False)
     # if we have no idea, use a simple line edit
     type_widget = pw.StrParamWidget
     # now some parameters where we can derive semantics from their name
@@ -219,12 +226,13 @@ def _get_parameter_widget_factory(
         type_widget = functools.partial(
             pw.PathParamWidget,
             pathtype=QFileDialog.Directory,
-            disable_manual_edit=active_suite.get('options', {}).get(
-                'disable_manual_path_input', False),
+            disable_manual_edit=disable_manual_path_input,
             basedir=basedir)
     elif name == 'path':
         type_widget = functools.partial(
-            pw.PathParamWidget, basedir=basedir)
+            pw.PathParamWidget,
+            disable_manual_edit=disable_manual_path_input,
+            basedir=basedir)
     elif name == 'cfg_proc':
         type_widget = pw.CfgProcParamWidget
     elif name == 'recursion_limit':
