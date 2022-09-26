@@ -506,3 +506,69 @@ class SiblingChoiceParamWidget(ChoiceParamWidget):
         self._set_placeholder_msg()
         if self.count():
             self.setEnabled(True)
+
+
+class CredentialChoiceParamWidget(QComboBox, GooeyParamWidgetMixin):
+    """Choice widget with items from `credentials()`"""
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+        self.setEditable(True)
+        self.setInsertPolicy(QComboBox.InsertAtTop)
+        self.setEnabled(True)
+        self.currentTextChanged.connect(self._handle_input)
+        self.setSizeAdjustPolicy(
+            QComboBox.AdjustToMinimumContentsLengthWithIcon)
+        self.setPlaceholderText('--auto--')
+        self._saw_dataset = False
+
+    def _init_gooey_from_other_params(self, spec: Dict) -> None:
+        if 'dataset' not in spec:
+            # we have items and no context change is required
+            return
+        self._saw_dataset = True
+        self._init_choices(
+            spec['dataset'] if spec['dataset'] != _NoValue else None)
+
+    def _init_choices(self, dataset=None):
+        # the dataset has changed: query!
+        # reset first
+        self.clear()
+        from datalad_next.credentials import Credentials
+        from datalad.support.exceptions import (
+            CapturedException,
+            NoDatasetFound,
+        )
+        self.addItem('')
+        try:
+            for res in Credentials.__call__(
+                dataset=dataset,
+                action='query',
+                return_type='generator',
+                result_renderer='disabled',
+                on_failure='ignore',
+            ):
+                name = res.get('name')
+                if (not name or res.get('status') != 'ok'
+                        or res.get('type') != 'credential'):
+                    # not a good sibling
+                    continue
+                self.addItem(name)
+        except NoDatasetFound as e:
+            CapturedException(e)
+            # TODO this should happen upon validation of the
+            # `dataset` parameter value
+            QMessageBox.critical(
+                self,
+                'No dataset selected',
+                'The path selected for the <code>dataset</code> parameter '
+                'does not point to a valid dataset. '
+                'Please select another path!'
+            )
+            self._saw_dataset = False
+
+    def _set_gooey_param_value_in_widget(self, value):
+        self.setCurrentText(value or '')
+
+    def _handle_input(self):
+        self._set_gooey_param_value(
+            self.currentText() or _NoValue)

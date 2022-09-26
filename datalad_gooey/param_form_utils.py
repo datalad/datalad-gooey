@@ -235,6 +235,8 @@ def _get_parameter_widget_factory(
             basedir=basedir)
     elif name == 'cfg_proc':
         type_widget = pw.CfgProcParamWidget
+    elif name == 'credential':
+        type_widget = pw.CredentialChoiceParamWidget
     elif name == 'recursion_limit':
         type_widget = functools.partial(pw.PosIntParamWidget, allow_none=True)
     # now parameters where we make decisions based on their configuration
