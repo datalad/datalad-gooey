@@ -5,9 +5,19 @@
 
 [![Build status](https://ci.appveyor.com/api/projects/status/g9von5wtpoidcecy/branch/main?svg=true)](https://ci.appveyor.com/project/mih/datalad-gooey/branch/main) [![codecov.io](https://codecov.io/github/datalad/datalad-gooey/coverage.svg?branch=main)](https://codecov.io/github/datalad/datalad-gooey?branch=main) [![crippled-filesystems](https://github.com/datalad/datalad-gooey/workflows/crippled-filesystems/badge.svg)](https://github.com/datalad/datalad-gooey/actions?query=workflow%3Acrippled-filesystems) [![docs](https://github.com/datalad/datalad-gooey/workflows/docs/badge.svg)](https://github.com/datalad/datalad-gooey/actions?query=workflow%3Adocs)
 
-This is a very early, very incomplete, demo of a Qt-based GUI for DataLad.
+This package provides a graphical user interface (GUI) for
+[DataLad](https://datalad.org). It is specifically aiming at making key data
+management tasks more accessible and more convenient, without requiring to
+become familiar with the command line.
 
-Install and run with `python -m datalad_gooey` or `datalad-gooey`.
+This simplified interface to DataLad is built on a foundation that is capable
+of providing graphical user interfaces for any DataLad command, including those
+provided by extension packages. Moreover, extension packages can even provide
+their own GUI suites, by mixing and tuning a custom set of commands and
+parameters.
+
+To try it out, install this package, and run `datalad gooey`.
+
 
 ## Contributors ✨
 
