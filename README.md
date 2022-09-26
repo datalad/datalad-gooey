@@ -3,7 +3,7 @@
 [![All Contributors](https://img.shields.io/badge/all_contributors-10-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-[![Build status](https://ci.appveyor.com/api/projects/status/g9von5wtpoidcecy/branch/main?svg=true)](https://ci.appveyor.com/project/mih/datalad-gooey/branch/main) [![codecov.io](https://codecov.io/github/datalad/datalad-gooey/coverage.svg?branch=main)](https://codecov.io/github/datalad/datalad-gooey?branch=main) [![crippled-filesystems](https://github.com/datalad/datalad-gooey/workflows/crippled-filesystems/badge.svg)](https://github.com/datalad/datalad-gooey/actions?query=workflow%3Acrippled-filesystems) [![docs](https://github.com/datalad/datalad-gooey/workflows/docs/badge.svg)](https://github.com/datalad/datalad-gooey/actions?query=workflow%3Adocs)
+[![Build status](https://ci.appveyor.com/api/projects/status/g9von5wtpoidcecy/branch/main?svg=true)](https://ci.appveyor.com/project/mih/datalad-gooey/branch/main) [![codecov.io](https://codecov.io/github/datalad/datalad-gooey/coverage.svg?branch=main)](https://codecov.io/github/datalad/datalad-gooey?branch=main) [![crippled-filesystems](https://github.com/datalad/datalad-gooey/workflows/crippled-filesystems/badge.svg)](https://github.com/datalad/datalad-gooey/actions?query=workflow%3Acrippled-filesystems) [![docs](https://github.com/datalad/datalad-gooey/workflows/docs/badge.svg)](https://github.com/datalad/datalad-gooey/actions?query=workflow%3Adocs) [![Documentation Status](https://readthedocs.org/projects/datalad-gooey/badge/?version=latest)](http://docs.datalad.org/projects/gooey/en/latest/?badge=latest)
 
 This package provides a graphical user interface (GUI) for
 [DataLad](https://datalad.org). It is specifically aiming at making key data
