@@ -34,14 +34,14 @@ api = dict(
         ),
     ),
     create=dict(
-        name='C&reate a dataset',
+        name='Create a dataset',
         exclude_parameters=set((
             'initopts',
             'description',
             'fake_dates',
         )),
         parameter_display_names=dict(
-            force='OK if target directory not empty',
+            force='FORCE if target directory not empty',
             path='Create at',
             dataset='Register in superdataset',
         ),
