@@ -7,7 +7,15 @@ and publish it to `GIN <https://gin.g-node.org>`_ (G-Node Infrastructure).
 Prerequisites
 -------------
 
-.. todo:: note about having ssh key set up
+In order to use GIN for hosting and sharing your datasets, you need to:
+
+  - Register a GIN account
+  - Add a personal access token (for creation of repositories with DataLad)
+  - Add an SSH key (for uploading annexed contents)
+
+Follow the instructions on GIN to do so.
+If you want to stay in the world of graphical interfaces, we recommend
+`PuTTYgen <https://www.puttygen.com/>`_ for SSH keys generation.
 
 Create a dataset
 ----------------
@@ -25,7 +33,7 @@ To do so, select *text2git* from the list of *Configuration procedure(s)* and cl
 Finally, check the *OK if target directory not empty* to enforce dataset creation out of a non-empty folder.
 With the options selected, click *OK*.
 
-.. todo: screenshot
+.. image:: /_static/screenshots-gin/created.png
 
 Save the contents
 -----------------
@@ -38,7 +46,7 @@ Here, we are saving all files at once, but if we wanted we cauld limit the save 
 or trigger it by clicking on a specific file.
 Once ready, click OK.
 
-.. todo: screenshot
+.. image:: /_static/screenshots-gin/saved.png
 
 Create a GIN sibling
 --------------------
@@ -49,11 +57,14 @@ Fill in the *New repository name on Gin* (and, optionally, check the *Make GIN r
 You can leave all other options default.
 
 In the *Name of the credential to be used* field, you can pick previously used credentials.
-If no value is given, and no previous credentials exist, the credentials will be save with ... by default.
+If no value is given, and no previous credentials exist, the credentials will be save with website name (`gin.g-node.org`) by default.
 
 Click OK.
 
-.. todo: screenshot
+At this point, you will be asked for a token.
+Paste the access token generated from GIN website, and click OK.
+
+.. image:: /_static/screenshots-gin/created-sibling.png
 
 Push to the GIN sibling
 -----------------------
@@ -62,7 +73,7 @@ Right-click *Dataset commands* → *Push data/updates to a sibling*.
 The only thing you need to select is the value of *To dataset sibling* - this will be the sibling name from the step above.
 Click OK.
 
-.. todo: screenshot
+.. image:: /_static/screenshots-gin/pushed.png
 
 Retrieve the data from GIN
 --------------------------
