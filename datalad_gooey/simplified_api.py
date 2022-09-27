@@ -167,7 +167,7 @@ api = dict(
             what='What to drop',
             path='Limit to',
             recursive='Also drop (in) any subdatasets',
-            reckless='Disable safeguards',
+            reckless='Disable safeguards (reckless!)',
         ),
         parameter_order=dict(
             dataset=0,
