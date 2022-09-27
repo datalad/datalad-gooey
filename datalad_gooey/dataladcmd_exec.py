@@ -194,6 +194,7 @@ class GooeyDataladCmdExec(QObject):
         aw = self._activity_widget
         aw.setIcon(gooey_resources.get_best_icon('kaboom'))
         aw.setText(f" {cmdname}")
+        aw.setToolTip("Interrupt command execution after the next result")
         aw.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         aw.show()
 
