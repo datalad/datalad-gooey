@@ -348,7 +348,6 @@ class GooeyApp(QObject):
             )),
         )
 
-
     @Slot(Interface, list)
     def _app_cmdexec_results_handler(self, cls, res):
         if cls != WTF:

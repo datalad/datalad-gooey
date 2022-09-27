@@ -414,7 +414,7 @@ class CfgProcParamWidget(ChoiceParamWidget):
         super().__init__(parent=parent)
 
     def _init_gooey_from_other_params(self, spec: Dict) -> None:
-        if self.count() and 'dataset' not in spec:
+        if self.count() and spec.get('dataset', _NoValue) is _NoValue:
             # we have items and no context change is required
             return
 
