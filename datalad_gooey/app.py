@@ -192,17 +192,24 @@ class GooeyApp(QObject):
             self.get_widget('statusbar').showMessage(f'Finished `{cmdname}`',
                                                      timeout=1000)
         else:
+            from datalad.support.exceptions import IncompleteResultsError
+            if ce.tb.exc_type is IncompleteResultsError:
+                # In this case, error results have been rendered already, the
+                # exception does not deliver any new information to the user.
+                error_hint = ""
+            else:
+                error_hint = " (see error log for details)"
             failed_msg = f"{render_cmd_call(cmdname, cmdargs)} <b>failed!</b>"
             # if a command crashes, state it in the statusbar
             self.get_widget('statusbar').showMessage(
-                f'`{cmdname}` failed (see error log for details)')
+                f'`{cmdname}` failed{error_hint}')
             if not cmdname.startswith('gooey_'):
                 # leave a brief note in the main log (if this was not a helper
                 # call)
                 # this alone would not be enough, because we do not know
                 # whether the command log is visible
                 self.get_widget('commandLog').appendHtml(
-                    f"<br>{failed_msg} (see error log for details)"
+                    f"<br>{failed_msg}{error_hint}"
                 )
             # but also barf the error into the logviewer
             lv = self.get_widget('errorLog')
