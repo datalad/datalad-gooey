@@ -107,7 +107,7 @@ api = dict(
             'recursive',
         )),
         parameter_display_names=dict(
-            dataset='Dataset',
+            dataset='Create sibling for dataset at',
             reponame='New repository name on Github',
             name='Sibling name',
             private='Make GitHub repo private',
@@ -133,7 +133,26 @@ api = dict(
         exclude_parameters=set((
             'recursive',
             'path',
+            'storage_name',
         )),
+        parameter_display_names=dict(
+            dataset='Create sibling for dataset at',
+            url='WebDAV URL',
+            name='Sibling name',
+            mode='Sibling mode',
+            credential='Name of credential to be used',
+            existing='If the sibling exists already...',
+        ),
+        parameter_order=dict(
+            dataset=0,
+            url=1,
+            name=2,
+            mode=3,
+            private=4,
+            access_protocol=5,
+            existing=6,
+            credential=7,
+        ),
     ),
     drop=dict(
         name='Dr&op content',
