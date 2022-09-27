@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLineEdit,
     QSpinBox,
+    QTextEdit,
     QToolButton,
     QWidget,
     QMessageBox,
@@ -304,6 +305,26 @@ class StrParamWidget(QLineEdit, GooeyParamWidgetMixin):
         self._set_gooey_param_value(self.text())
 
 
+class TextParamWidget(QTextEdit, GooeyParamWidgetMixin):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAcceptRichText(False)  # TODO: Could be an option
+        self.setAcceptDrops(True)
+        self.setPlaceholderText('Not set')
+        self.textChanged.connect(self._handle_input)
+
+    def _set_gooey_param_value_in_widget(self, value):
+        if value in (_NoValue, None):
+            # we treat both as "unset"
+            self.clear()
+        else:
+            self.setText(str(value))
+
+    def _handle_input(self):
+        self._set_gooey_param_value(self.toPlainText())
+
+
 class PathParamWidget(QWidget, GooeyParamWidgetMixin):
     def __init__(self, basedir=None,
                  pathtype: QFileDialog.FileMode = QFileDialog.AnyFile,
@@ -447,6 +468,7 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
                 self._handle_drop(file)
         else:
             event.ignore()
+
 
 class CfgProcParamWidget(ChoiceParamWidget):
     """Choice widget with items from `run_procedure(discover=True)`"""
