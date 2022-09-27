@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 from datalad.interface.base import Interface
 from datalad.utils import get_dataset_root
 from datalad.dataset.gitrepo import GitRepo
+from datalad.coreapi import Dataset
 
 from .cmd_actions import add_cmd_actions_to_menu
 from .fsbrowser_item import FSBrowserItem
@@ -403,7 +404,22 @@ class GooeyFilesystemBrowser(QObject):
         pbrowser.clear()
 
         if itype in ('file', 'annexed-file'):
-            pbrowser.setText(f'Filliiii {ipath}')
+            dsroot = get_dataset_root(ipath)
+            if dsroot is None:
+                # untracked file, we don't know anything
+                pbrowser.setText(f'Untracked file {ipath}')
+            else:
+                res = Dataset(dsroot).status(ipath,
+                                             annex='basic',
+                                             result_renderer='disabled',
+                                             return_type='item-or-list')
+                text = "<table>"
+                for k, v in res.items():
+                    if k in ['action', 'status', 'ds', 'refds']:
+                        continue
+                    text += f"<tr><td>{k}:</td><td>{v}</td></tr>"
+                text += "</table>"
+                pbrowser.setText(text)
         else:
             pbrowser.setText(f'No information on {ipath}')
 
