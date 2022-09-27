@@ -129,11 +129,31 @@ api = dict(
         ),
     ),
     create_sibling_webdav=dict(
-        name='Create a &WebDAV sibling',
+        name='Create a &WebDav sibling',
         exclude_parameters=set((
+            # bunch of complexity that can be ignored when not supporting
+            # recursive sibling creation
             'recursive',
-            'path',
+            'recursion_limit'
         )),
+        parameter_display_names=dict(
+            dataset='Create sibling for dataset at',
+            url='WebDav URL to create sibling at',
+            name='Sibling name',
+            mode='Usage mode for the sibling',
+            storage_name='Storage sibling name',
+            existing='If the sibling exists already...',
+            credential='Name of credential to be used',
+        ),
+        parameter_order=dict(
+            dataset=0,
+            url=1,
+            name=2,
+            storage_name=3,
+            mode=4,
+            credential=5,
+            existing=6,
+        ),
     ),
     drop=dict(
         name='Dr&op content',
