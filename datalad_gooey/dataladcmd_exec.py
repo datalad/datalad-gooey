@@ -8,6 +8,7 @@ from typing import (
 
 from PySide6.QtCore import (
     QObject,
+    Qt,
     Signal,
     Slot,
 )
@@ -18,6 +19,8 @@ from PySide6.QtWidgets import (
 from datalad.interface.base import Interface
 from datalad.support.exceptions import CapturedException
 from datalad.utils import get_wrapped_class
+
+from .resource_provider import gooey_resources
 
 # lazy import
 dlapi = None
@@ -189,7 +192,9 @@ class GooeyDataladCmdExec(QObject):
             exec_params: dict):
         # thread_id, cmdname, cmdargs/kwargs, exec_params
         aw = self._activity_widget
-        aw.setText(f"KABOOM {cmdname}")
+        aw.setIcon(gooey_resources.get_best_icon('kaboom'))
+        aw.setText(f" {cmdname}")
+        aw.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         aw.show()
 
     def _disable_activity_widget(

@@ -216,7 +216,7 @@
            <item>
             <widget class="QPushButton" name="clearErrorLogPB">
              <property name="text">
-              <string>Clear log</string>
+              <string>Clear Log</string>
              </property>
             </widget>
            </item>
