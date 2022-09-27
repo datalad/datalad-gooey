@@ -131,7 +131,7 @@ api = dict(
         parameter_display_names=dict(
             dataset='Drop from dataset at',
             what='What to drop',
-            path='Only drop',
+            path='Limit to',
             recursive='Also drop (in) any subdatasets',
         ),
         parameter_order=dict(
@@ -149,7 +149,8 @@ api = dict(
             'source',
         )),
         parameter_display_names=dict(
-            path='Only get',
+            dataset='Get content in dataset at',
+            path='Limit to',
             # 'all' because we have no recursion_limit enabled
             recursive='Also get all subdatasets',
             get_data='Get file content',
@@ -193,7 +194,7 @@ api = dict(
         parameter_display_names=dict(
             dataset='Save changes in dataset at',
             message='Description of change',
-            path='Only save',
+            path='Limit to',
             recursive='Include changes in subdatasets',
             to_git='Do not put files in annex',
             version_tag='Tag for saved dataset state',
@@ -240,7 +241,7 @@ directory_in_ds_api = {
     c: s for c, s in api.items()
     if c in ('clone', 'create', 'drop', 'get', 'push', 'save')
 }
-file_api = None
+file_api = {}
 file_in_ds_api = {
     c: s for c, s in api.items() if c in ('save')
 }
