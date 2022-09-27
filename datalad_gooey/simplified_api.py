@@ -54,14 +54,14 @@ api = dict(
             path=EnsureExistingDirectory(),
         ),
     ),
-    create_sibling_gitlab=dict(
-        name='Create a Git&Lab sibling',
-        exclude_parameters=set((
-            'dryrun',
-            'path',
-            'recursive',
-        )),
-    ),
+    #create_sibling_gitlab=dict(
+    #    name='Create a Git&Lab sibling',
+    #    exclude_parameters=set((
+    #        'dryrun',
+    #        'path',
+    #        'recursive',
+    #    )),
+    #),
     create_sibling_gin=dict(
         name='Create a GI&N sibling',
         exclude_parameters=set((
