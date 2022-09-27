@@ -253,6 +253,7 @@
     <property name="title">
      <string>&amp;File</string>
     </property>
+    <addaction name="actionSetBaseDirectory"/>
     <addaction name="action_Quit"/>
    </widget>
    <widget class="QMenu" name="menuView">
@@ -337,6 +338,11 @@
   <action name="actionDiagnostic_infos">
    <property name="text">
     <string>&amp;Diagnostic infos</string>
+   </property>
+  </action>
+  <action name="actionSetBaseDirectory">
+   <property name="text">
+    <string>Set &amp;base directory</string>
    </property>
   </action>
  </widget>

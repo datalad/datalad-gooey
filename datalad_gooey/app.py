@@ -63,10 +63,10 @@ class GooeyApp(QObject):
         'commandLog': QPlainTextEdit,
         'errorLog': QPlainTextEdit,
         'menuDataset': QMenu,
-        'menuHelp': QMenu,
         'menuView': QMenu,
         'menuSuite': QMenu,
         'menuUtilities': QMenu,
+        'menuHelp': QMenu,
         'statusbar': QStatusBar,
         'actionCheck_for_new_version': QAction,
         'actionReport_a_problem': QAction,
@@ -145,6 +145,8 @@ class GooeyApp(QObject):
         # necessary
         self.get_widget('menuDataset').aboutToShow.connect(
             self._populate_dataset_menu)
+        self.main_window.actionSetBaseDirectory.triggered.connect(
+            self._set_root_path)
         self.main_window.actionCheck_for_new_version.triggered.connect(
             self._check_new_version)
         self.main_window.actionReport_a_problem.triggered.connect(
