@@ -36,10 +36,13 @@ class GooeyFilesystemBrowser(QObject):
     item_requires_annotation = Signal(FSBrowserItem)
 
     # DONE
-    def __init__(self, app, path: Path, treewidget: QTreeWidget):
+    def __init__(self, app, treewidget: QTreeWidget):
         super().__init__()
 
         tw = treewidget
+        # disable until set_root() was called
+        tw.setDisabled(True)
+        self._tree = tw
         # TODO must setColumnNumber()
 
         self._app = app
@@ -51,25 +54,8 @@ class GooeyFilesystemBrowser(QObject):
         # established defined sorting order of the tree
         tw.sortItems(1, Qt.AscendingOrder)
 
-        # establish the root item, based on a fake lsdir result
-        # the info needed is so simple, it is not worth a command
-        # execution
-        root = FSBrowserItem.from_lsdir_result(
-            dict(
-                path=path,
-                type='dataset' if GitRepo.is_valid(path) else 'directory',
-            ),
-            parent=tw,
-        )
-        # set the tooltip to the full path, otherwise only names are shown
-        root.setToolTip(0, str(path))
-        tw.addTopLevelItem(root)
-        self._root_item = root
-
         tw.customContextMenuRequested.connect(
             self._custom_context_menu)
-
-        self._tree = tw
 
         # whenever a treeview node is expanded, add the path to the fswatcher
         tw.itemExpanded.connect(self._watch_dir)
@@ -90,6 +76,28 @@ class GooeyFilesystemBrowser(QObject):
 
         self._app._cmdexec.results_received.connect(
             self._cmdexec_results_handler)
+
+    def set_root(self, path):
+        tw = self._tree
+        # wipe the previous state
+        tw.clear()
+        # TODO stop any pending annotations
+
+        # establish the root item, based on a fake lsdir result
+        # the info needed is so simple, it is not worth a command
+        # execution
+        root = FSBrowserItem.from_lsdir_result(
+            dict(
+                path=path,
+                type='dataset' if GitRepo.is_valid(path) else 'directory',
+            ),
+            parent=tw,
+        )
+        # set the tooltip to the full path, otherwise only names are shown
+        root.setToolTip(0, str(path))
+        tw.addTopLevelItem(root)
+        self._root_item = root
+        tw.setEnabled(True)
 
     def _populate_item(self, item):
         if item.childCount():

@@ -105,21 +105,6 @@ class GooeyApp(QObject):
         # setup themeing before the first dialog goes up
         self._setup_looknfeel()
 
-        if not path:
-            # start root path given, ask user
-            path = QFileDialog.getExistingDirectory(
-                caption="Select a base directory for DataLad",
-                options=QFileDialog.ShowDirsOnly,
-            )
-            if not path:
-                # user aborted root path selection, start in HOME.
-                # HOME is a better choice than CWD in most environments
-                path = Path.home()
-
-        # set path for root item and PWD to give relative paths a reference that makes
-        # sense within the app
-        self._set_root_path(path)
-
         self._dlapi = None
         self._main_window = None
         self._cmdexec = GooeyDataladCmdExec()
@@ -128,9 +113,11 @@ class GooeyApp(QObject):
         # setup UI
         self._fsbrowser = GooeyFilesystemBrowser(
             self,
-            path,
             self.get_widget('fsBrowser'),
         )
+        # set path for root item and PWD to give relative paths a reference
+        # that makes sense within the app
+        self._set_root_path(path)
 
         # remember what backend was in use
         self._prev_ui_backend = dlui.ui.backend
@@ -261,8 +248,21 @@ class GooeyApp(QObject):
         # for a use case.
         # to make this possible, we would need to be able to adjust or reset the
         # treeview
+        if not path:
+            # start root path given, ask user
+            path = QFileDialog.getExistingDirectory(
+                caption="Select a base directory for DataLad",
+                options=QFileDialog.ShowDirsOnly,
+            )
+            if not path:
+                # user aborted root path selection, start in HOME.
+                # HOME is a better choice than CWD in most environments
+                path = Path.home()
+
         chpwd(path)
         self._path = path
+        # (re)init the browser
+        self._fsbrowser.set_root(path)
 
     @property
     def rootpath(self):

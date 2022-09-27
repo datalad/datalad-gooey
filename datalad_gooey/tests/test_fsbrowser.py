@@ -14,4 +14,5 @@ def test_GooeyFilesystemBrowser():
     class FakeApp(QWidget):
         _cmdexec = GooeyDataladCmdExec()
 
-    GooeyFilesystemBrowser(FakeApp(), Path.cwd(), QTreeWidget())
+    fsb = GooeyFilesystemBrowser(FakeApp(), QTreeWidget())
+    fsb.set_root(Path.cwd())
