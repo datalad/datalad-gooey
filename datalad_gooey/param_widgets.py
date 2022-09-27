@@ -555,7 +555,6 @@ class SiblingChoiceParamWidget(ChoiceParamWidget):
                     continue
                 self._add_item(sibling_name)
         except NoDatasetFound as e:
-            print(CapturedException(e))
             self._saw_dataset = 'invalid'
         # always update the placeholder, even when no items were created,
         # because we have no seen a dataset, and this is the result

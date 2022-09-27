@@ -246,7 +246,6 @@ class GooeyFilesystemBrowser(QObject):
         # there is stuff to annotate, make sure we do not trigger more
         # annotations while this one is running
         self._annotation_timer.stop()
-        print("ANNOTATE!", len(self._annotation_queue))
         # TODO stuff could be optimized here: collapsing multiple
         # directories belonging to the same dataset into a single `status`
         # call...
@@ -257,7 +256,6 @@ class GooeyFilesystemBrowser(QObject):
             # another, attention would be on the last expanded one, not the
             # first)
             item = self._annotation_queue.pop()
-            print('->', item)
             ipath = item.pathobj
             dsroot = get_dataset_root(ipath)
             if dsroot is None:
