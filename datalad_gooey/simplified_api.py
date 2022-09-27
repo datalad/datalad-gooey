@@ -58,6 +58,8 @@ api = dict(
         name='Create a Git&Lab sibling',
         exclude_parameters=set((
             'dryrun',
+            'path',
+            'recursive',
         )),
     ),
     create_sibling_gin=dict(
@@ -65,6 +67,8 @@ api = dict(
         exclude_parameters=set((
             'dryrun',
             'api'
+            'path',
+            'recursive',
         )),
         parameter_display_names=dict(
             dataset='Dataset',
@@ -94,7 +98,9 @@ api = dict(
             'dryrun',
             'github_login',
             'github_organization',
-            'api'
+            'api',
+            'path',
+            'recursive',
         )),
         parameter_display_names=dict(
             dataset='Dataset',
@@ -120,6 +126,10 @@ api = dict(
     ),
     create_sibling_webdav=dict(
         name='Create a &WebDAV sibling',
+        exclude_parameters=set((
+            'recursive',
+            'path',
+        )),
     ),
     drop=dict(
         name='Dr&op content',
