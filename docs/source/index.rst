@@ -4,6 +4,14 @@ DataLad extension template
 This is a template for creating a `DataLad <http://datalad.org>`__ extension
 that equips DataLad with additional functionality.
 
+Overview
+========
+
+.. toctree::
+   :maxdepth: 1
+
+   installation
+
 
 API
 ===
