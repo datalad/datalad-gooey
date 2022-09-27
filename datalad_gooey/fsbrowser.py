@@ -12,6 +12,7 @@ from PySide6.QtCore import (
     Signal,
     Slot,
 )
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QMenu,
     QTreeWidget,
@@ -437,6 +438,12 @@ class GooeyFilesystemBrowser(QObject):
                 from .active_suite import file_api as cmdapi
             submenu = context.addMenu('File commands')
         # TODO context menu for annex'ed files
+
+        if path_type in ('directory', 'dataset'):
+            setbase = QAction('Set &base directory here', context)
+            setbase.setData(ipath)
+            setbase.triggered.connect(self._app._set_root_path)
+            context.addAction(setbase)
 
         add_cmd_actions_to_menu(
             self._tree, self._app._cmdui.configure,

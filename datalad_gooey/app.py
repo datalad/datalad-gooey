@@ -251,7 +251,12 @@ class GooeyApp(QObject):
         # to make this possible, we would need to be able to adjust or reset the
         # treeview
         if not path:
-            # start root path given, ask user
+            # first check if this was called as a slot
+            action = self.sender()
+            if action is not None:
+                path = action.data()
+        if not path:
+            # start root path still not given, ask user
             path = QFileDialog.getExistingDirectory(
                 caption="Select a base directory for DataLad",
                 options=QFileDialog.ShowDirsOnly,
