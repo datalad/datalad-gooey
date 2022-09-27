@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>891</width>
+    <height>730</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -191,12 +191,36 @@
            </property>
           </widget>
          </item>
-         <item alignment="Qt::AlignRight">
-          <widget class="QPushButton" name="clearErrorLogPB">
-           <property name="text">
-            <string>Clear log</string>
-           </property>
-          </widget>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout">
+           <item>
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QPushButton" name="CopyLogPB">
+             <property name="text">
+              <string>Copy Log</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="clearErrorLogPB">
+             <property name="text">
+              <string>Clear log</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
         </layout>
        </widget>
@@ -363,6 +387,38 @@
     <hint type="destinationlabel">
      <x>674</x>
      <y>487</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>CopyLogPB</sender>
+   <signal>clicked()</signal>
+   <receiver>errorLog</receiver>
+   <slot>selectAll()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>650</x>
+     <y>543</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>400</x>
+     <y>425</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>CopyLogPB</sender>
+   <signal>clicked()</signal>
+   <receiver>errorLog</receiver>
+   <slot>copy()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>650</x>
+     <y>543</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>400</x>
+     <y>425</y>
     </hint>
    </hints>
   </connection>
