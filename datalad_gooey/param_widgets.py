@@ -491,7 +491,9 @@ class SiblingChoiceParamWidget(ChoiceParamWidget):
         self._set_placeholder_msg()
 
     def _set_placeholder_msg(self):
-        if not self._saw_dataset:
+        if self._saw_dataset == 'invalid':
+            self.setPlaceholderText('Select valid dataset')
+        elif not self._saw_dataset:
             self.setPlaceholderText('Select dataset first')
         elif not self.count():
             self.setPlaceholderText('No known siblings')
@@ -499,8 +501,8 @@ class SiblingChoiceParamWidget(ChoiceParamWidget):
             self.setPlaceholderText('Select sibling')
 
     def _init_gooey_from_other_params(self, spec: Dict) -> None:
-        if 'dataset' not in spec:
-            # we have items and no context change is required
+        if spec.get('dataset', _NoValue) in (_NoValue, None):
+            # siblings need a dataset context
             return
 
         self._saw_dataset = True
@@ -514,7 +516,8 @@ class SiblingChoiceParamWidget(ChoiceParamWidget):
         )
         try:
             for res in Siblings.__call__(
-                dataset=spec['dataset'],
+                dataset=spec['dataset']
+                if spec['dataset'] != _NoValue else None,
                 action='query',
                 return_type='generator',
                 result_renderer='disabled',
@@ -530,17 +533,8 @@ class SiblingChoiceParamWidget(ChoiceParamWidget):
                     continue
                 self._add_item(sibling_name)
         except NoDatasetFound as e:
-            CapturedException(e)
-            # TODO this should happen upon validation of the
-            # `dataset` parameter value
-            QMessageBox.critical(
-                self,
-                'No dataset selected',
-                'The path selected for the <code>dataset</code> parameter '
-                'does not point to a valid dataset. '
-                'Please select another path!'
-            )
-            self._saw_dataset = False
+            print(CapturedException(e))
+            self._saw_dataset = 'invalid'
         # always update the placeholder, even when no items were created,
         # because we have no seen a dataset, and this is the result
         self._set_placeholder_msg()
@@ -560,10 +554,11 @@ class CredentialChoiceParamWidget(QComboBox, GooeyParamWidgetMixin):
             QComboBox.AdjustToMinimumContentsLengthWithIcon)
         self.setPlaceholderText('--auto--')
         self._saw_dataset = False
+        self._init_choices()
 
     def _init_gooey_from_other_params(self, spec: Dict) -> None:
-        if 'dataset' not in spec:
-            # we have items and no context change is required
+        if spec.get('dataset', _NoValue) in (_NoValue, None):
+            # we have items, and no context change evidence exists
             return
         self._saw_dataset = True
         self._init_choices(
