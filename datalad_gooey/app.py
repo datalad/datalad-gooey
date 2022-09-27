@@ -8,13 +8,13 @@ from PySide6.QtWidgets import (
     QApplication,
     QMenu,
     QPlainTextEdit,
-    QPushButton,
     QStatusBar,
     QTabWidget,
     QTreeWidget,
     QWidget,
     QMessageBox,
     QFileDialog,
+    QTextBrowser,
 )
 from PySide6.QtCore import (
     QObject,
@@ -59,6 +59,7 @@ class GooeyApp(QObject):
     _main_window_widgets = {
         'contextTabs': QTabWidget,
         'cmdTab': QWidget,
+        'propertyBrowser': QTextBrowser,
         'fsBrowser': QTreeWidget,
         'commandLog': QPlainTextEdit,
         'errorLog': QPlainTextEdit,

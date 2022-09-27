@@ -16,6 +16,7 @@ from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QMenu,
     QTreeWidget,
+    QTreeWidgetItem,
 )
 
 from datalad.interface.base import Interface
@@ -55,6 +56,8 @@ class GooeyFilesystemBrowser(QObject):
         # established defined sorting order of the tree
         tw.sortItems(1, Qt.AscendingOrder)
 
+        # handle clicks
+        tw.itemClicked.connect(self._item_click_handler)
         tw.customContextMenuRequested.connect(
             self._custom_context_menu)
 
@@ -390,7 +393,20 @@ class GooeyFilesystemBrowser(QObject):
         self._populate_and_annotate(item, no_existing_children=False)
         lgr.log(9, "_inspect_changed_dir() -> requested update")
 
-    # DONE
+    def _item_click_handler(self, item: QTreeWidgetItem, column: int):
+        pbrowser = self._app.get_widget('propertyBrowser')
+        if not pbrowser.isVisible():
+            # save on cycle and do not update, when nothing is shown
+            return
+        itype = item.datalad_type
+        ipath = item.pathobj
+        pbrowser.clear()
+
+        if itype in ('file', 'annexed-file'):
+            pbrowser.setText(f'Filliiii {ipath}')
+        else:
+            pbrowser.setText(f'No information on {ipath}')
+
     def _custom_context_menu(self, onpoint):
         """Present a context menu for the item click in the directory browser
         """
