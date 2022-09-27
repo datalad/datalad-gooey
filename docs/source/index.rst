@@ -1,12 +1,16 @@
 Welcome to DataLad Gooey's documentation!
 *****************************************
 
-DataLad Gooey is a GUI application for using `DataLad`_. Currently the following
-DataLad functionality is supported:
+DataLad Gooey is a Graphical User Interface (GUI )for using `DataLad`_,
+a free and open source distributed data management tool. DataLad Gooey
+is compatible with all major operating systems and allows access to 
+DataLad's operations via both a simplified and complete suite.
+
+Current functionality supported via the simplified suite includes:
 
 * `clone`_ a dataset
 * `create`_ a dataset
-* create a sibling (`GitLab`_, `GIN`_, `GitHub`_, `WebDAV`_)
+* create a sibling (`GIN`_, `GitHub`_, `WebDAV`_)
 * `drop`_/`get`_ content
 * `push`_ data/updates to a sibling
 * `save`_ the state of a dataset

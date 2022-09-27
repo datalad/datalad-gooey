@@ -56,6 +56,14 @@ class GooeyLsDir(Interface):
             # this is not a datasetmethod, we do not have to take the
             # "relative-to-dsroot" case into account
             path = Path.cwd() / path
+        if not path.exists():
+            yield dict(
+                path=str(path),
+                type='directory',
+                status='ok',
+                state='deleted',
+            )
+            return
         # for each item we report
         # - type (symlink, file, directory, dataset)
         # - state (untracked, clean, ...)

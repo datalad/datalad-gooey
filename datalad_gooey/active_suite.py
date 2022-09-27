@@ -52,7 +52,6 @@ if spec is None:
         f'No active Gooey suite {active_suite!r}! Imploding...')
 
     api = dict()
-    print(active_suite)
     for a in active_suite.get('apis', {}).values():
         if a:
             api.update(a)
