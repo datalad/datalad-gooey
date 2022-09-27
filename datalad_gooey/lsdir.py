@@ -15,7 +15,7 @@ from datalad.interface.results import get_status_dict
 
 from datalad.runner import (
     GitRunner,
-    StdOutCapture,
+    StdOutErrCapture,
     CommandError,
 )
 from datalad.dataset.gitrepo import GitRepo
@@ -56,6 +56,14 @@ class GooeyLsDir(Interface):
             # this is not a datasetmethod, we do not have to take the
             # "relative-to-dsroot" case into account
             path = Path.cwd() / path
+        if not path.exists():
+            yield dict(
+                path=str(path),
+                type='directory',
+                status='ok',
+                state='deleted',
+            )
+            return
         # for each item we report
         # - type (symlink, file, directory, dataset)
         # - state (untracked, clean, ...)
@@ -131,7 +139,7 @@ def _lsfiles(path: Path):
          '--exclude-standard',
          # to satisfy the needs of _get_content_info_line_helper()
          '-z'],
-        protocol=StdOutCapture,
+        protocol=StdOutErrCapture,
         # run in the directory we want info on
         # and do not pass further path constraints
         # work around https://github.com/datalad/datalad/issues/7040

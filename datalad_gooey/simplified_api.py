@@ -54,14 +54,14 @@ api = dict(
             path=EnsureExistingDirectory(),
         ),
     ),
-    create_sibling_gitlab=dict(
-        name='Create a Git&Lab sibling',
-        exclude_parameters=set((
-            'dryrun',
-            'path',
-            'recursive',
-        )),
-    ),
+    #create_sibling_gitlab=dict(
+    #    name='Create a Git&Lab sibling',
+    #    exclude_parameters=set((
+    #        'dryrun',
+    #        'path',
+    #        'recursive',
+    #    )),
+    #),
     create_sibling_gin=dict(
         name='Create a GI&N sibling',
         exclude_parameters=set((
@@ -107,7 +107,7 @@ api = dict(
             'recursive',
         )),
         parameter_display_names=dict(
-            dataset='Dataset',
+            dataset='Create sibling for dataset at',
             reponame='New repository name on Github',
             name='Sibling name',
             private='Make GitHub repo private',
@@ -129,11 +129,32 @@ api = dict(
         ),
     ),
     create_sibling_webdav=dict(
-        name='Create a &WebDAV sibling',
+        name='Create a &WebDav sibling',
         exclude_parameters=set((
+            # bunch of complexity that can be ignored when not supporting
+            # recursive sibling creation
             'recursive',
             'path',
+            'storage_name',
         )),
+        parameter_display_names=dict(
+            dataset='Create sibling for dataset at',
+            url='WebDAV URL to create sibling at',
+            name='Sibling name',
+            mode='Usage mode for the sibling',
+            credential='Name of credential to be used',
+            existing='If the sibling exists already...',
+        ),
+        parameter_order=dict(
+            dataset=0,
+            url=1,
+            name=2,
+            mode=3,
+            private=4,
+            access_protocol=5,
+            existing=6,
+            credential=7,
+        ),
     ),
     drop=dict(
         name='Dr&op content',
@@ -146,7 +167,7 @@ api = dict(
             what='What to drop',
             path='Limit to',
             recursive='Also drop (in) any subdatasets',
-            reckless='Disable safeguards',
+            reckless='Disable safeguards (reckless!)',
         ),
         parameter_order=dict(
             dataset=0,

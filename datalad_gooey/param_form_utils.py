@@ -239,6 +239,8 @@ def _get_parameter_widget_factory(
         type_widget = pw.CredentialChoiceParamWidget
     elif name == 'recursion_limit':
         type_widget = functools.partial(pw.PosIntParamWidget, allow_none=True)
+    elif name == 'message':
+        type_widget = pw.TextParamWidget
     # now parameters where we make decisions based on their configuration
     elif isinstance(constraints, EnsureDatasetSiblingName):
         type_widget = pw.SiblingChoiceParamWidget

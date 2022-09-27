@@ -126,11 +126,6 @@ class GooeyDataladCmdUI(QObject):
                 k: v for k, v in field_widget.get_gooey_param_spec().items()
                 if v is not _NoValue
             })
-
-        # take a peek, TODO remove
-        from pprint import pprint
-        pprint(params)
-
         self.disable()
         self.configured_dataladcmd.emit(
             self.pform.datalad_cmd_name,

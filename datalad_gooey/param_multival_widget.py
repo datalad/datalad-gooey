@@ -101,7 +101,6 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
             assert len(item)
             item = item[0]
         if data is _NoValue:
-            print(self._editor.get_gooey_param_spec())
             # TODO avoid the need to use the name
             data = self._editor.get_gooey_param_spec().get(
                 self._gooey_param_name, _NoValue)

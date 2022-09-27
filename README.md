@@ -1,9 +1,12 @@
 # DataLad Gooey (pronounce "GUI")
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-10-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-11-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![Build status](https://ci.appveyor.com/api/projects/status/g9von5wtpoidcecy/branch/main?svg=true)](https://ci.appveyor.com/project/mih/datalad-gooey/branch/main) [![codecov.io](https://codecov.io/github/datalad/datalad-gooey/coverage.svg?branch=main)](https://codecov.io/github/datalad/datalad-gooey?branch=main) [![crippled-filesystems](https://github.com/datalad/datalad-gooey/workflows/crippled-filesystems/badge.svg)](https://github.com/datalad/datalad-gooey/actions?query=workflow%3Acrippled-filesystems) [![docs](https://github.com/datalad/datalad-gooey/workflows/docs/badge.svg)](https://github.com/datalad/datalad-gooey/actions?query=workflow%3Adocs) [![Documentation Status](https://readthedocs.org/projects/datalad-gooey/badge/?version=latest)](http://docs.datalad.org/projects/gooey/en/latest/?badge=latest)
+[![GitHub release](https://img.shields.io/github/release/datalad/datalad-gooey.svg)](https://GitHub.com/datalad/datalad-gooey/releases/)
+[![PyPI version fury.io](https://badge.fury.io/py/datalad-gooey.svg)](https://pypi.python.org/pypi/datalad-gooey/)
+
 
 This package provides a graphical user interface (GUI) for
 [DataLad](https://datalad.org). It is specifically aiming at making key data
@@ -41,6 +44,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center"><a href="mslw.github.io"><img src="https://avatars.githubusercontent.com/u/11985212?v=4?s=100" width="100px;" alt="Michał Szczepanik"/><br /><sub><b>Michał Szczepanik</b></sub></a><br /><a href="https://github.com/datalad/datalad-gooey/commits?author=mslw" title="Code">💻</a></td>
       <td align="center"><a href="https://github.com/aqw"><img src="https://avatars.githubusercontent.com/u/765557?v=4?s=100" width="100px;" alt="Alex Waite"/><br /><sub><b>Alex Waite</b></sub></a><br /><a href="#userTesting-aqw" title="User Testing">📓</a> <a href="#ideas-aqw" title="Ideas, Planning, & Feedback">🤔</a></td>
       <td align="center"><a href="manukapp.itch.io"><img src="https://avatars.githubusercontent.com/u/86295664?v=4?s=100" width="100px;" alt="Leonardo Muller-Rodriguez"/><br /><sub><b>Leonardo Muller-Rodriguez</b></sub></a><br /><a href="#userTesting-Manukapp" title="User Testing">📓</a> <a href="https://github.com/datalad/datalad-gooey/commits?author=Manukapp" title="Code">💻</a></td>
+      <td align="center"><a href="https://github.com/loj"><img src="https://avatars.githubusercontent.com/u/15157717?v=4?s=100" width="100px;" alt="Laura Waite"/><br /><sub><b>Laura Waite</b></sub></a><br /><a href="https://github.com/datalad/datalad-gooey/commits?author=loj" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>

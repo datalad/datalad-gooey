@@ -21,6 +21,9 @@ command_suite = (
     ]
 )
 
+# patch the patches...yeah!
+import datalad_gooey.patches
+
 from datalad.support.extensions import register_config
 from datalad.support.constraints import (
     EnsureChoice,

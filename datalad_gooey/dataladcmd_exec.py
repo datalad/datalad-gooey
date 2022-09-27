@@ -99,7 +99,6 @@ class GooeyDataladCmdExec(QObject):
         """The code is executed in a worker thread"""
         # we need to amend the record below, make a mutable version
         cmdkwargs = cmdkwargs.copy()
-        print('EXECINTHREAD', cmdname, cmdkwargs, exec_params)
         preferred_result_interval = exec_params.get(
             'preferred_result_interval', 1.0)
         res_override = exec_params.get(
@@ -194,6 +193,7 @@ class GooeyDataladCmdExec(QObject):
         aw = self._activity_widget
         aw.setIcon(gooey_resources.get_best_icon('kaboom'))
         aw.setText(f" {cmdname}")
+        aw.setToolTip("Interrupt command execution after the next result")
         aw.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         aw.show()
 
