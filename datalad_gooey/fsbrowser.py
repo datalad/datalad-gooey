@@ -403,8 +403,8 @@ class GooeyFilesystemBrowser(QObject):
         ipath = item.pathobj
         pbrowser.clear()
 
+        dsroot = get_dataset_root(ipath)
         if itype in ('file', 'annexed-file'):
-            dsroot = get_dataset_root(ipath)
             if dsroot is None:
                 # untracked file, we don't know anything
                 pbrowser.setText(f'Untracked file {ipath}')
@@ -421,7 +421,17 @@ class GooeyFilesystemBrowser(QObject):
                 text += "</table>"
                 pbrowser.setText(text)
         else:
-            pbrowser.setText(f'No information on {ipath}')
+            if dsroot is not None:
+                # TODO: consider `wtf -S dataset` as well - at least get the ID
+                dsrepo = Dataset(dsroot).repo
+                if hasattr(dsrepo, 'call_annex'):
+                    text = Dataset(dsroot).repo.call_annex(['info', '--fast'])
+                    pbrowser.setText(text)
+                else:
+                    pbrowser.setText(f'Git repository {ipath}')
+            else:
+                pbrowser.setText(f'No information on {ipath}')
+
 
     def _custom_context_menu(self, onpoint):
         """Present a context menu for the item click in the directory browser
