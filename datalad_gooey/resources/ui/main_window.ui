@@ -93,8 +93,8 @@
               <rect>
                <x>0</x>
                <y>0</y>
-               <width>381</width>
-               <height>152</height>
+               <width>428</width>
+               <height>212</height>
               </rect>
              </property>
             </widget>
@@ -234,7 +234,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>891</width>
      <height>21</height>
     </rect>
    </property>
@@ -266,7 +266,7 @@
     </widget>
     <widget class="QMenu" name="menuTheme">
      <property name="title">
-      <string>Theme</string>
+      <string>&amp;Theme</string>
      </property>
      <addaction name="actionViewTheme_system"/>
      <addaction name="actionViewTheme_light"/>
@@ -296,7 +296,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Check for new version</string>
+    <string>Check for new &amp;version</string>
    </property>
   </action>
   <action name="action_Quit">
@@ -306,17 +306,17 @@
   </action>
   <action name="actionViewTheme_system">
    <property name="text">
-    <string>System</string>
+    <string>&amp;System</string>
    </property>
   </action>
   <action name="actionViewTheme_light">
    <property name="text">
-    <string>Light</string>
+    <string>&amp;Light</string>
    </property>
   </action>
   <action name="actionViewTheme_dark">
    <property name="text">
-    <string>Dark</string>
+    <string>&amp;Dark</string>
    </property>
   </action>
   <action name="actionReport_a_problem">

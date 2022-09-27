@@ -85,7 +85,7 @@ dataset_api = {
 }
 
 gooey_suite = dict(
-    title='Complete',
+    title='&Complete',
     description='Generic access to all command available in this DataLad installation',
     apis=dict(
         dataset=dataset_api,
