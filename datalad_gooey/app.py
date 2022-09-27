@@ -323,7 +323,7 @@ class GooeyApp(QObject):
         title = 'Oooops'
         msg = 'Please report unexpected or faulty behavior to us. File a ' \
               'report with <a href="https://github.com/datalad/datalad-gooey/issues/new?template=issue_template.yml">' \
-              'datalad-gooey </a> or with <a href="https://github.com/datalad/datalad-gooey/issues/new?assignees=&labels=gooey&template=issue_template_gooey.yml">' \
+              'datalad-gooey</a> or with <a href="https://github.com/datalad/datalad-gooey/issues/new?assignees=&labels=gooey&template=issue_template_gooey.yml">' \
               'DataLad</a>'
         mbox(self.main_window, title, msg)
 
@@ -331,10 +331,10 @@ class GooeyApp(QObject):
         mbox = QMessageBox.information
         title = 'I need help!'
         msg = 'Find resources to learn more or ask questions here: <ul><li>' \
-              'About this tool:<a href=http://docs.datalad.org/projects/gooey/en/latest>DataLad Gooey Docs</a> </li>' \
-              '<li>General DataLad user tutorials: <a href=http://handbook.datalad.org> handbook.datalad.org </a> </li>' \
+              'About this tool: <a href=http://docs.datalad.org/projects/gooey/en/latest>DataLad Gooey Docs</a> </li>' \
+              '<li>General DataLad user tutorials: <a href=http://handbook.datalad.org> handbook.datalad.org</a> </li>' \
               '<li>Live chat and weekly office hour: <a href="https://matrix.to/#/!NaMjKIhMXhSicFdxAj:matrix.org?via=matrix.waite.eu&via=matrix.org&via=inm7.de">' \
-              'Join us on Matrix </li></ul>'
+              'Join us on Matrix</a></li></ul>'
         mbox(self.main_window, title, msg)
 
     def _get_info(self):
