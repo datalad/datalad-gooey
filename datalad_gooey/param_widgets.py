@@ -196,6 +196,18 @@ class ChoiceParamWidget(QComboBox, GooeyParamWidgetMixin):
             self.setPlaceholderText('No known choices')
             self.setDisabled(True)
         self.currentIndexChanged.connect(self._handle_input)
+        self._adjust_width()
+
+    def _adjust_width(self, max_chars=80, margin_chars=3):
+        if not self.count():
+            return
+        self.setMinimumContentsLength(
+            min(
+                max_chars,
+                max(len(self.itemText(r))
+                    for r in range(self.count())) + margin_chars
+            )
+        )
 
     def _set_gooey_param_value_in_widget(self, value):
         self.setCurrentText(self._gooey_map_val2label(value))
