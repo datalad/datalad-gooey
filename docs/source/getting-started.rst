@@ -34,8 +34,13 @@ The screenshot below shows the right-click context menu of a directory.
 
 Once a DataLad command is selected, the ``Command`` tab contains relevant parameters and configurations for it.
 The parameters will differ for each command, but hovering over their submenus or editors will show useful hints what to set them to.
+Clicking ``OK`` will execute the command.
 
 .. image:: _static/command_pane_filled.png
+
+The ``Command log`` will continuously update you on the state of running and finished commands, displaying, where available, progress bars, result reports, or command summaries.
+Should a command fail, a detailed traceback with details about the failure will be send to the ``Error log`` tab right next to the ``Command log``.
+You can use the information from this tab to investigate and fix problems.
 
 The View Tab
 ^^^^^^^^^^^^
