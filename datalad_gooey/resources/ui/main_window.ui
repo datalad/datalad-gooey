@@ -248,6 +248,7 @@
     <property name="title">
      <string>&amp;DataLad</string>
     </property>
+    <addaction name="actionWaitingToBePopulated"/>
    </widget>
    <widget class="QMenu" name="menuFile">
     <property name="title">
@@ -343,6 +344,11 @@
   <action name="actionSetBaseDirectory">
    <property name="text">
     <string>Set &amp;base directory</string>
+   </property>
+  </action>
+  <action name="actionWaitingToBePopulated">
+   <property name="text">
+    <string>Waiting to be populated</string>
    </property>
   </action>
  </widget>

@@ -277,6 +277,12 @@ class GooeyApp(QObject):
 
     def _populate_datalad_menu(self):
         """Private slot to populate connected QMenus with dataset actions"""
+        sender = self.sender()
+        if sender.objectName() == 'menuDatalad':
+            # stupid workaround, because on a mac an empty menu is hidden, hence cannot
+            # be clicked on. So in the .ui file, we put rubbish in to make it show, which
+            # needs to be cleared now
+            sender.clear()
         from .active_suite import dataset_api
         add_cmd_actions_to_menu(
             self, self._cmdui.configure, dataset_api, self.sender())
