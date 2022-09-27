@@ -61,6 +61,11 @@ Installing on macOS
 -------------------
 
 .. admonition:: macOS application pending
+   
+   Until the macOS application is available to allow standard installation into the
+   Applications folder, macOS users can install DataLad Gooey via PyPI.
 
-Until the macOS application is available to allow standard installation into the
-Applications folder, macOS users can install DataLad Gooey via PyPI.
+.. code::
+
+   # Install from PyPI
+   pip install datalad_gooey
