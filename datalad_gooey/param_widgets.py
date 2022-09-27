@@ -22,6 +22,11 @@ from PySide6.QtWidgets import (
     QMessageBox,
 )
 
+from PySide6.QtGui import (
+    QDragEnterEvent,
+    QDropEvent,
+)
+
 from .resource_provider import gooey_resources
 from .utils import _NoValue
 
@@ -308,7 +313,7 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
         # we stay with the default left/right, but minimize vertically
         hl.setContentsMargins(margins.left(), 0, margins.right(), 0)
         self.setLayout(hl)
-
+        self.setAcceptDrops(True)
         # the main widget is a simple line edit
         self._edit = QLineEdit(self)
         if disable_manual_edit:
@@ -362,6 +367,14 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
         # treat an empty path as None
         self._set_gooey_param_value(val if val else None)
 
+    def _handle_drop(self, val):
+        if val:
+            self._edit.setText(str(val))
+            self._set_gooey_param_value(val)
+        else:
+            # TODO shouldn't happen, but add something to catch nevertheless?
+            return
+
     def set_gooey_param_docs(self, docs: str) -> None:
         # only use edit tooltip for the docs, and let the buttons
         # have their own
@@ -407,6 +420,21 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
         if 'dataset' in spec:
             self._basedir = spec['dataset']
 
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        if event.mimeData().hasUrls():
+            event.setDropAction(Qt.DropAction.CopyAction)
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+        return
+
+    def dropEvent(self, event: QDropEvent) -> None:
+        if event.mimeData().hasUrls():
+            for url in event.mimeData().urls():
+                file = str(url.toLocalFile())
+                self._handle_drop(file)
+        else:
+            event.ignore()
 
 class CfgProcParamWidget(ChoiceParamWidget):
     """Choice widget with items from `run_procedure(discover=True)`"""
