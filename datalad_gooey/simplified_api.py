@@ -66,19 +66,24 @@ api = dict(
         name='Create a GI&N sibling',
         exclude_parameters=set((
             'dryrun',
-            'api'
+            'api',
+            # bunch of complexity that can be ignored when not supporting
+            # recursive sibling creation
             'path',
             'recursive',
+            'dry_run',
+            # GIN can take data, generally no strong need for this
+            'publish_depends',
         )),
         parameter_display_names=dict(
-            dataset='Dataset',
+            dataset='Create sibling for dataset at',
             reponame='New repository name on Gin',
             name='Sibling name',
-            private='Make Gin repo private',
+            private='Make GIN repository private',
             existing='If the sibling exists already...',
             recursive='Create siblings for subdatasets',
             credential='Name of credential to be used',
-            access_protocol='Access protocol',
+            access_protocol='Get/push protocol',
             publish_depends='Add publication dependency to'
         ),
         parameter_order=dict(
@@ -87,9 +92,8 @@ api = dict(
             private=2,
             name=3,
             access_protocol=4,
-            existing=5,
-            recursive=6,
-            credential=7,
+            credential=5,
+            existing=6,
         ),
     ),
     create_sibling_github=dict(
