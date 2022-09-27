@@ -108,7 +108,7 @@ class GooeyApp(QObject):
         if not path:
             # start root path given, ask user
             path = QFileDialog.getExistingDirectory(
-                caption="Choose directory or dataset",
+                caption="Select a base directory for DataLad",
                 options=QFileDialog.ShowDirsOnly,
             )
             if not path:
