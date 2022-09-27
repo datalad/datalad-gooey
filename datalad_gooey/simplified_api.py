@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from .constraints import (
     EnsureDatasetSiblingName,
     EnsureExistingDirectory,
@@ -126,6 +128,12 @@ api = dict(
             'if_dirty',
             'reckless',
         )),
+        parameter_display_names=dict(
+            dataset='Drop from dataset at',
+            what='What to drop',
+            path='Only drop',
+            recursive='Also drop (in) any subdatasets',
+        ),
         parameter_order=dict(
             dataset=0,
             what=1,
@@ -160,6 +168,20 @@ api = dict(
         )),
         parameter_constraints=dict(
             to=EnsureDatasetSiblingName(),
+        ),
+        parameter_display_names=dict(
+            dataset='Push from dataset at',
+            to='To dataset sibling',
+            data='What to push',
+            path='Limit to',
+            force='Force operation',
+        ),
+        parameter_order=dict(
+            dataset=0,
+            to=1,
+            data=2,
+            path=3,
+            recursive=4,
         ),
     ),
     save=dict(
@@ -222,26 +244,26 @@ file_api = None
 file_in_ds_api = {
     c: s for c, s in api.items() if c in ('save')
 }
-annexed_file_api = {
-    c: s for c, s in api.items()
-    if c in ('drop', 'get', 'push', 'save')
-}
-# get of a single annexed files can be simpler
-from copy import deepcopy
-annexed_file_get = deepcopy(annexed_file_api['get'])
-parameter_constraints=dict(
-            path=EnsureExistingDirectory(),
-        ),
-annexed_file_get['exclude_parameters'].update((
-    # not getting data for an annexed file makes no sense
-    'get_data',
+
+annexed_file_api = {}
+for c, s in api.items():
+    if c not in ('drop', 'get', 'push', 'save'):
+        continue
+    s = deepcopy(s)
     # recursion underneath a file is not possible
-    'recursive',
-))
-annexed_file_get['parameter_nargs'] = dict(
-    path=1,
-)
-annexed_file_api['get'] = annexed_file_get
+    s['exclude_parameters'].add('recursive')
+    # there can only ever be a single path
+    s['parameter_nargs'] = dict(path=1)
+    # path subselection does not make sense, but if we exclude it
+    # the config dialog is practically empty. keep as some kind of
+    # confirmation
+    #s['exclude_parameters'].add('path')
+    annexed_file_api[c] = s
+
+# get of a single annexed files can be simpler
+af_get = annexed_file_api['get']
+# not getting data for an annexed file makes no sense
+af_get['exclude_parameters'].add('get_data')
 
 
 gooey_suite = dict(
