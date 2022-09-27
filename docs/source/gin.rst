@@ -15,8 +15,6 @@ Create a dataset
 Let's assume that we are starting with an existing folder which already has some content, but is not yet a DataLad dataset.
 Let's open the DataLad gooey and set a base directory to our folder, or its parent directory.
 
-
-
 Our first operation is to to create a DataLad dataset.
 For this, right-click your folder and select *Directory commands* → *Create a dataset*.
 This will populate the Command tab on the right with options for the selected command. 
@@ -40,4 +38,36 @@ Here, we are saving all files at once, but if we wanted we cauld limit the save 
 or trigger it by clicking on a specific file.
 Once ready, click OK.
 
-.. todo: screensho
+.. todo: screenshot
+
+Create a GIN sibling
+--------------------
+
+Creating a GIN sibling will create a new repository on GIN, and configure your dataset with its address.
+To perform this action, right-click your dataset, and select *Dataset commands* → *Create a GIN sibling*.
+Fill in the *New repository name on Gin* (and, optionally, check the *Make GIN repository private*).
+You can leave all other options default.
+
+In the *Name of the credential to be used* field, you can pick previously used credentials.
+If no value is given, and no previous credentials exist, the credentials will be save with ... by default.
+
+Click OK.
+
+.. todo: screenshot
+
+Push to the GIN sibling
+-----------------------
+
+Right-click *Dataset commands* → *Push data/updates to a sibling*.
+The only thing you need to select is the value of *To dataset sibling* - this will be the sibling name from the step above.
+Click OK.
+
+.. todo: screenshot
+
+Retrieve the data from GIN
+--------------------------
+
+Finally we can confirm that our dataset can be obtained from GIN (possibly by other users who have access).
+
+.. todo: describe cloning
+
