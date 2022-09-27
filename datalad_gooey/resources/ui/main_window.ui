@@ -244,9 +244,9 @@
     </property>
     <addaction name="actionCheck_for_new_version"/>
    </widget>
-   <widget class="QMenu" name="menuDataset">
+   <widget class="QMenu" name="menuDatalad">
     <property name="title">
-     <string>&amp;Dataset</string>
+     <string>&amp;DataLad</string>
     </property>
    </widget>
    <widget class="QMenu" name="menuFile">
@@ -286,7 +286,7 @@
     <addaction name="actionAbout"/>
    </widget>
    <addaction name="menuFile"/>
-   <addaction name="menuDataset"/>
+   <addaction name="menuDatalad"/>
    <addaction name="menuView"/>
    <addaction name="menuUtilities"/>
    <addaction name="menuHelp"/>

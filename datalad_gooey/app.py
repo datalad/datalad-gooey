@@ -62,7 +62,7 @@ class GooeyApp(QObject):
         'fsBrowser': QTreeWidget,
         'commandLog': QPlainTextEdit,
         'errorLog': QPlainTextEdit,
-        'menuDataset': QMenu,
+        'menuDatalad': QMenu,
         'menuView': QMenu,
         'menuSuite': QMenu,
         'menuUtilities': QMenu,
@@ -143,8 +143,8 @@ class GooeyApp(QObject):
         self._cmdexec.execution_failed.connect(self._setup_stopped_cmdexec)
         # arrange for the dataset menu to populate itself lazily once
         # necessary
-        self.get_widget('menuDataset').aboutToShow.connect(
-            self._populate_dataset_menu)
+        self.get_widget('menuDatalad').aboutToShow.connect(
+            self._populate_datalad_menu)
         self.main_window.actionSetBaseDirectory.triggered.connect(
             self._set_root_path)
         self.main_window.actionCheck_for_new_version.triggered.connect(
@@ -275,15 +275,15 @@ class GooeyApp(QObject):
     def rootpath(self):
         return self._path
 
-    def _populate_dataset_menu(self):
+    def _populate_datalad_menu(self):
         """Private slot to populate connected QMenus with dataset actions"""
         from .active_suite import dataset_api
         add_cmd_actions_to_menu(
             self, self._cmdui.configure, dataset_api, self.sender())
         # immediately sever the connection to avoid repopulating the menu
         # over and over
-        self.get_widget('menuDataset').aboutToShow.disconnect(
-            self._populate_dataset_menu)
+        self.get_widget('menuDatalad').aboutToShow.disconnect(
+            self._populate_datalad_menu)
 
     def _check_new_version(self):
         self.get_widget('statusbar').showMessage(
