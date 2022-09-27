@@ -123,7 +123,7 @@
       </widget>
       <widget class="QTabWidget" name="consoleTabs">
        <property name="currentIndex">
-        <number>0</number>
+        <number>1</number>
        </property>
        <widget class="QWidget" name="tabCommandLog">
         <attribute name="title">
@@ -152,7 +152,7 @@
          <item alignment="Qt::AlignRight|Qt::AlignTop">
           <widget class="QPushButton" name="clearCommandLogPB">
            <property name="text">
-            <string>Clear Log</string>
+            <string>Clear</string>
            </property>
           </widget>
          </item>
@@ -209,14 +209,14 @@
            <item>
             <widget class="QPushButton" name="CopyLogPB">
              <property name="text">
-              <string>Copy Log</string>
+              <string>Copy</string>
              </property>
             </widget>
            </item>
            <item>
             <widget class="QPushButton" name="clearErrorLogPB">
              <property name="text">
-              <string>Clear Log</string>
+              <string>Clear</string>
              </property>
             </widget>
            </item>
