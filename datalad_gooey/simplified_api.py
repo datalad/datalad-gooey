@@ -126,19 +126,20 @@ api = dict(
         exclude_parameters=set((
             'check',
             'if_dirty',
-            'reckless',
         )),
         parameter_display_names=dict(
             dataset='Drop from dataset at',
             what='What to drop',
             path='Only drop',
             recursive='Also drop (in) any subdatasets',
+            reckless='Disable safeguard(s)',
         ),
         parameter_order=dict(
             dataset=0,
             what=1,
             path=2,
             recursive=3,
+            reckless=4,
         ),
     ),
     get=dict(
