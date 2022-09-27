@@ -20,6 +20,7 @@ class GooeyResources:
         'deleted': 'untracked',
         'unknown': 'untracked',
         'added': 'modified',
+        'kaboom': 'kaboom',
     }
 
     def __init__(self):
