@@ -1,7 +1,7 @@
 Welcome to DataLad Gooey's documentation!
 *****************************************
 
-DataLad Gooey is a Graphical User Interface (GUI )for using `DataLad`_,
+DataLad Gooey is a Graphical User Interface (GUI) for using `DataLad`_,
 a free and open source distributed data management tool. DataLad Gooey
 is compatible with all major operating systems and allows access to 
 DataLad's operations via both a simplified and complete suite.
