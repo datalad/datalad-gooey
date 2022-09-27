@@ -19,6 +19,8 @@ Overview
    :maxdepth: 1
 
    installation
+   getting-started
+   gin
 
 
 API
