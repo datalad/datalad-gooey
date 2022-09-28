@@ -1,7 +1,7 @@
 Getting started
 ###############
 
-In order to start up ``DataLad Gooey``, double-click the program's icon on your Desktop or in your Explorer if you are on Windows, or find it in your Applications folder if you are on Mac.
+In order to start up ``DataLad Gooey``, double-click the program's icon on your Desktop or in your Explorer if you are on Windows, find it in your Applications folder if you are on Mac, or among your Desktop files if you are using Linux. [#f1]_
 
 An initial dialog let's you select a root directory.
 Navigate to any directory you would like to open up, select it, and click ``Select Folder``.
@@ -9,6 +9,7 @@ Navigate to any directory you would like to open up, select it, and click ``Sele
 .. image:: _static/start_location_selection.png
 
 If you ``Cancel`` this dialog, the DataLad Gooey will open your home directory.
+The root directory can be changed at any later point using the ``File`` -> ``Set base directory`` submenu from the top task bar.
 
 UI Overview
 -----------
@@ -42,6 +43,14 @@ The ``Command log`` will continuously update you on the state of running and fin
 Should a command fail, a detailed traceback with details about the failure will be send to the ``Error log`` tab right next to the ``Command log``.
 You can use the information from this tab to investigate and fix problems.
 
+Navigation
+^^^^^^^^^^
+
+The interface can be navigated via mouse clicks, or, on most operating systems, via keyboard shortcuts as well.
+Low lines under specific letters of menus or submenus identify the shortcut [#f2]_. Accessing the shortcut to a menu requires pressing ``Alt`` and the respective letter: ``Alt`` + ``f`` for example will open the ``File`` menu. Pressing further letters shortcuts to submenu actions: ``Alt``+ ``f`` + ``q`` will shortcut to ``Quit`` and close the application, while ``Alt`` + ``d`` + ``g`` will open a ``get`` command in the Command panel.
+
+In addition, path parameters (such as the ``dataset`` parameter) can be filled via drag and drop from your system's native file browser.
+
 The View Tab
 ^^^^^^^^^^^^
 
@@ -58,3 +67,8 @@ DataLad extensions can add additional suites when you install them.
 Please note that we recommend the "simplified" command suite to users, as the complete suite can contain experimental implementations.
 
 .. image:: _static/suite_menu.png
+
+
+.. [#f1] If you used ``pip`` to install ``datalad gooey`` you can also start it up from the command line, running ``datalad gooey``. The optional ``--path`` argument lets you specify the root directory.
+
+.. [#f2] Windows users may not automatically see underlined letters. To make them visible, press the ``Alt`` key. Mac users won't see underlined letters as it would violate the guidelines of macOS graphical user interface `aqua <https://en.wikipedia.org/wiki/Aqua_%28user_interface%29>`_.
