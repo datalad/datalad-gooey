@@ -49,3 +49,10 @@ def format_param_docs(docs: str) -> str:
     if not docs:
         return docs
     return alter_interface_docs_for_api(docs)
+
+
+def format_cmd_docs(docs: str) -> str:
+    """Removes Python API formating of Interface docs for GUI use"""
+    if not docs:
+        return docs
+    return alter_interface_docs_for_api(docs)

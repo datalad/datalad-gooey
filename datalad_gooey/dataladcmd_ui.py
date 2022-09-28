@@ -16,8 +16,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from datalad.utils import get_wrapped_class
+
 from .param_form_utils import populate_form_w_params
-from .api_utils import get_cmd_displayname
+from .api_utils import (
+    get_cmd_displayname,
+    format_cmd_docs,
+)
 from .active_suite import spec as active_suite
 
 
@@ -93,6 +98,7 @@ class GooeyDataladCmdUI(QObject):
         self._app.get_widget('contextTabs').setCurrentWidget(self.pwidget)
 
         self.reset_form()
+        self._show_cmd_help(cmdname)
         populate_form_w_params(
             api,
             self._app.rootpath,
@@ -146,3 +152,21 @@ class GooeyDataladCmdUI(QObject):
             # empty the form layout (deletes all widgets)
             self.pform.removeRow(i)
         self.disable()
+
+    def _show_cmd_help(self, cmdname):
+        # localize to potentially delay heavy import
+        from datalad import api as dlapi
+        # get the matching callable from the DataLad API
+        cmd = getattr(dlapi, cmdname)
+        cmd_cls = get_wrapped_class(cmd)
+        hbrowser = self._app.get_widget('helpBrowser')
+        # TODO we could use the sphinx RST parser to convert the docstring
+        # into html and do
+        #hbrowser.setHtml()
+        # but it would have to be the sphinx one, plain docutils is not
+        # enough.
+        # waiting to be in the right mood for diving into the twisted world
+        # of sphinx again
+        hbrowser.setPlainText(
+            format_cmd_docs(cmd_cls.__doc__)
+        )
