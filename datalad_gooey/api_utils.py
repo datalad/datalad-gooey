@@ -3,6 +3,7 @@ from collections.abc import Callable
 from itertools import zip_longest
 from typing import List
 
+from datalad.interface.base import alter_interface_docs_for_api
 from datalad.utils import getargspec
 
 from .utils import _NoValue
@@ -41,3 +42,10 @@ def get_cmd_params(cmd: Callable) -> List:
             fillvalue=_NoValue)
     # reverse the order again to match the original order in the signature
     )[::-1]
+
+
+def format_param_docs(docs: str) -> str:
+    """Removes Python API formating of Parameter docs for GUI use"""
+    if not docs:
+        return docs
+    return alter_interface_docs_for_api(docs)
