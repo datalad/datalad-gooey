@@ -24,8 +24,8 @@ What DataLad Gooey is not
 DataLad Gooey has a number of cool features, but here are features that you will need to use other tools for:
 
 * An interface to visualize revision histories of DataLad datasets. Please refer to many of the available visual Git visualization tools
-* An interface for advanced Git operations such as branching, resetting, reverting, or otherwise interacting with commit history. Please refer to your favourite Git client or the command line for these operations.
-  DataLad Gooey will detect such external operations, and will update its view accordingly.
+* An interface for advanced Git operations such as branching, resetting, reverting, or otherwise interacting with commit history. Please refer to your favourite Git client or the command line for these operations. DataLad Gooey will detect such external operations, and will update its view accordingly.
+
 Overview
 ========
 
