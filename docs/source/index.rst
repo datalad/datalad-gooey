@@ -8,7 +8,8 @@ DataLad's operations via both a simplified and complete suite.
 
 .. image:: _static/command_pane_filled.png
 
-Current functionality supported via the simplified suite includes:
+While using DataLad Gooey assumes at least some familiarity with DataLad concepts, the simplified command suite makes starting with DataLad easier via tailor-made command selections, condensed parameter specifications, and tool tips.
+The current functionality supported via the simplified suite includes:
 
 * `clone`_ a dataset
 * `create`_ a dataset
@@ -18,6 +19,13 @@ Current functionality supported via the simplified suite includes:
 * `save`_ the state of a dataset
 * `update`_ from a sibling
 
+What DataLad Gooey is not
+=========================
+DataLad Gooey has a number of cool features, but here are features that you will need to use other tools for:
+
+* An interface to visualize revision histories of DataLad datasets. Please refer to many of the available visual Git visualization tools
+* An interface for advanced Git operations such as branching, resetting, reverting, or otherwise interacting with commit history. Please refer to your favourite Git client or the command line for these operations. DataLad Gooey will detect such external operations, and will update its view accordingly.
+
 Overview
 ========
 
@@ -26,43 +34,17 @@ Overview
 
    installation
    getting-started
+   datalad-concepts
    gin
 
-
-API
-===
-
-High-level API commands
------------------------
-
-.. currentmodule:: datalad.api
-.. autosummary::
-   :toctree: generated
-
-   gooey
-   gooey_askpass
-   gooey_lsdir
-   gooey_status_light
-
-
-Command line reference
-----------------------
+Commands and API
+================
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
-   generated/man/datalad-gooey
-   generated/man/datalad-gooey-askpass
-   generated/man/datalad-gooey-lsdir
-   generated/man/datalad-gooey-status-light
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   cmdline
+   modref
 
 .. |---| unicode:: U+02014 .. em dash
 
