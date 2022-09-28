@@ -496,6 +496,14 @@ class GooeyFilesystemBrowser(QObject):
             setbase.triggered.connect(self._app._set_root_path)
             context.addAction(setbase)
 
+        if item == self._root_item:
+            # for now this is the same as resetting the base to the same
+            # root -- but later it could be more clever
+            reload = QAction('&Refresh directory tree', context)
+            reload.setData(ipath)
+            reload.triggered.connect(self._app._set_root_path)
+            context.addAction(reload)
+
         if not context.isEmpty():
             # present the menu at the clicked point
             context.exec(self._tree.viewport().mapToGlobal(onpoint))
