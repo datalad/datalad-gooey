@@ -88,7 +88,7 @@ Finally we can confirm that our dataset can be obtained from GIN (possibly by ot
 Let's try making a clone in the same parent directory as our dataset, but under a different name.
 To do this, from the menu select *DataLad* → *Clone a dataset*.
 In the *Clone from* field, enter the dataset URL taken from GIN.
-Here, you can use either HTTPS (for public repositories) or SSH (for private repositories) URL.
+Here, you can use either the HTTPS (for public repositories) or SSH (for private repositories) URL.
 Note that when using HTTPS, you need to remove the ``.git`` from the URL ending for proper interaction with GIN.
 Next, click the directory selection icon to the right of *Clone into* field, and use the directory picker
 to create and select a new directory named, for example, ``cloned-dataset``.
