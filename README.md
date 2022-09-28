@@ -22,6 +22,18 @@ parameters.
 To try it out, install this package, and run `datalad gooey`.
 
 
+## Acknowledgements
+
+DataLad development is supported by a US-German collaboration in computational
+neuroscience (CRCNS) project "DataGit: converging catalogues, warehouses, and
+deployment logistics into a federated 'data distribution'" (Halchenko/Hanke),
+co-funded by the US National Science Foundation (NSF 1429999) and the German
+Federal Ministry of Education and Research (BMBF 01GQ1411).
+
+This DataLad extension was developed with additional funding from the Deutsche
+Forschungsgemeinschaft (DFG, German Research Foundation) under grant SFB 1451
+
+
 ## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
