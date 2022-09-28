@@ -41,14 +41,15 @@ api = dict(
             'fake_dates',
         )),
         parameter_display_names=dict(
-            force='OK if target directory not empty',
+            force='Force, if directory is not empty',
             path='Create at',
             dataset='Register in superdataset',
         ),
         parameter_order=dict(
             path=0,
-            annex=1,
-            dataset=2,
+            force=1,
+            annex=2,
+            dataset=3,
         ),
         parameter_constraints=dict(
             path=EnsureExistingDirectory(),
