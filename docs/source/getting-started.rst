@@ -47,7 +47,7 @@ Navigation
 ^^^^^^^^^^
 
 The interface can be navigated via mouse clicks, or, on most operating systems, via keyboard shortcuts as well.
-Low lines under specific letters of menus or submenus identify the shortcut [#f2]_. Accessing the shortcut to a menu requires pressing ``Alt`` and the respective letter: ``Alt`` + ``f`` for example will open the ``File`` menu. Pressing further letters shortcuts to submenu actions: ``Alt``+ ``f`` + ``q`` will shortcut to ``Quit`` and close the application, while ``Alt`` + ``d`` + ``g`` will open a ``get`` command in the Command panel.
+Low lines under specific letters of menus or submenus identify the shortcut [#f2]_. Accessing the shortcut to a menu requires pressing ``Alt`` and the respective letter: ``Alt`` + ``f`` for example will open the ``File`` menu. Pressing further letters shortcuts to submenu actions: ``Alt`` + ``f`` + ``q`` will shortcut to ``Quit`` and close the application, while ``Alt`` + ``d`` + ``g`` will open a ``get`` command in the Command panel.
 
 In addition, path parameters (such as the ``dataset`` parameter) can be filled via drag and drop from your system's native file browser.
 
@@ -67,6 +67,16 @@ DataLad extensions can add additional suites when you install them.
 Please note that we recommend the "simplified" command suite to users, as the complete suite can contain experimental implementations.
 
 .. image:: _static/suite_menu.png
+
+The Utilities and Help Tab
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ``Utilities`` tab has a convenience version checker that can tell you whether there is a newer DataLad version available.
+Note that this check requires a network connection.
+
+The ``Help`` tab contains a range of actions to find additional information or help.
+"Report a problem" contains links for filing issues and getting in touch with the developers.
+"Diagnostic infos" will create a report about the details of your installation and system that you can copy-paste into such issues.
 
 
 .. [#f1] If you used ``pip`` to install ``datalad gooey`` you can also start it up from the command line, running ``datalad gooey``. The optional ``--path`` argument lets you specify the root directory.
