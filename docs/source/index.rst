@@ -8,7 +8,8 @@ DataLad's operations via both a simplified and complete suite.
 
 .. image:: _static/command_pane_filled.png
 
-Current functionality supported via the simplified suite includes:
+While using DataLad Gooey assumes at least some familiarity with DataLad concepts, the simplified command suite makes starting with DataLad easier via tailor-made command selections, condensed parameter specifications, and tool tips.
+The current functionality supported via the simplified suite includes:
 
 * `clone`_ a dataset
 * `create`_ a dataset
@@ -17,6 +18,13 @@ Current functionality supported via the simplified suite includes:
 * `push`_ data/updates to a sibling
 * `save`_ the state of a dataset
 * `update`_ from a sibling
+
+What DataLad Gooey is not
+=========================
+DataLad Gooey has a number of cool features, but here are features that you will need to use other tools for:
+
+* An interface to visualize revision histories of DataLad datasets. Please refer to many of the available visual Git visualization tools
+* An interface for advanced Git operations such as branching, resetting, reverting, or otherwise interacting with commit history. Please refer to your favourite Git client or the command line for these operations.
 
 Overview
 ========
