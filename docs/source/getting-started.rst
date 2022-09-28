@@ -11,8 +11,11 @@ Navigate to any directory you would like to open up, select it, and click ``Sele
 If you ``Cancel`` this dialog, the DataLad Gooey will open your home directory.
 The root directory can be changed at any later point using the ``File`` -> ``Set base directory`` submenu from the top task bar.
 
-UI Overview
------------
+Application Overview
+--------------------
+
+The User Interface
+^^^^^^^^^^^^^^^^^^
 
 In general, the DataLad Gooey interface has three main sections: A tree view on the upper left, command pane on the upper right, and the log views at the bottom.
 
@@ -25,6 +28,8 @@ You can distinguish directories and DataLad datasets and files.
 Within datasets, files are either ``annexed-file``'s or ``file``'s, depending on how these files are tracked in the dataset.
 The ``State`` property indicates the version-state of files, datasets, or directories: A new file, for example, would be annotated with an ``untracked`` state, a directory with a newly added unsaved change would be ``modified``, and neatly saved content would be annotated with a ``clean`` tag.
 
+Running a DataLad command
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 There are two ways of running DataLad command: either through the ``Dataset`` menu at the top, or by right-clicking on files, directories, or datasets in the tree view.
 The latter option might be simpler to use, as it only allows commands suitable for the item that was right-clicked on, and prefills many parameter specifications.
