@@ -26,7 +26,10 @@ from datalad.utils import (
 from . import param_widgets as pw
 from .param_multival_widget import MultiValueInputWidget
 from .active_suite import spec as active_suite
-from .api_utils import get_cmd_params
+from .api_utils import (
+    get_cmd_params,
+    format_param_docs,
+)
 from .utils import _NoValue
 from .constraints import (
     Constraint,
@@ -125,7 +128,7 @@ def populate_form_w_params(
             nargs=_get_nargs(pname, param_spec.cmd_kwargs),
             # will also be _NoValue, if there was none
             default=pdefault,
-            docs=param_spec._doc,
+            docs=format_param_docs(param_spec._doc),
             # TODO make obsolete
             argparse_spec=param_spec.cmd_kwargs,
         )
