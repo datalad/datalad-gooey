@@ -26,6 +26,7 @@ Overview
 
    installation
    getting-started
+   datalad-concepts
    gin
 
 Commands and API
