@@ -51,10 +51,10 @@ Low lines under specific letters of menus or submenus identify the shortcut [#f2
 
 In addition, path parameters (such as the ``dataset`` parameter) can be filled via drag and drop from your system's native file browser.
 
-The View Tab
-^^^^^^^^^^^^
+The View Menu
+^^^^^^^^^^^^^
 
-The ``View`` tab contains two submenus that allow you to alter the appearance of the interface.
+The ``View`` menu contains two submenus that allow you to alter the appearance of the interface.
 Whenever you change the appearance of the interface, you need to close and reopen the program in order to let the change take effect.
 
 The ``Theme`` submenu lets you switch between a light, dark, and system theme.
@@ -68,13 +68,13 @@ Please note that we recommend the "simplified" command suite to users, as the co
 
 .. image:: _static/suite_menu.png
 
-The Utilities and Help Tab
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+The Utilities and Help Menu
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ``Utilities`` tab has a convenience version checker that can tell you whether there is a newer DataLad version available.
+The ``Utilities`` menu has a convenience version checker that can tell you whether there is a newer DataLad version available.
 Note that this check requires a network connection.
 
-The ``Help`` tab contains a range of actions to find additional information or help.
+The ``Help`` menu contains a range of actions to find additional information or help.
 "Report a problem" contains links for filing issues and getting in touch with the developers.
 "Diagnostic infos" will create a report about the details of your installation and system that you can copy-paste into such issues.
 
