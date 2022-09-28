@@ -28,6 +28,7 @@ from PySide6.QtGui import (
     QGuiApplication,
 )
 
+import datalad
 from datalad import cfg as dlcfg
 from datalad import __version__ as dlversion
 import datalad.ui as dlui
@@ -59,6 +60,7 @@ class GooeyApp(QObject):
     _main_window_widgets = {
         'contextTabs': QTabWidget,
         'cmdTab': QWidget,
+        'helpBrowser': QTextBrowser,
         'propertyBrowser': QTextBrowser,
         'fsBrowser': QTreeWidget,
         'commandLog': QPlainTextEdit,
@@ -82,6 +84,9 @@ class GooeyApp(QObject):
     def __init__(self, path: Path = None):
         super().__init__()
         # bend datalad to our needs
+        # e.g. prevent doc assembly for Python API -- we are better off with
+        # the raw material
+        datalad.enable_librarymode()
         # we cannot handle ANSI coloring
         dlcfg.set('datalad.ui.color', 'off', scope='override', force=True)
 

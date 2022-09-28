@@ -224,6 +224,16 @@
          </item>
         </layout>
        </widget>
+       <widget class="QWidget" name="tabHelp">
+        <attribute name="title">
+         <string>Help</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="verticalLayout_4">
+         <item>
+          <widget class="QTextBrowser" name="helpBrowser"/>
+         </item>
+        </layout>
+       </widget>
       </widget>
      </widget>
     </item>
