@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from pathlib import Path
 from types import MappingProxyType
 from typing import (
     Any,
@@ -10,6 +11,8 @@ from PySide6.QtCore import (
     Qt,
     Signal,
     QUrl,
+    QMimeData,
+    QModelIndex,
 )
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -27,6 +30,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import (
     QDragEnterEvent,
     QDropEvent,
+    QStandardItemModel,
 )
 
 from .resource_provider import gooey_resources
@@ -498,11 +502,35 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
         if 'dataset' in spec:
             self._basedir = spec['dataset']
 
+    def _get_pathobj_from_qabstractitemmodeldatalist(
+            self, event: QDropEvent, mime_data: QMimeData) -> Path:
+        """Helper to extract a path from a dropped FSBrowser item"""
+        # create a temp item model to drop the mime data into
+        model = QStandardItemModel()
+        model.dropMimeData(
+            mime_data,
+            event.dropAction(),
+            0, 0,
+            QModelIndex(),
+        )
+        # and get the path out from column 0
+        from datalad_gooey.fsbrowser_item import FSBrowserItem
+        return model.index(0, 0).data(role=FSBrowserItem.PathObjRole)
+
     def _would_gooey_accept_drop_event(self, event: QDropEvent):
-        if not event.mimeData().hasUrls():
+        mime_data = event.mimeData()
+
+        if mime_data.hasFormat("application/x-qabstractitemmodeldatalist"):
+            if self._get_pathobj_from_qabstractitemmodeldatalist(
+                    event, mime_data):
+                return True
+            else:
+                return False
+
+        if not mime_data.hasUrls():
             return False
 
-        url = event.mimeData().urls()
+        url = mime_data.urls()
         if len(url) != 1:
             # we can only handle a single url, ignore the event, to give
             # a parent a chance to act
@@ -526,7 +554,14 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
     def dropEvent(self, event: QDropEvent) -> None:
         # we did all the necessary checks before accepting the event in
         # dragEnterEvent()
-        self._set_gooey_drop_url_in_widget(event.mimeData().urls()[0])
+        mime_data = event.mimeData()
+        if mime_data.hasFormat("application/x-qabstractitemmodeldatalist"):
+            # this is a fsbrowser item
+            self._edit.setText(str(
+                self._get_pathobj_from_qabstractitemmodeldatalist(
+                    event, mime_data)))
+        else:
+            self._set_gooey_drop_url_in_widget(mime_data.urls()[0])
 
     def _set_gooey_drop_url_in_widget(self, url: QUrl):
         path = str(url.toLocalFile())
