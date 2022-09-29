@@ -7,6 +7,10 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QPushButton,
 )
+from PySide6.QtGui import (
+    QDragEnterEvent,
+    QDropEvent,
+)
 
 from datalad.utils import ensure_list
 from .param_widgets import (
@@ -20,6 +24,7 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
 
     def __init__(self, editor_factory, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.setAcceptDrops(True)
 
         # main layout
         layout = QVBoxLayout()
@@ -173,6 +178,44 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
         elif val == [default]:
             val = _NoValue
         return {self._gooey_param_name: val}
+
+    def _would_gooey_accept_drop_event(self, event: QDropEvent):
+        if not self._editor.acceptDrops():
+            # our editor is ignorant of drop events, so we should be too
+            # because we cannot reasonably test whether it is OK to accept
+            # an event
+            return False
+        # first event, try passing the event entirely
+        # a user might simply have no aimed good enough to hit the
+        # editor widget only
+        if self._editor._would_gooey_accept_drop_event(event):
+            # when we can it, we can just stop here, and in dropEvent()
+            # need to make sure to pass it on to the editor in-full too
+            return True
+        # otherwise loop over URLs and create custom events to probe
+        if not event.mimeData().hasUrls():
+            # we can only handle URLs
+            return False
+
+        if all(self._editor._would_gooey_accept_drop_url(u)
+               for u in event.mimeData().urls()):
+            return True
+        else:
+            return False
+
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        self._gooey_dragEnterEvent(event)
+
+    def dropEvent(self, event: QDropEvent) -> None:
+        if self._editor._would_gooey_accept_drop_event(event):
+            self._editor.dropEvent(event)
+            self._update_item(item=self._add_item())
+        else:
+            for url in event.mimeData().urls():
+                self._editor._set_gooey_drop_url_in_widget(url)
+                self._update_item(item=self._add_item())
+        # clear the editor
+        self._editor._set_gooey_param_value_in_widget(_NoValue)
 
 
 def _get_item_display(value) -> str:

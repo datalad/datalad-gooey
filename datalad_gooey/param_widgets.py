@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from pathlib import Path
 from types import MappingProxyType
 from typing import (
     Any,
@@ -9,6 +10,9 @@ from PySide6.QtCore import (
     QDir,
     Qt,
     Signal,
+    QUrl,
+    QMimeData,
+    QModelIndex,
 )
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -26,6 +30,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import (
     QDragEnterEvent,
     QDropEvent,
+    QStandardItemModel,
 )
 
 from .resource_provider import gooey_resources
@@ -162,6 +167,58 @@ class GooeyParamWidgetMixin:
         of remotes after changing the reference dataset.
         """
         pass
+
+    #
+    # drag&drop related API
+    #
+    def _would_gooey_accept_drop_event(self, event: QDropEvent) -> bool:
+        """Helper of `_gooey_dragEnterEvent()`
+
+        Implement to indicate whether a drop event can be handled by a widget,
+        when `_gooey_dragEnterEvent()` is used to handle the event.
+        """
+        return False
+
+    def _would_gooey_accept_drop_url(self, url: QUrl):
+        """Helper of `MultiValueInputWidget`
+
+        Implement to let `MultiValueInputWidget` decide whether to pass URLs
+        from a drop event with multiple URLs on to the widget, url by url.
+        If the is implemented, `_set_gooey_drop_url_in_widget()` must also
+        be implemented.
+        """
+        return False
+
+    def _set_gooey_drop_url_in_widget(self, url: QUrl) -> None:
+        """Helper of `MultiValueInputWidget`
+
+        Implement to support setting the widget's value based on a URL from
+        a drop event. Called by `MultiValueInputWidget` when
+        `_would_gooey_accept_drop_url()` returned `True`.
+        """
+        raise NotImplementedError
+
+    def _gooey_dragEnterEvent(
+            self,
+            event: QDragEnterEvent,
+            # use a link action by default, so that the source/provider does
+            # not decide to remove the source when we accept
+            action: Qt.DropAction = Qt.DropAction.LinkAction) -> None:
+        """Standard implementation of drop event handling.
+
+        This implementation accepts or ignores and event based on the
+        return value of `_would_gooey_accept_drop_event()`. It can be
+        called by a widget's `dragEnterEvent()`.
+
+        This is not provided as a default implementation of `dragEnterEvent()`
+        directly in order to not override a widget specific implementation
+        provided by Qt.
+        """
+        if self._would_gooey_accept_drop_event(event):
+            event.setDropAction(action)
+            event.accept()
+        else:
+            event.ignore()
 
 
 def load_parameter_widget(
@@ -400,14 +457,6 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
         # treat an empty path as None
         self._set_gooey_param_value(val if val else None)
 
-    def _handle_drop(self, val):
-        if val:
-            self._edit.setText(str(val))
-            self._set_gooey_param_value(val)
-        else:
-            # TODO shouldn't happen, but add something to catch nevertheless?
-            return
-
     def set_gooey_param_docs(self, docs: str) -> None:
         # only use edit tooltip for the docs, and let the buttons
         # have their own
@@ -453,21 +502,73 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
         if 'dataset' in spec:
             self._basedir = spec['dataset']
 
+    def _get_pathobj_from_qabstractitemmodeldatalist(
+            self, event: QDropEvent, mime_data: QMimeData) -> Path:
+        """Helper to extract a path from a dropped FSBrowser item"""
+        # create a temp item model to drop the mime data into
+        model = QStandardItemModel()
+        model.dropMimeData(
+            mime_data,
+            event.dropAction(),
+            0, 0,
+            QModelIndex(),
+        )
+        # and get the path out from column 0
+        from datalad_gooey.fsbrowser_item import FSBrowserItem
+        return model.index(0, 0).data(role=FSBrowserItem.PathObjRole)
+
+    def _would_gooey_accept_drop_event(self, event: QDropEvent):
+        mime_data = event.mimeData()
+
+        if mime_data.hasFormat("application/x-qabstractitemmodeldatalist"):
+            if self._get_pathobj_from_qabstractitemmodeldatalist(
+                    event, mime_data):
+                return True
+            else:
+                return False
+
+        if not mime_data.hasUrls():
+            return False
+
+        url = mime_data.urls()
+        if len(url) != 1:
+            # we can only handle a single url, ignore the event, to give
+            # a parent a chance to act
+            return False
+
+        url = url[0]
+
+        if not self._would_gooey_accept_drop_url(url):
+            return False
+
+        return True
+
+    def _would_gooey_accept_drop_url(self, url: QUrl):
+        """Return whether _set_gooey_drop_url_in_widget() would accept URL
+        """
+        return url.isLocalFile()
+
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
-        if event.mimeData().hasUrls():
-            event.setDropAction(Qt.DropAction.CopyAction)
-            event.acceptProposedAction()
-        else:
-            event.ignore()
-        return
+        self._gooey_dragEnterEvent(event)
 
     def dropEvent(self, event: QDropEvent) -> None:
-        if event.mimeData().hasUrls():
-            for url in event.mimeData().urls():
-                file = str(url.toLocalFile())
-                self._handle_drop(file)
+        # we did all the necessary checks before accepting the event in
+        # dragEnterEvent()
+        mime_data = event.mimeData()
+        if mime_data.hasFormat("application/x-qabstractitemmodeldatalist"):
+            # this is a fsbrowser item
+            self._edit.setText(str(
+                self._get_pathobj_from_qabstractitemmodeldatalist(
+                    event, mime_data)))
         else:
-            event.ignore()
+            self._set_gooey_drop_url_in_widget(mime_data.urls()[0])
+
+    def _set_gooey_drop_url_in_widget(self, url: QUrl):
+        path = str(url.toLocalFile())
+        # setting the value in the widget will also trigger
+        # the necessary connections to also set the value in the
+        # mixin
+        self._edit.setText(path)
 
 
 class CfgProcParamWidget(ChoiceParamWidget):

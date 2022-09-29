@@ -43,6 +43,9 @@ class GooeyFilesystemBrowser(QObject):
         super().__init__()
 
         tw = treewidget
+        # enable dragging items, e.g. onto Path input widgets
+        tw.setDragEnabled(True)
+
         # disable until set_root() was called
         tw.setDisabled(True)
         self._tree = tw
