@@ -253,6 +253,7 @@
      <string>&amp;Utilities</string>
     </property>
     <addaction name="actionCheck_for_new_version"/>
+    <addaction name="actionManageCredentials"/>
    </widget>
    <widget class="QMenu" name="menuDatalad">
     <property name="title">
@@ -359,6 +360,11 @@
   <action name="actionWaitingToBePopulated">
    <property name="text">
     <string>Waiting to be populated</string>
+   </property>
+  </action>
+  <action name="actionManageCredentials">
+   <property name="text">
+    <string>Manage &amp;credentials</string>
    </property>
   </action>
  </widget>

@@ -48,6 +48,7 @@ from .cmd_actions import add_cmd_actions_to_menu
 from .fsbrowser import GooeyFilesystemBrowser
 from .resource_provider import gooey_resources
 from . import utility_actions as ua
+from . import credentials as cred
 
 lgr = logging.getLogger('datalad.ext.gooey.app')
 
@@ -176,6 +177,8 @@ class GooeyApp(QObject):
             lambda: ua.show_about_info(self.main_window))
         self.main_window.actionDiagnostic_infos.triggered.connect(
             lambda: ua.get_diagnostic_info(self))
+        self.main_window.actionManageCredentials.triggered.connect(
+            lambda: cred.show_credential_manager(self.main_window))
         # TODO could be done lazily to save in entrypoint iteration
         self._setup_suites()
         self._connect_menu_view(self.get_widget('menuView'))
