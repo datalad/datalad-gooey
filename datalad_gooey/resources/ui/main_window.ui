@@ -254,6 +254,7 @@
     </property>
     <addaction name="actionCheck_for_new_version"/>
     <addaction name="actionManageCredentials"/>
+    <addaction name="actionSetAuthorIdentity"/>
    </widget>
    <widget class="QMenu" name="menuDatalad">
     <property name="title">
@@ -365,6 +366,11 @@
   <action name="actionManageCredentials">
    <property name="text">
     <string>Manage &amp;credentials</string>
+   </property>
+  </action>
+  <action name="actionSetAuthorIdentity">
+   <property name="text">
+    <string>Set author &amp;identity</string>
    </property>
   </action>
  </widget>
