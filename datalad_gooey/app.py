@@ -199,7 +199,7 @@ class GooeyApp(QObject):
             # https://github.com/datalad/datalad-gooey/issues/182
             return
         self.get_widget('commandLog').appendHtml(
-            f"<hr>{render_cmd_call(cmdname, cmdargs)}<hr>"
+            f"<hr>{render_cmd_call(cmdname, cmdargs, 'Running')}"
         )
 
     def _setup_stopped_cmdexec(
@@ -207,6 +207,10 @@ class GooeyApp(QObject):
         if ce is None:
             self.get_widget('statusbar').showMessage(f'Finished `{cmdname}`',
                                                      timeout=1000)
+            if not cmdname.startswith('gooey_'):
+                self.get_widget('commandLog').appendHtml(
+                    f"{render_cmd_call(cmdname, cmdargs, '-> Done')}<hr>"
+                )
         else:
             from datalad.support.exceptions import IncompleteResultsError
             if ce.tb.exc_type is IncompleteResultsError:
@@ -215,7 +219,8 @@ class GooeyApp(QObject):
                 error_hint = ""
             else:
                 error_hint = " (see error log for details)"
-            failed_msg = f"{render_cmd_call(cmdname, cmdargs)} <b>failed!</b>"
+            failed_msg = \
+                f"{render_cmd_call(cmdname, cmdargs, '-> Failed')}<hr>"
             # if a command crashes, state it in the statusbar
             self.get_widget('statusbar').showMessage(
                 f'`{cmdname}` failed{error_hint}')

@@ -33,7 +33,7 @@ def load_ui(name, parent=None):
     return ui
 
 
-def render_cmd_call(cmdname: str, cmdkwargs: Dict):
+def render_cmd_call(cmdname: str, cmdkwargs: Dict, label: str):
     """Minimalistic Python-like rendering of commands for the logs"""
     cmdkwargs = cmdkwargs.copy()
     ds_path = cmdkwargs.pop('dataset', None)
@@ -42,7 +42,7 @@ def render_cmd_call(cmdname: str, cmdkwargs: Dict):
             ds_path = ds_path.path
         ds_path = str(ds_path)
     # show commands running on datasets as dataset method calls
-    rendered = "<b>Running:</b> "
+    rendered = f"<b>{label}:</b> "
     rendered += f"<code>Dataset({ds_path!r})." if ds_path else ''
     rendered += f"{cmdname}<nobr>("
     rendered += ', '.join(
