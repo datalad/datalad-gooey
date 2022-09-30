@@ -141,7 +141,7 @@ def populate_form_w_params(
             active_suite.get('parameter_display_names', {}).get(
                 pname,
                 # last resort:
-                # use capitalized orginal with _ removed as default
+                # use capitalized original with _ removed as default
                 pname.replace('_', ' ').capitalize()
             ),
         )
