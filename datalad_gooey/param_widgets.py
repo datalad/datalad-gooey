@@ -485,7 +485,7 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
         if not result_code:
             if not self._edit.isEnabled():
                 # if the selection was canceled, clear the path,
-                # otherwise users have no ability to unset a pervious
+                # otherwise users have no ability to unset a previous
                 # selection
                 self._set_gooey_param_value_in_widget(_NoValue)
             # otherwise just keep the present value as-is

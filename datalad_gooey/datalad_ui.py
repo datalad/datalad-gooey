@@ -27,7 +27,7 @@ class DataladQtUIBridge(QObject):
 
     This is meant to be used by the GooeyUI singleton.
     """
-    # signal to be emmitted when message() was called
+    # signal to be emitted when message() was called
     message_received = Signal(str)
     question_asked = Signal(MappingProxyType)
     progress_update_received = Signal()

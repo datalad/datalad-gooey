@@ -34,7 +34,7 @@ def get_cmd_params(cmd: Callable) -> List:
     return list(
         zip_longest(
             # fuse parameters from the back, to match with their respective
-            # defaults -- if soem have no defaults, they would be the first
+            # defaults -- if some have no defaults, they would be the first
             args[::-1],
             defaults[::-1],
             # pad with a dedicate type, to be able to tell if there was a
@@ -45,14 +45,14 @@ def get_cmd_params(cmd: Callable) -> List:
 
 
 def format_param_docs(docs: str) -> str:
-    """Removes Python API formating of Parameter docs for GUI use"""
+    """Removes Python API formatting of Parameter docs for GUI use"""
     if not docs:
         return docs
     return alter_interface_docs_for_api(docs)
 
 
 def format_cmd_docs(docs: str) -> str:
-    """Removes Python API formating of Interface docs for GUI use"""
+    """Removes Python API formatting of Interface docs for GUI use"""
     if not docs:
         return docs
     return alter_interface_docs_for_api(docs)
