@@ -369,7 +369,6 @@ class TextParamWidget(QTextEdit, GooeyParamWidgetMixin):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setAcceptRichText(False)  # TODO: Could be an option
         self.setAcceptDrops(True)
         self.setPlaceholderText('Not set')
         self.textChanged.connect(self._handle_input)
@@ -379,10 +378,20 @@ class TextParamWidget(QTextEdit, GooeyParamWidgetMixin):
             # we treat both as "unset"
             self.clear()
         else:
-            self.setText(str(value))
+            self.setPlainText(str(value))
 
     def _handle_input(self):
         self._set_gooey_param_value(self.toPlainText())
+
+    def insertFromMimeData(self, mime):
+        if mime.hasUrls():
+            url = mime.urls()[0]
+            if url.isLocalFile():
+                text = Path(url.toLocalFile()).read_text()
+                self.insertPlainText(text)
+                return
+        if mime.hasText():
+            self.insertPlainText(mime.text())
 
 
 class PathParamWidget(QWidget, GooeyParamWidgetMixin):
