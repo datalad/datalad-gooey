@@ -33,6 +33,9 @@ from PySide6.QtGui import (
     QStandardItemModel,
 )
 
+from datalad import cfg as dlcfg
+from datalad.distribution.dataset import require_dataset
+
 from .resource_provider import gooey_resources
 from .utils import _NoValue
 
@@ -690,26 +693,16 @@ class CredentialChoiceParamWidget(QComboBox, GooeyParamWidgetMixin):
         # the dataset has changed: query!
         # reset first
         self.clear()
-        from datalad_next.credentials import Credentials
+        from datalad_next.credman import CredentialManager
         from datalad.support.exceptions import (
             CapturedException,
             NoDatasetFound,
         )
         self.addItem('')
         try:
-            for res in Credentials.__call__(
-                dataset=dataset,
-                action='query',
-                return_type='generator',
-                result_renderer='disabled',
-                on_failure='ignore',
-            ):
-                name = res.get('name')
-                if (not name or res.get('status') != 'ok'
-                        or res.get('type') != 'credential'):
-                    # not a good sibling
-                    continue
-                self.addItem(name)
+            credman = CredentialManager(
+                require_dataset(dataset).config if dataset else dlcfg)
+            self.addItems(i[0] for i in credman.query())
         except NoDatasetFound as e:
             CapturedException(e)
             # TODO this should happen upon validation of the
