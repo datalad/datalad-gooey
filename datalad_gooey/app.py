@@ -2,7 +2,6 @@ import logging
 import sys
 from types import MappingProxyType
 from os import environ
-from outdated import check_outdated
 from pathlib import Path
 from PySide6.QtWidgets import (
     QApplication,
@@ -30,7 +29,6 @@ from PySide6.QtGui import (
 
 import datalad
 from datalad import cfg as dlcfg
-from datalad import __version__ as dlversion
 import datalad.ui as dlui
 from datalad.interface.base import Interface
 from datalad.local.wtf import (
@@ -49,6 +47,7 @@ from .dataladcmd_ui import GooeyDataladCmdUI
 from .cmd_actions import add_cmd_actions_to_menu
 from .fsbrowser import GooeyFilesystemBrowser
 from .resource_provider import gooey_resources
+from . import utility_actions as ua
 
 lgr = logging.getLogger('datalad.ext.gooey.app')
 
@@ -147,22 +146,6 @@ class GooeyApp(QObject):
         self._cmdexec.execution_started.connect(self._setup_ongoing_cmdexec)
         self._cmdexec.execution_finished.connect(self._setup_stopped_cmdexec)
         self._cmdexec.execution_failed.connect(self._setup_stopped_cmdexec)
-        # arrange for the dataset menu to populate itself lazily once
-        # necessary
-        self.get_widget('menuDatalad').aboutToShow.connect(
-            self._populate_datalad_menu)
-        self.main_window.actionSetBaseDirectory.triggered.connect(
-            self._set_root_path)
-        self.main_window.actionCheck_for_new_version.triggered.connect(
-            self._check_new_version)
-        self.main_window.actionReport_a_problem.triggered.connect(
-            self._get_issue_template)
-        self.main_window.actionGetHelp.triggered.connect(
-            self._get_help)
-        self.main_window.actionAbout.triggered.connect(
-            self._get_info)
-        self.main_window.actionDiagnostic_infos.triggered.connect(
-            self._get_diagnostic_info)
         # connect the diagnostic WTF helper
         self._cmdexec.results_received.connect(
             self._app_cmdexec_results_handler)
@@ -174,7 +157,25 @@ class GooeyApp(QObject):
         # https://github.com/datalad/datalad-gooey/issues/105
         #self._fsbrowser._tree.currentItemChanged.connect(
         #    lambda cur, prev: self._cmdui.reset_form())
+        self._setup_menus()
 
+    def _setup_menus(self):
+        # arrange for the dataset menu to populate itself lazily once
+        # necessary
+        self.get_widget('menuDatalad').aboutToShow.connect(
+            self._populate_datalad_menu)
+        self.main_window.actionSetBaseDirectory.triggered.connect(
+            self._set_root_path)
+        self.main_window.actionCheck_for_new_version.triggered.connect(
+            lambda: ua.check_new_datalad_version(self))
+        self.main_window.actionReport_a_problem.triggered.connect(
+            lambda: ua.get_issue_template(self.main_window))
+        self.main_window.actionGetHelp.triggered.connect(
+            lambda: ua.get_help(self.main_window))
+        self.main_window.actionAbout.triggered.connect(
+            lambda: ua.show_about_info(self.main_window))
+        self.main_window.actionDiagnostic_infos.triggered.connect(
+            lambda: ua.get_diagnostic_info(self))
         # TODO could be done lazily to save in entrypoint iteration
         self._setup_suites()
         self._connect_menu_view(self.get_widget('menuView'))
@@ -303,69 +304,6 @@ class GooeyApp(QObject):
         # over and over
         self.get_widget('menuDatalad').aboutToShow.disconnect(
             self._populate_datalad_menu)
-
-    def _check_new_version(self):
-        self.get_widget('statusbar').showMessage(
-            'Checking latest version', timeout=2000)
-        try:
-            is_outdated, latest = check_outdated('datalad', dlversion)
-        except ValueError:
-            # thrown when one is in a development version (ie., more
-            # recent than the most recent release)
-            is_outdated = False
-            pass
-        mbox = QMessageBox.information
-        title = 'Version check'
-        msg = 'Your DataLad version is up to date.'
-        if is_outdated:
-            mbox = QMessageBox.warning
-            msg = f'A newer DataLad version {latest} ' \
-                  f'is available (installed: {dlversion}).'
-        mbox(self.main_window, title, msg)
-
-    def _get_issue_template(self):
-        mbox = QMessageBox.warning
-        title = 'Oooops'
-        msg = 'Please report unexpected or faulty behavior to us. File a ' \
-              'report with <a href="https://github.com/datalad/datalad-gooey/issues/new?template=issue_template.yml">' \
-              'datalad-gooey</a> or with <a href="https://github.com/datalad/datalad-gooey/issues/new?assignees=&labels=gooey&template=issue_template_gooey.yml">' \
-              'DataLad</a>'
-        mbox(self.main_window, title, msg)
-
-    def _get_help(self):
-        mbox = QMessageBox.information
-        title = 'I need help!'
-        msg = 'Find resources to learn more or ask questions here: <ul><li>' \
-              'About this tool: <a href=http://docs.datalad.org/projects/gooey/en/latest>DataLad Gooey Docs</a> </li>' \
-              '<li>General DataLad user tutorials: <a href=http://handbook.datalad.org> handbook.datalad.org</a> </li>' \
-              '<li>Live chat and weekly office hour: <a href="https://matrix.to/#/!NaMjKIhMXhSicFdxAj:matrix.org?via=matrix.waite.eu&via=matrix.org&via=inm7.de">' \
-              'Join us on Matrix</a></li></ul>'
-        mbox(self.main_window, title, msg)
-
-    def _get_info(self):
-        mbox = QMessageBox.information
-        title = 'About'
-        msg = 'DataLad and DataLad Gooey are free and open source software. ' \
-              'Read the <a href=https://doi.org/10.21105/joss.03262> paper' \
-              '</a>, or find out more at <a href=http://datalad.org>' \
-              'datalad.org</a>.'
-        mbox(self.main_window, title, msg)
-
-    def _get_diagnostic_info(self):
-        self.execute_dataladcmd.emit(
-            'wtf',
-            MappingProxyType(dict(
-                result_renderer='disabled',
-                on_failure='ignore',
-                return_type='generator',
-            )),
-            MappingProxyType(dict(
-                preferred_result_interval=0.2,
-                result_override=dict(
-                    secret_handshake=True,
-                ),
-            )),
-        )
 
     @Slot(Interface, list)
     def _app_cmdexec_results_handler(self, cls, res):
