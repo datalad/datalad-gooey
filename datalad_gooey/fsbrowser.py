@@ -348,7 +348,6 @@ class GooeyFilesystemBrowser(QObject):
             self._fswatcher.removePath(path),
         )
 
-    # DONE
     def _inspect_changed_dir(self, path: str):
         pathobj = Path(path)
         # look for special case of the internals of a dataset having changed
@@ -356,7 +355,7 @@ class GooeyFilesystemBrowser(QObject):
         if len(path_parts) > 3 \
                 and path_parts[-3:] == ('.git', 'refs', 'heads'):
             # yep, happened -- inspect corresponding dataset root
-            self._inspect_changed_dir(pathobj.parent.parent.parent)
+            self._inspect_changed_dir(str(pathobj.parent.parent.parent))
             return
 
         lgr.log(9, "GooeyFilesystemBrowser._inspect_changed_dir(%r)", pathobj)
@@ -376,10 +375,11 @@ class GooeyFilesystemBrowser(QObject):
         parent = item.parent()
         if not pathobj.exists():
             if parent is None:
-                # TODO we could have lost the root dir -> special action
-                raise NotImplementedError
-            parent.removeChild(item)
-            lgr.log(8, "-> _inspect_changed_dir() -> item removed")
+                lgr.log(8, "-> _inspect_changed_dir() "
+                           "-> parent item already gone")
+            else:
+                parent.removeChild(item)
+                lgr.log(8, "-> _inspect_changed_dir() -> item removed")
             return
 
         # we will kick off a `lsdir` run to update the widget, but it could
