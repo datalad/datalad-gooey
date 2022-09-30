@@ -4,9 +4,16 @@ from types import MappingProxyType
 
 from PySide6.QtWidgets import (
     QMessageBox,
+    QDialogButtonBox,
+    QLineEdit,
 )
 
-from datalad import __version__ as dlversion
+from datalad import (
+    __version__ as dlversion,
+    cfg as dlcfg,
+)
+
+from .utils import load_ui
 
 
 def check_new_datalad_version(app):
@@ -75,3 +82,29 @@ def get_diagnostic_info(app):
             ),
         )),
     )
+
+
+def set_git_identity(parent):
+    dlg = load_ui('user_dialog', parent=parent)
+    save_pb = dlg.findChild(QDialogButtonBox, 'buttonBox').button(
+        QDialogButtonBox.Save)
+    save_pb.setDisabled(True)
+    name_edit = dlg.findChild(QLineEdit, 'nameLineEdit')
+    email_edit = dlg.findChild(QLineEdit, 'eMailLineEdit')
+
+    def _set_button_state():
+        save_pb.setEnabled(
+            True if name_edit.text() and email_edit.text() else False)
+
+    for w in (name_edit, email_edit):
+        w.textChanged.connect(_set_button_state)
+
+    name_edit.setText(dlcfg.get('user.name', ''))
+    email_edit.setText(dlcfg.get('user.email', ''))
+
+    if not dlg.exec():
+        # user canceled
+        return
+
+    dlcfg.set('user.name', name_edit.text(), scope='global')
+    dlcfg.set('user.email', email_edit.text(), scope='global', reload=True)

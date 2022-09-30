@@ -160,6 +160,10 @@ class GooeyApp(QObject):
         #    lambda cur, prev: self._cmdui.reset_form())
         self._setup_menus()
 
+        # check if we have an identity. Most of datalad will blow up if not
+        if dlcfg.get('user.name') is None or dlcfg.get('user.email') is None:
+            ua.set_git_identity(self.main_window)
+
     def _setup_menus(self):
         # arrange for the dataset menu to populate itself lazily once
         # necessary
@@ -177,6 +181,8 @@ class GooeyApp(QObject):
             lambda: ua.show_about_info(self.main_window))
         self.main_window.actionDiagnostic_infos.triggered.connect(
             lambda: ua.get_diagnostic_info(self))
+        self.main_window.actionSetAuthorIdentity.triggered.connect(
+            lambda: ua.set_git_identity(self.main_window))
         self.main_window.actionManageCredentials.triggered.connect(
             lambda: cred.show_credential_manager(self.main_window))
         # TODO could be done lazily to save in entrypoint iteration
