@@ -262,7 +262,7 @@ class GooeyApp(QObject):
                 f"Could not locate widget {name} ({wgt_cls.__name__})")
         return wgt
 
-    def _set_root_path(self, path: Path):
+    def _set_root_path(self, path: Path = None):
         """Store the application root path and change PWD to it
 
         Right now this method can only be called once and only before the GUI
@@ -289,6 +289,7 @@ class GooeyApp(QObject):
                 # HOME is a better choice than CWD in most environments
                 path = Path.home()
 
+        path = Path(path)
         chpwd(path)
         self._path = path
         # (re)init the browser

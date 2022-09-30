@@ -23,6 +23,7 @@ from datalad.interface.base import Interface
 from datalad.utils import get_dataset_root
 from datalad.dataset.gitrepo import GitRepo
 from datalad.coreapi import Dataset
+from datalad.support.exceptions import CapturedException
 
 from .cmd_actions import add_cmd_actions_to_menu
 from .fsbrowser_item import FSBrowserItem
@@ -38,7 +39,6 @@ class GooeyFilesystemBrowser(QObject):
     # FSBrowserItem
     item_requires_annotation = Signal(FSBrowserItem)
 
-    # DONE
     def __init__(self, app, treewidget: QTreeWidget):
         super().__init__()
 
@@ -89,7 +89,10 @@ class GooeyFilesystemBrowser(QObject):
         tw = self._tree
         # wipe the previous state
         tw.clear()
-        # TODO stop any pending annotations
+        # unwatch everything
+        self._fswatcher.removePaths(self._fswatcher.directories())
+        # stop any pending annotations
+        self._annotation_queue.clear()
 
         # establish the root item, based on a fake lsdir result
         # the info needed is so simple, it is not worth a command
@@ -104,10 +107,13 @@ class GooeyFilesystemBrowser(QObject):
         # set the tooltip to the full path, otherwise only names are shown
         root.setToolTip(0, str(path))
         tw.addTopLevelItem(root)
+        self._root_path = path
         self._root_item = root
+        self._watch_dir(root)
         tw.setEnabled(True)
 
     def _populate_item(self, item):
+        """Private slot that is called with expanded tree items"""
         if item.childCount():
             return
         # only parse, if there are no children yet
@@ -260,7 +266,13 @@ class GooeyFilesystemBrowser(QObject):
             # another, attention would be on the last expanded one, not the
             # first)
             item = self._annotation_queue.pop()
-            ipath = item.pathobj
+            try:
+                ipath = item.pathobj
+            except Exception as e:
+                # this can happen, when the item has been removed due to a
+                # previous annotation outcome
+                CapturedException(e)
+                continue
             dsroot = get_dataset_root(ipath)
             if dsroot is None:
                 # no containing dataset, by definition everything is untracked
@@ -322,7 +334,6 @@ class GooeyFilesystemBrowser(QObject):
 
         target_item.update_from_status_result(res)
 
-    # DONE
     def _watch_dir(self, item):
         path = item.pathobj
         lgr.log(
@@ -337,7 +348,6 @@ class GooeyFilesystemBrowser(QObject):
             # updates on any branch
             self._fswatcher.addPath(str(path / '.git' / 'refs' / 'heads'))
 
-    # DONE
     # https://github.com/datalad/datalad-gooey/issues/50
     def _unwatch_dir(self, item):
         path = str(item.pathobj)
@@ -350,9 +360,17 @@ class GooeyFilesystemBrowser(QObject):
 
     def _inspect_changed_dir(self, path: str):
         pathobj = Path(path)
+        dir_exists = pathobj.exists()
+        if not dir_exists:
+            if pathobj == self._root_path:
+                # we lost everything
+                self._tree.clear()
+                self._app._set_root_path()
+                return
+            self._fswatcher.removePath(path)
         # look for special case of the internals of a dataset having changed
         path_parts = pathobj.parts
-        if len(path_parts) > 3 \
+        if dir_exists and len(path_parts) > 3 \
                 and path_parts[-3:] == ('.git', 'refs', 'heads'):
             # yep, happened -- inspect corresponding dataset root
             self._inspect_changed_dir(str(pathobj.parent.parent.parent))
@@ -377,6 +395,7 @@ class GooeyFilesystemBrowser(QObject):
             if parent is None:
                 lgr.log(8, "-> _inspect_changed_dir() "
                            "-> parent item already gone")
+                del item
             else:
                 parent.removeChild(item)
                 lgr.log(8, "-> _inspect_changed_dir() -> item removed")
