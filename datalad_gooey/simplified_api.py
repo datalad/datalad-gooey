@@ -1,6 +1,7 @@
 from copy import deepcopy
 
 from .constraints import (
+    EnsureConfigProcedureName,
     EnsureDatasetSiblingName,
     EnsureExistingDirectory,
 )
@@ -53,6 +54,7 @@ api = dict(
         ),
         parameter_constraints=dict(
             path=EnsureExistingDirectory(),
+            cfg_proc=EnsureConfigProcedureName(),
         ),
     ),
     #create_sibling_gitlab=dict(

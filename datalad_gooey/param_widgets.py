@@ -43,6 +43,7 @@ from .constraints import (
     Constraint,
     EnsureChoice,
     NoConstraint,
+    EnsureConfigProcedureName,
 )
 from .resource_provider import gooey_resources
 from .utils import _NoValue
@@ -598,6 +599,8 @@ class PathParamWidget(QWidget, GooeyParamWidgetMixin):
 class CfgProcParamWidget(ChoiceParamWidget):
     """Choice widget with items from `run_procedure(discover=True)`"""
     def __init__(self, choices=None, parent=None):
+        # we can only handle this validator, set it from the get-go
+        self._gooey_param_validator = EnsureConfigProcedureName()
         super().__init__(parent=parent)
 
     def _init_gooey_from_other_params(self, spec: Dict) -> None:
@@ -605,26 +608,16 @@ class CfgProcParamWidget(ChoiceParamWidget):
             # we have items and no context change is required
             return
 
-        # we have no items yet, or the dataset has changed: query!
         # reset first
-        while self.count():
-            self.removeItem(0)
-        from datalad.local.run_procedure import RunProcedure
-        for res in RunProcedure.__call__(
-            dataset=spec.get('dataset'),
-            discover=True,
-            return_type='generator',
-            result_renderer='disabled',
-            on_failure='ignore',
-        ):
-            proc_name = res.get('procedure_name', '')
-            if res.get('status') != 'ok' \
-                    or not proc_name.startswith('cfg_'):
-                # not a good config procedure
-                continue
-            # strip 'cfg_' prefix, even when reporting, we do not want it
-            # because commands like `create()` put it back themselves
-            self._add_item(proc_name[4:])
+        self.clear()
+        if spec.get('dataset', _NoValue) in (_NoValue, None):
+            validator = self._gooey_param_validator
+        else:
+            validator = self._gooey_param_validator.for_dataset(
+                Dataset(spec['dataset'])
+            )
+        for c in validator._allowed:
+            self._add_item(c)
         if self.count():
             self.setEnabled(True)
             self.setPlaceholderText('Select procedure')
