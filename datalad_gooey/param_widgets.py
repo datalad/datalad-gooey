@@ -34,8 +34,16 @@ from PySide6.QtGui import (
 )
 
 from datalad import cfg as dlcfg
-from datalad.distribution.dataset import require_dataset
+from datalad.distribution.dataset import (
+    Dataset,
+    require_dataset,
+)
 
+from .constraints import (
+    Constraint,
+    EnsureChoice,
+    NoConstraint,
+)
 from .resource_provider import gooey_resources
 from .utils import _NoValue
 
@@ -68,6 +76,10 @@ class GooeyParamWidgetMixin:
         self._gooey_param_default = default
         self._gooey_param_value = _NoValue
         self._gooey_param_prev_value = _NoValue
+        if not hasattr(self, '_gooey_param_validator'):
+            # set a default contraint that does nothing, but avoid conditional
+            # in downstream code. There is always a constraint.
+            self._gooey_param_validator = NoConstraint()
 
     def init_gooey_from_params(self, spec: Dict) -> None:
         """Slot to receive changes of parameter values (self or other)
@@ -146,9 +158,9 @@ class GooeyParamWidgetMixin:
         """
         raise NotImplementedError
 
-    def set_gooey_param_validator(self, validator: Callable) -> None:
+    def set_gooey_param_validator(self, validator: Constraint) -> None:
         """Set a validator callable that can be used by the widget
-        for input validation
+        for input validation.
         """
         self._gooey_param_validator = validator
 
@@ -640,34 +652,16 @@ class SiblingChoiceParamWidget(ChoiceParamWidget):
             # siblings need a dataset context
             return
 
-        self._saw_dataset = True
         # the dataset has changed: query!
+        ds = Dataset(spec['dataset'])
+        self._saw_dataset = True
         # reset first
         self.clear()
-        from datalad.distribution.siblings import Siblings
-        from datalad.support.exceptions import (
-            CapturedException,
-            NoDatasetFound,
-        )
-        try:
-            for res in Siblings.__call__(
-                dataset=spec['dataset']
-                if spec['dataset'] != _NoValue else None,
-                action='query',
-                return_type='generator',
-                result_renderer='disabled',
-                on_failure='ignore',
-            ):
-                sibling_name = res.get('name')
-                if (not sibling_name or res.get('status') != 'ok'
-                        or res.get('type') != 'sibling'
-                        or (sibling_name == 'here'
-                            # be robust with Path objects
-                            and res.get('path') == str(spec['dataset']))):
-                    # not a good sibling
-                    continue
-                self._add_item(sibling_name)
-        except NoDatasetFound as e:
+        dsvalidator = self._gooey_param_validator.for_dataset(ds)
+        if isinstance(dsvalidator, EnsureChoice):
+            for c in dsvalidator._allowed:
+                self._add_item(c)
+        else:
             self._saw_dataset = 'invalid'
         # always update the placeholder, even when no items were created,
         # because we have no seen a dataset, and this is the result

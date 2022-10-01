@@ -3,17 +3,35 @@ from pathlib import Path
 from datalad.support.constraints import (
     Constraint,
     EnsureStr,
+    EnsureChoice,
 )
+from datalad.distribution.dataset import Dataset
+
+
+# extension for Constraint from datalad-core
+def for_dataset(self, dataset: Dataset) -> Constraint:
+    """Return a constraint-variant for a specific dataset context
+
+    The default implementation returns the unmodified, identical
+    constraint. However, subclasses can implement different behaviors.
+    """
+    return self
+
+
+# patch it in
+Constraint.for_dataset = for_dataset
+
+
+class NoConstraint(Constraint):
+    """A contraint that represents no constraints"""
+    def short_description(self):
+        return ''
+
+    def __call__(self, value):
+        return value
 
 
 class EnsureDatasetSiblingName(EnsureStr):
-    # we cannot really test this, because we have no access to a repo
-    # TODO think about expanding the __call__ API to take a positional
-    # a the key value (status quo), but also take a range of kwargs
-    # such that a constraint could be validated more than once
-    # (i.e. not just by argparse at the CLI, but also inside an
-    # implementation, maybe once a dataset context is known).
-    # Could also be implemented by a dedicated `valid_for(value, dataset)`
     def __init__(self):
         # basic protection against an empty label
         super().__init__(min_len=1)
@@ -23,6 +41,25 @@ class EnsureDatasetSiblingName(EnsureStr):
 
     def short_description(self):
         return 'sibling name'
+
+    def for_dataset(self, dataset: Dataset):
+        """Return an `EnsureChoice` with the sibling names for this dataset"""
+        if not dataset.is_installed():
+            return self
+
+        choices = (
+            r['name']
+            for r in dataset.siblings(
+                action='query',
+                return_type='generator',
+                result_renderer='disabled',
+                on_failure='ignore')
+            if 'name' in r
+            and r.get('status') == 'ok'
+            and r.get('type') == 'sibling'
+            and r['name'] != 'here'
+        )
+        return EnsureChoice(*choices)
 
 
 class EnsureExistingDirectory(Constraint):
