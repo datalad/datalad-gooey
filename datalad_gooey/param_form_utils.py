@@ -276,8 +276,5 @@ def _get_parameter_widget_factory(
                 or argparse_action == 'append'):
             type_widget = functools.partial(
                 MultiValueInputWidget, type_widget)
-        else:
-            print("WTF", name, nargs, type(nargs))
-
 
     return type_widget
