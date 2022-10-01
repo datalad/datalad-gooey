@@ -271,8 +271,13 @@ def _get_parameter_widget_factory(
                 # TODO give a fixed N as a parameter too
                 MultiValueInputWidget, type_widget)
     else:
-        if nargs in ('+', '*') or argparse_action == 'append':
+        import argparse
+        if (nargs in ('+', '*', argparse.REMAINDER)
+                or argparse_action == 'append'):
             type_widget = functools.partial(
                 MultiValueInputWidget, type_widget)
+        else:
+            print("WTF", name, nargs, type(nargs))
+
 
     return type_widget
