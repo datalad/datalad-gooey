@@ -295,6 +295,10 @@ class GooeyApp(QObject):
                 path = Path.home()
 
         path = Path(path)
+        if not path.is_absolute():
+            # internal machinery expects absolute paths.
+            # relative is relative to CWD
+            path = Path.cwd() / path
         chpwd(path)
         self._path = path
         # (re)init the browser
