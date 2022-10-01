@@ -1,10 +1,11 @@
-from typing import List
 from pathlib import Path
 
 from datalad.support.constraints import (
+    AltConstraints,
     Constraint,
     EnsureStr,
     EnsureChoice,
+    EnsureNone,
 )
 from datalad.distribution.dataset import Dataset
 
@@ -30,6 +31,11 @@ class NoConstraint(Constraint):
 
     def __call__(self, value):
         return value
+
+
+class EnsureNoneOrEmptyStr(Constraint):
+    # TODO
+    pass
 
 
 class EnsureDatasetSiblingName(EnsureStr):

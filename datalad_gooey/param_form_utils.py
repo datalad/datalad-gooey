@@ -25,6 +25,7 @@ from datalad.utils import (
 
 from . import param_widgets as pw
 from .param_multival_widget import MultiValueInputWidget
+from .param_alt_widget import AlternativeParamWidget
 from .active_suite import spec as active_suite
 from .api_utils import (
     get_cmd_params,
@@ -32,9 +33,11 @@ from .api_utils import (
 )
 from .utils import _NoValue
 from .constraints import (
+    AltConstraints,
     Constraint,
     EnsureExistingDirectory,
     EnsureDatasetSiblingName,
+    EnsureNone,
 )
 
 __all__ = ['populate_form_w_params']
@@ -245,6 +248,8 @@ def _get_parameter_widget_factory(
     elif name == 'message':
         type_widget = pw.TextParamWidget
     # now parameters where we make decisions based on their configuration
+    elif isinstance(constraints, EnsureNone):
+        type_widget = pw.NoneParamWidget
     elif isinstance(constraints, EnsureDatasetSiblingName):
         type_widget = pw.SiblingChoiceParamWidget
     # TODO ideally the suite API would normalize this to a EnsureBool
@@ -259,6 +264,20 @@ def _get_parameter_widget_factory(
     elif argparse_spec.get('choices'):
         type_widget = functools.partial(
             pw.ChoiceParamWidget, choices=argparse_spec.get('choices'))
+    elif isinstance(constraints, AltConstraints):
+        widgets = [
+            _get_parameter_widget_factory(
+                name=name,
+                default=default,
+                constraints=c,
+                # we take care of multi-value specification outside
+                nargs='?',
+                basedir=basedir,
+                argparse_spec=argparse_spec,
+            )
+            for c in constraints.constraints
+        ]
+        type_widget = functools.partial(AlternativeParamWidget, widgets)
 
     # we must consider the following nargs spec for widget selection
     # (int, '*', '+'), plus action=append

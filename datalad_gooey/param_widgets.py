@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
     QToolButton,
     QWidget,
     QMessageBox,
+    QLabel,
 )
 
 from PySide6.QtGui import (
@@ -259,6 +260,17 @@ def load_parameter_widget(
 #
 # Parameter widget implementations
 #
+
+class NoneParamWidget(QLabel, GooeyParamWidgetMixin):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setText('No value')
+        self._gooey_param_value = _NoValue
+
+    def _set_gooey_param_value_in_widget(self, val):
+        # nothing to set, this is fixed to `None`
+        return
+
 
 class ChoiceParamWidget(QComboBox, GooeyParamWidgetMixin):
     def __init__(self, choices=None, parent=None):

@@ -9,9 +9,11 @@ from ..param_widgets import (
     PosIntParamWidget,
     ChoiceParamWidget,
     PathParamWidget,
+    NoneParamWidget,
     load_parameter_widget,
 )
 from ..param_multival_widget import MultiValueInputWidget
+from ..param_alt_widget import AlternativeParamWidget
 from ..utils import _NoValue
 
 
@@ -38,6 +40,19 @@ def test_GooeyParamWidgetMixin():
                 MultiValueInputWidget, PathParamWidget),
              [str(Path.cwd()), 'temp'],
              None),
+            # alternatives with value and default associated with different
+            # types
+            (functools.partial(
+                AlternativeParamWidget,
+                [BoolParamWidget, PosIntParamWidget]),
+             False, 5),
+            # alternatives with a superfluous "None widget" (ChoiceParamWidget
+            # can handle that too)
+            (functools.partial(
+                AlternativeParamWidget,
+                [functools.partial(ChoiceParamWidget, ['a', 'b']),
+                 NoneParamWidget]),
+             'b', None),
 
     ):
         pname = 'peewee'
