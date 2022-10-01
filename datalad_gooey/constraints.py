@@ -1,19 +1,38 @@
+from typing import List
 from pathlib import Path
 
 from datalad.support.constraints import (
     Constraint,
     EnsureStr,
+    EnsureChoice,
 )
+from datalad.distribution.dataset import Dataset
+
+
+# extension for Constraint from datalad-core
+def for_dataset(self, dataset: Dataset) -> Constraint:
+    """Return a constraint-variant for a specific dataset context
+
+    The default implementation returns the unmodified, identical
+    constraint. However, subclasses can implement different behaviors.
+    """
+    return self
+
+
+# patch it in
+Constraint.for_dataset = for_dataset
+
+
+class NoConstraint(Constraint):
+    """A contraint that represents no constraints"""
+    def short_description(self):
+        return ''
+
+    def __call__(self, value):
+        return value
 
 
 class EnsureDatasetSiblingName(EnsureStr):
-    # we cannot really test this, because we have no access to a repo
-    # TODO think about expanding the __call__ API to take a positional
-    # a the key value (status quo), but also take a range of kwargs
-    # such that a constraint could be validated more than once
-    # (i.e. not just by argparse at the CLI, but also inside an
-    # implementation, maybe once a dataset context is known).
-    # Could also be implemented by a dedicated `valid_for(value, dataset)`
     def __init__(self):
         # basic protection against an empty label
         super().__init__(min_len=1)
@@ -23,6 +42,58 @@ class EnsureDatasetSiblingName(EnsureStr):
 
     def short_description(self):
         return 'sibling name'
+
+    def for_dataset(self, dataset: Dataset):
+        """Return an `EnsureChoice` with the sibling names for this dataset"""
+        if not dataset.is_installed():
+            return self
+
+        choices = (
+            r['name']
+            for r in dataset.siblings(
+                action='query',
+                return_type='generator',
+                result_renderer='disabled',
+                on_failure='ignore')
+            if 'name' in r
+            and r.get('status') == 'ok'
+            and r.get('type') == 'sibling'
+            and r['name'] != 'here'
+        )
+        return EnsureChoice(*choices)
+
+
+class EnsureConfigProcedureName(EnsureChoice):
+    def __init__(self):
+        # all dataset-independent procedures
+        super().__init__(*self._get_procs())
+
+    def long_description(self):
+        return 'value must be the name of a configuration dataset procedure'
+
+    def short_description(self):
+        return 'configuration procedure'
+
+    def for_dataset(self, dataset: Dataset):
+        if not dataset.is_installed():
+            return self
+        return EnsureChoice(**self._get_procs(dataset))
+
+    def _get_procs(self, dataset: Dataset = None):
+        from datalad.local.run_procedure import RunProcedure
+        return (
+            # strip 'cfg_' prefix, even when reporting, we do not want it
+            # because commands like `create()` put it back themselves
+            r['procedure_name'][4:]
+            for r in RunProcedure.__call__(
+                dataset=dataset,
+                discover=True,
+                return_type='generator',
+                result_renderer='disabled',
+                on_failure='ignore')
+            if r.get('status') == 'ok'
+            and r.get('procedure_name', '').startswith('cfg_')
+        )
 
 
 class EnsureExistingDirectory(Constraint):
