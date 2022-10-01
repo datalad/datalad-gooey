@@ -33,10 +33,10 @@ other_api = None
 
 
 active_suite = cfg.obtain('datalad.gooey.active-suite')
+epname = 'datalad.gooey.suites'
 
 from datalad.support.entrypoints import iter_entrypoints
-for sname, _, sload in iter_entrypoints(
-        'datalad.gooey.suites', load=False):
+for sname, _, sload in iter_entrypoints(epname, load=False):
     if sname != active_suite:
         continue
 
@@ -49,7 +49,9 @@ for sname, _, sload in iter_entrypoints(
 
 if spec is None:
     raise RuntimeError(
-        f'No active Gooey suite {active_suite!r}! Imploding...')
+        f'No Gooey suite {active_suite!r}! Have: '
+        f'{[n for n, _, _ in iter_entrypoints(epname, load=False)]}'
+        ' Imploding...')
 
     api = dict()
     for a in active_suite.get('apis', {}).values():
