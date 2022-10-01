@@ -277,6 +277,9 @@ class ChoiceParamWidget(QComboBox, GooeyParamWidgetMixin):
 
     def _set_gooey_param_value_in_widget(self, value):
         self.setCurrentText(self._gooey_map_val2label(value))
+        # cover the case where the set value was already the default/set
+        # and the change action was not triggered
+        self._handle_input()
 
     def _handle_input(self):
         self._set_gooey_param_value(self.currentData())
