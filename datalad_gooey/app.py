@@ -1,6 +1,7 @@
 import logging
 import sys
 from types import MappingProxyType
+from typing import cast
 from os import environ
 from pathlib import Path
 from PySide6.QtWidgets import (
@@ -17,6 +18,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import (
     QObject,
+    QSettings,
     Qt,
     Signal,
     Slot,
@@ -164,6 +166,8 @@ class GooeyApp(QObject):
         if dlcfg.get('user.name') is None or dlcfg.get('user.email') is None:
             ua.set_git_identity(self.main_window)
 
+        self._restore_configuration()
+
     def _setup_menus(self):
         # arrange for the dataset menu to populate itself lazily once
         # necessary
@@ -236,12 +240,33 @@ class GooeyApp(QObject):
         if not self._cmdexec.n_running:
             self.main_window.setCursor(QCursor(Qt.ArrowCursor))
 
+    def _restore_configuration(self):
+        # Restore prior configuration
+        self._qt_settings = QSettings("datalad", self.__class__.__name__)
+        self.main_window.restoreGeometry(self._qt_settings.value('geometry'))
+        self.main_window.restoreState(self._qt_settings.value('state'))
+
+        fs_browser: QTreeWidget = cast(QTreeWidget, self.get_widget('fsBrowser'))
+        fs_browser.restoreGeometry(self._qt_settings.value('geometry/fsBrowser'))
+        fs_browser.header().restoreState(
+            self._qt_settings.value('state/fsBrowser/header'))
+
+    def _store_configuration(self):
+        # Store configuration of main elements we care storing
+        self._qt_settings.setValue('geometry', self.main_window.saveGeometry())
+        self._qt_settings.setValue('state', self.main_window.saveState())
+
+        fs_browser: QTreeWidget = cast(QTreeWidget, self.get_widget('fsBrowser'))
+        self._qt_settings.setValue('geometry/fsBrowser', fs_browser.saveGeometry())
+        self._qt_settings.setValue('state/fsBrowser/header', fs_browser.header().saveState())
+
     def deinit(self):
         dlui.ui.set_backend(self._prev_ui_backend)
         # restore any possible term prompt setup
         for var, val in self._restore_env.items():
             if val is not None:
                 environ[var] = val
+        self._store_configuration()
 
     #@cached_property not available for PY3.7
     @property
