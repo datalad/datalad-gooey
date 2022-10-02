@@ -8,10 +8,10 @@ from ..param_widgets import (
     StrParamWidget,
     PosIntParamWidget,
     ChoiceParamWidget,
-    PathParamWidget,
     NoneParamWidget,
     load_parameter_widget,
 )
+from ..param_path_widget import PathParamWidget
 from ..param_multival_widget import MultiValueInputWidget
 from ..param_alt_widget import AlternativeParamWidget
 from ..utils import _NoValue

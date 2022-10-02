@@ -24,6 +24,7 @@ from datalad.utils import (
 
 
 from . import param_widgets as pw
+from .param_path_widget import PathParamWidget
 from .param_multival_widget import MultiValueInputWidget
 from .param_alt_widget import AlternativeParamWidget
 from .active_suite import spec as active_suite
@@ -230,13 +231,13 @@ def _get_parameter_widget_factory(
     # now some parameters where we can derive semantics from their name
     if name == 'dataset' or isinstance(constraints, EnsureExistingDirectory):
         type_widget = functools.partial(
-            pw.PathParamWidget,
+            PathParamWidget,
             pathtype=QFileDialog.Directory,
             disable_manual_edit=disable_manual_path_input,
             basedir=basedir)
     elif name == 'path':
         type_widget = functools.partial(
-            pw.PathParamWidget,
+            PathParamWidget,
             disable_manual_edit=disable_manual_path_input,
             basedir=basedir)
     elif name == 'cfg_proc':
