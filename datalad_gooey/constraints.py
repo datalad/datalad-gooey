@@ -34,9 +34,6 @@ class NoConstraint(Constraint):
 
 
 class EnsureStrOrNoneWithEmptyIsNone(EnsureStr):
-    def __init__(self):
-        super().__init__(min_len=0)
-
     def __call__(self, value):
         if value is None:
             return None
@@ -46,7 +43,7 @@ class EnsureStrOrNoneWithEmptyIsNone(EnsureStr):
         return v if v else None
 
 
-class EnsureDatasetSiblingName(EnsureStr):
+class EnsureDatasetSiblingName(EnsureStrOrNoneWithEmptyIsNone):
     def __init__(self):
         # basic protection against an empty label
         super().__init__(min_len=1)
@@ -78,9 +75,10 @@ class EnsureDatasetSiblingName(EnsureStr):
 
 
 class EnsureConfigProcedureName(EnsureChoice):
-    def __init__(self):
+    def __init__(self, allow_none=False):
+        self._allow_none = allow_none
         # all dataset-independent procedures
-        super().__init__(*self._get_procs())
+        super().__init__(*self._get_procs_())
 
     def long_description(self):
         return 'value must be the name of a configuration dataset procedure'
@@ -91,31 +89,38 @@ class EnsureConfigProcedureName(EnsureChoice):
     def for_dataset(self, dataset: Dataset):
         if not dataset.is_installed():
             return self
-        return EnsureChoice(**self._get_procs(dataset))
+        return EnsureChoice(*self._get_procs_(dataset))
 
-    def _get_procs(self, dataset: Dataset = None):
+    def _get_procs_(self, dataset: Dataset = None):
         from datalad.local.run_procedure import RunProcedure
-        return (
-            # strip 'cfg_' prefix, even when reporting, we do not want it
-            # because commands like `create()` put it back themselves
-            r['procedure_name'][4:]
-            for r in RunProcedure.__call__(
+        for r in RunProcedure.__call__(
                 dataset=dataset,
                 discover=True,
                 return_type='generator',
                 result_renderer='disabled',
-                on_failure='ignore')
-            if r.get('status') == 'ok'
-            and r.get('procedure_name', '').startswith('cfg_')
-        )
+                on_failure='ignore'):
+            if r.get('status') != 'ok' or not r.get(
+                    'procedure_name', '').startswith('cfg_'):
+                continue
+            # strip 'cfg_' prefix, even when reporting, we do not want it
+            # because commands like `create()` put it back themselves
+            yield r['procedure_name'][4:]
+        if self._allow_none:
+            yield None
 
 
 class EnsureExistingDirectory(Constraint):
+    def __init__(self, allow_none=False):
+        self._allow_none = allow_none
+
     def __call__(self, value):
+        if value is None and self._allow_none:
+            return None
+
         if not Path(value).is_dir():
             raise ValueError(
                 f"{value} is not an existing directory")
         return value
 
     def short_description(self):
-        return 'existing directory'
+        return f'existing directory{" (optional)" if self._allow_none else ""}'
