@@ -4,6 +4,7 @@ from .constraints import (
     EnsureConfigProcedureName,
     EnsureDatasetSiblingName,
     EnsureExistingDirectory,
+    EnsureStrOrNoneWithEmptyIsNone,
 )
 
 # each item is a command that is allowed in the API
@@ -31,7 +32,7 @@ api = dict(
             dataset=2,
         ),
         parameter_constraints=dict(
-            path=EnsureExistingDirectory(),
+            path=EnsureExistingDirectory(allow_none=True),
         ),
     ),
     create=dict(
@@ -53,8 +54,8 @@ api = dict(
             dataset=3,
         ),
         parameter_constraints=dict(
-            path=EnsureExistingDirectory(),
-            cfg_proc=EnsureConfigProcedureName(),
+            path=EnsureExistingDirectory(allow_none=True),
+            cfg_proc=EnsureConfigProcedureName(allow_none=True),
         ),
     ),
     #create_sibling_gitlab=dict(
@@ -98,6 +99,9 @@ api = dict(
             credential=5,
             existing=6,
         ),
+        parameter_constraints=dict(
+            name=EnsureStrOrNoneWithEmptyIsNone(),
+        ),
     ),
     create_sibling_github=dict(
         name='Create a Git&Hub sibling',
@@ -130,6 +134,10 @@ api = dict(
             recursive=6,
             credential=7,
         ),
+        parameter_constraints=dict(
+            name=EnsureStrOrNoneWithEmptyIsNone(),
+            publish_depends=EnsureStrOrNoneWithEmptyIsNone(),
+        ),
     ),
     create_sibling_webdav=dict(
         name='Create a &WebDav sibling',
@@ -157,6 +165,9 @@ api = dict(
             access_protocol=5,
             existing=6,
             credential=7,
+        ),
+        parameter_constraints=dict(
+            name=EnsureStrOrNoneWithEmptyIsNone()
         ),
     ),
     drop=dict(
@@ -207,7 +218,7 @@ api = dict(
             'since',
         )),
         parameter_constraints=dict(
-            to=EnsureDatasetSiblingName(),
+            to=EnsureDatasetSiblingName(allow_none=True),
         ),
         parameter_display_names=dict(
             dataset='Push from dataset at',
@@ -248,6 +259,10 @@ api = dict(
             version_tag=5,
             amend=6,
         ),
+        parameter_constraints=dict(
+            message=EnsureStrOrNoneWithEmptyIsNone(),
+            version_tag=EnsureStrOrNoneWithEmptyIsNone(),
+        ),
     ),
     update=dict(
         name='&Update from a sibling',
@@ -259,7 +274,7 @@ api = dict(
             'reobtain_data',
         )),
         parameter_constraints=dict(
-            sibling=EnsureDatasetSiblingName(),
+            sibling=EnsureDatasetSiblingName(allow_none=True),
         ),
     ),
 )

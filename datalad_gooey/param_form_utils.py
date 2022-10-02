@@ -24,7 +24,9 @@ from datalad.utils import (
 
 
 from . import param_widgets as pw
+from .param_path_widget import PathParamWidget
 from .param_multival_widget import MultiValueInputWidget
+from .param_alt_widget import AlternativeParamWidget
 from .active_suite import spec as active_suite
 from .api_utils import (
     get_cmd_params,
@@ -32,9 +34,11 @@ from .api_utils import (
 )
 from .utils import _NoValue
 from .constraints import (
+    AltConstraints,
     Constraint,
     EnsureExistingDirectory,
     EnsureDatasetSiblingName,
+    EnsureNone,
 )
 
 __all__ = ['populate_form_w_params']
@@ -227,13 +231,13 @@ def _get_parameter_widget_factory(
     # now some parameters where we can derive semantics from their name
     if name == 'dataset' or isinstance(constraints, EnsureExistingDirectory):
         type_widget = functools.partial(
-            pw.PathParamWidget,
+            PathParamWidget,
             pathtype=QFileDialog.Directory,
             disable_manual_edit=disable_manual_path_input,
             basedir=basedir)
     elif name == 'path':
         type_widget = functools.partial(
-            pw.PathParamWidget,
+            PathParamWidget,
             disable_manual_edit=disable_manual_path_input,
             basedir=basedir)
     elif name == 'cfg_proc':
@@ -245,13 +249,20 @@ def _get_parameter_widget_factory(
     elif name == 'message':
         type_widget = pw.TextParamWidget
     # now parameters where we make decisions based on their configuration
+    elif isinstance(constraints, EnsureNone):
+        type_widget = pw.NoneParamWidget
     elif isinstance(constraints, EnsureDatasetSiblingName):
         type_widget = pw.SiblingChoiceParamWidget
     # TODO ideally the suite API would normalize this to a EnsureBool
     # constraint
     elif argparse_action in ('store_true', 'store_false'):
-        type_widget = pw.BoolParamWidget
-    elif isinstance(constraints, EnsureChoice) and argparse_action is None:
+        if default is None:
+            # it wants to be a bool, but isn't quite pure
+            type_widget = functools.partial(
+                pw.BoolParamWidget, allow_none=True)
+        else:
+            type_widget = pw.BoolParamWidget
+    elif isinstance(constraints, EnsureChoice):
         type_widget = functools.partial(
             pw.ChoiceParamWidget, choices=constraints._allowed)
     # TODO ideally the suite API would normalize this to a EnsureChoice
@@ -259,6 +270,20 @@ def _get_parameter_widget_factory(
     elif argparse_spec.get('choices'):
         type_widget = functools.partial(
             pw.ChoiceParamWidget, choices=argparse_spec.get('choices'))
+    elif isinstance(constraints, AltConstraints):
+        widgets = [
+            _get_parameter_widget_factory(
+                name=name,
+                default=default,
+                constraints=c,
+                # we take care of multi-value specification outside
+                nargs='?',
+                basedir=basedir,
+                argparse_spec=argparse_spec,
+            )
+            for c in constraints.constraints
+        ]
+        type_widget = functools.partial(AlternativeParamWidget, widgets)
 
     # we must consider the following nargs spec for widget selection
     # (int, '*', '+'), plus action=append
