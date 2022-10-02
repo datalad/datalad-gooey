@@ -5,6 +5,8 @@ from PySide6.QtWidgets import (
     QRadioButton,
 )
 
+from datalad.support.exceptions import CapturedException
+
 from .param_widgets import (
     GooeyParamWidgetMixin,
     NoneParamWidget,
@@ -52,8 +54,7 @@ class AlternativeParamWidget(QWidget, GooeyParamWidgetMixin):
         # we just need to figure out which one to enable
         for r, i in self._inputs:
             try:
-                # TODO try dataset-context one
-                i._gooey_param_validator(value)
+                i._validate_gooey_param_value(value)
                 r.setChecked(True)
             except Exception:
                 continue
@@ -64,46 +65,18 @@ class AlternativeParamWidget(QWidget, GooeyParamWidgetMixin):
             i.set_gooey_param_spec(name, default)
 
     def init_gooey_from_params(self, spec):
-        none_row = None
         for r, i in self._inputs:
-            if isinstance(i, NoneParamWidget):
-                none_row = (r, i)
-            i.init_gooey_from_params(spec)
-            i.setEnabled(r.isChecked())
-        super().init_gooey_from_params(spec)
-
-        if none_row is None or none_row[0].isChecked():
-            # we have no "None widget", no need to dealt with the special
-            # case of implicit None representations via the other alternatives
-            # OR
-            # the NoneParamWidget is specifically selected, which would mean
-            # it was the first (usually only) widget that could represent
-            # an explicitly set None value or default value.
-            return
-
-        # check whether any widget other than NoneParamWidget can represent
-        # `None`. If so, disable the explicit NoneParamWidget row for
-        # a cleaner UI
-        can_represent_None = False
-        for r, i in self._inputs:
-            if i is none_row[1]:
-                # skip the None widget itself
-                continue
             try:
-                # TODO try dataset-context one
-                i._gooey_param_validator(None)
-                # we found one
-                can_represent_None = True
-                # one is enough
-                break
-            except Exception:
-                continue
+                i.init_gooey_from_params(spec)
+                i.setEnabled(r.isChecked())
+            except Exception as e:
+                # something went wrong, likely this widget alternative not
+                # supporting the value that needs to be set
+                CapturedException(e)
+                i.setEnabled(False)
+                r.setChecked(False)
 
-        for w in none_row:
-            if can_represent_None:
-                w.hide()
-            else:
-                w.show()
+        super().init_gooey_from_params(spec)
 
     def get_gooey_param_spec(self):
         spec = {self._gooey_param_name: _NoValue}
@@ -117,14 +90,7 @@ class AlternativeParamWidget(QWidget, GooeyParamWidgetMixin):
 
     def set_gooey_param_validator(self, validator: Constraint) -> None:
         # this will be an AltConstraints
-        if self._implicit_None:
-            constraints = [
-                c for c in validator.constraints
-                if not isinstance(c, EnsureNone)
-            ]
-        else:
-            constraints = validator.constraints
-        for i, c in enumerate(constraints):
+        for i, c in enumerate(validator.constraints):
             radio, wid = self._inputs[i]
             if radio:
                 radio.setToolTip(c.long_description())

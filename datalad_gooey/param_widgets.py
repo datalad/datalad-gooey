@@ -110,6 +110,7 @@ class GooeyParamWidgetMixin:
         self._init_gooey_from_other_params(spec)
         if self._gooey_param_name in spec:
             val = spec[self._gooey_param_name]
+            val = self._validate_gooey_param_value(val)
             self._set_gooey_param_value(val)
             # let widget implementation actually set the value
             self._set_gooey_param_value_in_widget(val)
@@ -647,7 +648,8 @@ class CfgProcParamWidget(ChoiceParamWidget):
     """Choice widget with items from `run_procedure(discover=True)`"""
     def __init__(self, choices=None, parent=None):
         # we can only handle this validator, set it from the get-go
-        self._gooey_param_validator = EnsureConfigProcedureName()
+        self._gooey_param_validator = EnsureConfigProcedureName(
+            allow_none=True)
         super().__init__(parent=parent)
 
     def _init_gooey_from_other_params(self, spec: Dict) -> None:

@@ -5,7 +5,6 @@ from .constraints import (
     EnsureDatasetSiblingName,
     EnsureExistingDirectory,
     EnsureStrOrNoneWithEmptyIsNone,
-    EnsureNone,
 )
 
 # each item is a command that is allowed in the API
@@ -33,7 +32,7 @@ api = dict(
             dataset=2,
         ),
         parameter_constraints=dict(
-            path=EnsureExistingDirectory(),
+            path=EnsureExistingDirectory(allow_none=True),
         ),
     ),
     create=dict(
@@ -55,8 +54,8 @@ api = dict(
             dataset=3,
         ),
         parameter_constraints=dict(
-            path=EnsureExistingDirectory(),
-            cfg_proc=EnsureConfigProcedureName(),
+            path=EnsureExistingDirectory(allow_none=True),
+            cfg_proc=EnsureConfigProcedureName(allow_none=True),
         ),
     ),
     #create_sibling_gitlab=dict(
@@ -99,6 +98,9 @@ api = dict(
             access_protocol=4,
             credential=5,
             existing=6,
+        ),
+        parameter_constraints=dict(
+            name=EnsureStrOrNoneWithEmptyIsNone(),
         ),
     ),
     create_sibling_github=dict(
