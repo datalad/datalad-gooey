@@ -67,18 +67,9 @@ def populate_form_w_params(
     form_widgets = dict()
 
     def _get_nargs(pname, argparse_spec):
-        # TODO we must consider the following action specs for widget selection
-        # - 'store_const'
-        # - 'store_true' and 'store_false'
-        # - 'append'
-        # - 'append_const'
-        # - 'count'
-        # - 'extend'
         if pname in cmd_api_spec.get('parameter_nargs', []):
             # take as gospel
             return cmd_api_spec['parameter_nargs'][pname]
-        elif argparse_spec.get('action') == 'append':
-            return '*'
         else:
             nargs = argparse_spec.get('nargs', None)
             try:
@@ -294,9 +285,15 @@ def _get_parameter_widget_factory(
         type_widget = functools.partial(AlternativeParamWidget, widgets)
 
     # we must consider the following nargs spec for widget selection
-    # (int, '*', '+'), plus action=append
-    # in all these cases, we need to expect multiple instances of the data type
-    # for which we have selected the input widget above
+    # (int, '*', '+'), plus action=
+    # - 'store_const'
+    # - 'store_true' and 'store_false'
+    # - 'append'
+    # - 'append_const'
+    # - 'count'
+    # - 'extend'
+    # in some of these cases, we need to expect multiple instances of the data
+    # type for which we have selected the input widget above
     if isinstance(nargs, int):
         # we have a concrete number
         if nargs > 1:
