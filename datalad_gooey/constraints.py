@@ -1,12 +1,15 @@
-import functools
 from pathlib import Path
 
+# this is an import target for all constraints used within gooey
 from datalad.support.constraints import (
     AltConstraints,
     Constraint,
     EnsureStr,
     EnsureChoice,
     EnsureNone,
+    EnsureBool,
+    EnsureInt,
+    EnsureRange,
 )
 from datalad.distribution.dataset import Dataset
 

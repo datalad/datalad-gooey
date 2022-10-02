@@ -18,13 +18,30 @@ from ..utils import _NoValue
 from ..constraints import EnsureStrOrNoneWithEmptyIsNone
 
 
+def _get_input_widget(pwfactory, default,
+                      pname='peewee', docs='EXPLAIN!', validator=None):
+    # this is how all parameter widgets are instantiated
+    parent = QWidget()
+    # this is how all parameter widgets are instantiated
+    pw = load_parameter_widget(
+        parent,
+        pwfactory,
+        name=pname,
+        docs=docs,
+        default=default,
+        validator=validator
+    )
+    # we need parent to stick around, so nothing gets picked up by GC
+    return pname, pw, parent
+
+
 def test_GooeyParamWidgetMixin():
     # can we set and get a supported value to/from any widget
     # through the GooeyParamWidgetMixin API
 
     for pw_factory, val, default in (
             (BoolParamWidget, False, True),
-            (BoolParamWidget, False, None),
+            (functools.partial(BoolParamWidget, allow_none=True), False, None),
             (PosIntParamWidget, 4, 1),
             (functools.partial(PosIntParamWidget, True), 4, None),
             (StrParamWidget, 'dummy', 'mydefault'),
@@ -56,18 +73,7 @@ def test_GooeyParamWidgetMixin():
              'b', None),
 
     ):
-        pname = 'peewee'
-        # this is how all parameter widgets are instantiated
-        parent = QWidget()  # we need parent to stick around,
-                            # so nothing gets picked up by GC
-        pw = load_parameter_widget(
-            parent,
-            pw_factory,
-            name=pname,
-            docs='EXPLAIN!',
-            default=default,
-        )
-
+        pname, pw, parent = _get_input_widget(pw_factory, default=default)
         # If nothing was set yet, we expect `_NoValue` as the "representation
         # of default" here:
         assert pw.get_gooey_param_spec() == {pname: _NoValue}, \
@@ -84,20 +90,9 @@ def test_GooeyParamWidgetMixin():
 
 
 def test_param_None_behavior():
-    pname = 'wannabe-none'
-    pw_factory = StrParamWidget
     default = 'three'
-
-    parent = QWidget()  # we need parent to stick around,
-                        # so nothing gets picked up by GC
-    pw = load_parameter_widget(
-        parent,
-        pw_factory,
-        name=pname,
-        docs='EXPLAIN!',
-        default=default,
-        validator=EnsureStrOrNoneWithEmptyIsNone(),
-    )
+    pname, pw, parent = _get_input_widget(
+        StrParamWidget, default, validator=EnsureStrOrNoneWithEmptyIsNone())
     pw.init_gooey_from_params({pname: default})
     # now set `None`
     pw.init_gooey_from_params({pname: None})

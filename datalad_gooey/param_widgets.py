@@ -42,9 +42,14 @@ from datalad.distribution.dataset import (
 
 from .constraints import (
     Constraint,
+    EnsureBool,
     EnsureChoice,
+    EnsureNone,
     NoConstraint,
     EnsureConfigProcedureName,
+    EnsureInt,
+    EnsureRange,
+    EnsureStr,
 )
 from .resource_provider import gooey_resources
 from .utils import _NoValue
@@ -299,6 +304,7 @@ class NoneParamWidget(QLabel, GooeyParamWidgetMixin):
         super().__init__(parent)
         self.setText('No value')
         self._gooey_param_value = _NoValue
+        self.set_gooey_param_validator(EnsureNone())
 
     def _set_gooey_param_value_in_widget(self, val):
         # nothing to set, this is fixed to `None`
@@ -315,6 +321,7 @@ class ChoiceParamWidget(QComboBox, GooeyParamWidgetMixin):
         if choices:
             for c in choices:
                 self._add_item(c)
+            self.set_gooey_param_validator(EnsureChoice(*choices))
         else:
             # avoid making the impression something could be selected
             self.setPlaceholderText('No known choices')
@@ -357,6 +364,8 @@ class PosIntParamWidget(QSpinBox, GooeyParamWidgetMixin):
         if allow_none:
             self.setMinimum(-1)
             self.setSpecialValueText('none')
+            self.set_gooey_param_validator(
+                (EnsureInt() & EnsureRange(min=0)) | EnsureNone())
         else:
             # this is not entirely correct, but large enough for any practical
             # purpose
@@ -364,7 +373,7 @@ class PosIntParamWidget(QSpinBox, GooeyParamWidgetMixin):
             # limits of type  [signed] "i" (4bytes).
             # Do we need to set a maximum value at all?
             #self.setMaximum(sys.maxsize)
-            pass
+            self.set_gooey_param_validator(EnsureInt() & EnsureRange(min=0))
         self._allow_none = allow_none
         self.valueChanged.connect(self._handle_input)
 
@@ -381,11 +390,13 @@ class PosIntParamWidget(QSpinBox, GooeyParamWidgetMixin):
 
 
 class BoolParamWidget(QCheckBox, GooeyParamWidgetMixin):
-
     def __init__(self, allow_none=False, parent=None) -> None:
         super().__init__(parent)
         if allow_none:
             self.setTristate(True)
+            self.set_gooey_param_validator(EnsureBool() | EnsureNone())
+        else:
+            self.set_gooey_param_validator(EnsureBool())
         self.stateChanged.connect(self._handle_input)
 
     def _set_gooey_param_value_in_widget(self, value):
@@ -414,6 +425,10 @@ class StrParamWidget(QLineEdit, GooeyParamWidgetMixin):
         super().__init__(parent)
         self.setPlaceholderText('Not set')
         self.textChanged.connect(self._handle_input)
+        # TODO a proper constraint would be in order, but as long
+        # as this is the fallback widget for anything we do not
+        # handle properly, it is not yet feasible to do so
+        #self.set_gooey_param_validator(EnsureStr())
 
     def _set_gooey_param_value_in_widget(self, value):
         if value in (_NoValue, None):
@@ -427,12 +442,12 @@ class StrParamWidget(QLineEdit, GooeyParamWidgetMixin):
 
 
 class TextParamWidget(QTextEdit, GooeyParamWidgetMixin):
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setAcceptDrops(True)
         self.setPlaceholderText('Not set')
         self.textChanged.connect(self._handle_input)
+        self.set_gooey_param_validator(EnsureStr())
 
     def _set_gooey_param_value_in_widget(self, value):
         if value in (_NoValue, None):
