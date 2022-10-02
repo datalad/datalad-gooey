@@ -18,13 +18,16 @@ class _NoValue:
     pass
 
 
-def load_ui(name, parent=None):
+def load_ui(name, parent=None, custom_widgets=None):
     ui_file_name = Path(__file__).parent / 'resources' / 'ui' / f"{name}.ui"
     ui_file = QFile(ui_file_name)
     if not ui_file.open(QIODevice.ReadOnly):
         raise RuntimeError(
             f"Cannot open {ui_file_name}: {ui_file.errorString()}")
     loader = QUiLoader()
+    if custom_widgets:
+        for custom_widget in custom_widgets:
+            loader.registerCustomWidget(custom_widget)
     ui = loader.load(ui_file, parentWidget=parent)
     ui_file.close()
     if not ui:
