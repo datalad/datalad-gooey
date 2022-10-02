@@ -62,15 +62,19 @@ class AlternativeParamWidget(QWidget, GooeyParamWidgetMixin):
         # init_gooey_from_params() has already placed the values
         # in their respective widget
         # we just need to figure out which one to enable
+        try_validate = True
         for r, i in self._inputs:
-            try:
-                i._validate_gooey_param_value(value)
-                r.setChecked(True)
-                # we go with the first, the order of alternative
-                # constraints is typically meaningful
-                break
-            except Exception:
-                continue
+            if try_validate:
+                try:
+                    i._validate_gooey_param_value(value)
+                    r.setChecked(True)
+                    # we go with the first, the order of alternative
+                    # constraints is typically meaningful
+                    try_validate = False
+                    continue
+                except Exception:
+                    pass
+            r.setChecked(False)
 
     def set_gooey_param_spec(self, name: str, default=_NoValue):
         super().set_gooey_param_spec(name, default)
@@ -78,6 +82,7 @@ class AlternativeParamWidget(QWidget, GooeyParamWidgetMixin):
             i.set_gooey_param_spec(name, default)
 
     def init_gooey_from_params(self, spec):
+        super().init_gooey_from_params(spec)
         for r, i in self._inputs:
             try:
                 i.init_gooey_from_params(spec)
@@ -89,8 +94,6 @@ class AlternativeParamWidget(QWidget, GooeyParamWidgetMixin):
                 i.setEnabled(False)
                 r.setChecked(False)
 
-        super().init_gooey_from_params(spec)
-
     def get_gooey_param_spec(self):
         spec = {self._gooey_param_name: _NoValue}
         for r, i in self._inputs:
@@ -99,7 +102,9 @@ class AlternativeParamWidget(QWidget, GooeyParamWidgetMixin):
             # this will already come out validated, no need to do again
             spec = i.get_gooey_param_spec()
             break
-        return spec
+        return spec \
+            if spec[self._gooey_param_name] != self._gooey_param_default \
+            else {self._gooey_param_name: _NoValue}
 
     def set_gooey_param_validator(self, validator: Constraint) -> None:
         # this will be an AltConstraints
