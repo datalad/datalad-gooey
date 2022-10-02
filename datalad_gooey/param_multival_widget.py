@@ -179,6 +179,28 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
             val = _NoValue
         return {self._gooey_param_name: val}
 
+    def _validate_gooey_param_value(self, value):
+        # TODO this should not be a full reimplementation, but a reuse of the
+        # baseclass validator, but the mixin pattern makes it painful
+        # special _NoValue is unhandled here
+        if value is _NoValue:
+            return value
+
+        # no-op validation by default
+        def _validator(value):
+            return value
+
+        if hasattr(self, '_gooey_param_validator'):
+            _validator = self._gooey_param_validator
+            if hasattr(self, '_gooey_param_dsvalidator'):
+                _validator = self._gooey_param_dsvalidator
+
+        if not isinstance(value, (tuple, list)):
+            # it could be a non-sequence default
+            return _validator(value)
+        else:
+            return [_validator(v) for v in value]
+
     def _would_gooey_accept_drop_event(self, event: QDropEvent):
         if not self._editor.acceptDrops():
             # our editor is ignorant of drop events, so we should be too
