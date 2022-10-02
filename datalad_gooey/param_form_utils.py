@@ -279,7 +279,15 @@ def _get_parameter_widget_factory(
                 # we take care of multi-value specification outside
                 nargs='?',
                 basedir=basedir,
-                argparse_spec=argparse_spec,
+                argparse_spec={
+                    # pass on anything, but not information that
+                    # would trigger a MultiValueInputWidget
+                    # wrapping on a particular alternative.
+                    # This is only done once around the entire
+                    # AlternativeParamWidget
+                    k: v for k, v in argparse_spec.items()
+                    if k != 'action' or v != 'append'
+                }
             )
             for c in constraints.constraints
         ]
