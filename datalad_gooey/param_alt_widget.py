@@ -1,4 +1,3 @@
-import functools
 from PySide6.QtWidgets import (
     QWidget,
     QFormLayout,
@@ -7,18 +6,29 @@ from PySide6.QtWidgets import (
 
 from datalad.support.exceptions import CapturedException
 
-from .param_widgets import (
-    GooeyParamWidgetMixin,
-    NoneParamWidget,
-)
+from .param_widgets import GooeyParamWidgetMixin
 from .utils import _NoValue
-from .constraints import (
-    Constraint,
-    EnsureNone,
-)
+from .constraints import Constraint
 
 
 class AlternativeParamWidget(QWidget, GooeyParamWidgetMixin):
+    """Widget to combine multiple, mutually exclusive input widgets
+
+    Each input widget can cover a different set of input types.
+    These types need not be mutually exclusive. However, each
+    alternative widget is combined with a radio button that a user
+    must select, in order to indicate which widget provides the
+    value for the parameter. Only the selected widget will be
+    activate.
+
+    When setting a value via `set_gooey_from_params()` an attempt
+    is made to represent an incoming value in all alternative
+    widgets. A failure to do so (e.g., due to a type mismatch) is
+    ignored.
+
+    The first alternative to accept a value is also made active.
+    """
+
     def __init__(self, widget_factories, *args, **kwargs):
         # no point in alternatives, when there is none
         assert len(widget_factories) > 1
@@ -56,6 +66,9 @@ class AlternativeParamWidget(QWidget, GooeyParamWidgetMixin):
             try:
                 i._validate_gooey_param_value(value)
                 r.setChecked(True)
+                # we go with the first, the order of alternative
+                # constraints is typically meaningful
+                break
             except Exception:
                 continue
 

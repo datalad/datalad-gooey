@@ -218,7 +218,7 @@ api = dict(
             'since',
         )),
         parameter_constraints=dict(
-            to=EnsureDatasetSiblingName(),
+            to=EnsureDatasetSiblingName(allow_none=True),
         ),
         parameter_display_names=dict(
             dataset='Push from dataset at',
@@ -274,7 +274,7 @@ api = dict(
             'reobtain_data',
         )),
         parameter_constraints=dict(
-            sibling=EnsureDatasetSiblingName(),
+            sibling=EnsureDatasetSiblingName(allow_none=True),
         ),
     ),
 )

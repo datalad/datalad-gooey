@@ -1,3 +1,4 @@
+import functools
 from pathlib import Path
 
 from datalad.support.constraints import (
@@ -43,16 +44,24 @@ class EnsureStrOrNoneWithEmptyIsNone(EnsureStr):
         return v if v else None
 
 
-class EnsureDatasetSiblingName(EnsureStrOrNoneWithEmptyIsNone):
-    def __init__(self):
+class EnsureDatasetSiblingName(EnsureStr):
+    def __init__(self, allow_none=False):
         # basic protection against an empty label
         super().__init__(min_len=1)
+        self._allow_none = allow_none
+
+    def __call__(self, value):
+        if self._allow_none:
+            return EnsureStrOrNoneWithEmptyIsNone()(value)
+        else:
+            return super()(value)
 
     def long_description(self):
-        return 'value must be the name of a dataset sibling'
+        return 'value must be the name of a dataset sibling' \
+               f"{' or None' if self._allow_none else ''}"
 
     def short_description(self):
-        return 'sibling name'
+        return f'sibling name{" (optional)" if self._allow_none else ""}'
 
     def for_dataset(self, dataset: Dataset):
         """Return an `EnsureChoice` with the sibling names for this dataset"""
@@ -71,7 +80,10 @@ class EnsureDatasetSiblingName(EnsureStrOrNoneWithEmptyIsNone):
             and r.get('type') == 'sibling'
             and r['name'] != 'here'
         )
-        return EnsureChoice(*choices)
+        if self._allow_none:
+            return EnsureChoice(None, *choices)
+        else:
+            return EnsureChoice(*choices)
 
 
 class EnsureConfigProcedureName(EnsureChoice):
