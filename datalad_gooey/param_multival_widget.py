@@ -171,7 +171,7 @@ class MultiValueInputWidget(QWidget, GooeyParamWidgetMixin):
         # TODO This likely needs more work and awareness of `nargs`, see
         # https://github.com/datalad/datalad-gooey/issues/212#issuecomment-1256950251
         # https://github.com/datalad/datalad-gooey/issues/212#issuecomment-1257170208
-        val = self._gooey_param_value
+        val = self._validate_gooey_param_value(self._gooey_param_value)
         default = self._gooey_param_default
         if val == default:
             val = _NoValue

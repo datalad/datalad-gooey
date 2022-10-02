@@ -110,6 +110,7 @@ class AlternativeParamWidget(QWidget, GooeyParamWidgetMixin):
         for r, i in self._inputs:
             if not r.isChecked():
                 continue
+            # this will already come out validated, no need to do again
             spec = i.get_gooey_param_spec()
             break
         return spec

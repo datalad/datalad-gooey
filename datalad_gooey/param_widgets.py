@@ -121,7 +121,7 @@ class GooeyParamWidgetMixin:
         _NoValue when no value was gathered, or the gather value is not
         different from the default)
         """
-        val = self._gooey_param_value
+        val = self._validate_gooey_param_value(self._gooey_param_value)
         return {self._gooey_param_name: val} \
             if val != self._gooey_param_default \
             else {self._gooey_param_name: _NoValue}
@@ -165,6 +165,38 @@ class GooeyParamWidgetMixin:
         for input validation.
         """
         self._gooey_param_validator = validator
+
+    def tailor_gooey_param_validator_to_dataset(
+            self, dataset: Dataset or None) -> None:
+        if not hasattr(self, '_gooey_param_validator'):
+            # no validator, nothing to tailor
+            return
+        if dataset is None:
+            if hasattr(self, '_gooey_param_dsvalidator'):
+                # no longer a dataset context present, remove tailored
+                # validator to put context-free one in effect in
+                # _validate_gooey_param_value()
+                delattr(self, '_gooey_param_dsvalidator')
+        else:
+            # generate a variant, but keep the original around, such that we
+            # could keep tailoring for other datasets later
+            self._gooey_param_dsvalidator = \
+                self._gooey_param_validator.for_dataset(dataset)
+
+    def _validate_gooey_param_value(self, value) -> Any:
+        # special _NoValue is unhandled here
+        if value is _NoValue:
+            return value
+
+        # no-op validation by default
+        def _validator(value):
+            return value
+
+        if hasattr(self, '_gooey_param_validator'):
+            _validator = self._gooey_param_validator
+            if hasattr(self, '_gooey_param_dsvalidator'):
+                _validator = self._gooey_param_dsvalidator
+        return _validator(value)
 
     def set_gooey_param_docs(self, docs: str) -> None:
         """Present documentation on the parameter in the widget

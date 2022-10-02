@@ -33,9 +33,17 @@ class NoConstraint(Constraint):
         return value
 
 
-class EnsureNoneOrEmptyStr(Constraint):
-    # TODO
-    pass
+class EnsureStrOrNoneWithEmptyIsNone(EnsureStr):
+    def __init__(self):
+        super().__init__(min_len=0)
+
+    def __call__(self, value):
+        if value is None:
+            return None
+        # otherwise, first the regular str business
+        v = super().__call__(value)
+        # force to None if empty
+        return v if v else None
 
 
 class EnsureDatasetSiblingName(EnsureStr):

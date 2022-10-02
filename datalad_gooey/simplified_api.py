@@ -4,6 +4,8 @@ from .constraints import (
     EnsureConfigProcedureName,
     EnsureDatasetSiblingName,
     EnsureExistingDirectory,
+    EnsureStrOrNoneWithEmptyIsNone,
+    EnsureNone,
 )
 
 # each item is a command that is allowed in the API
@@ -130,6 +132,10 @@ api = dict(
             recursive=6,
             credential=7,
         ),
+        parameter_constraints=dict(
+            name=EnsureStrOrNoneWithEmptyIsNone(),
+            publish_depends=EnsureStrOrNoneWithEmptyIsNone(),
+        ),
     ),
     create_sibling_webdav=dict(
         name='Create a &WebDav sibling',
@@ -157,6 +163,9 @@ api = dict(
             access_protocol=5,
             existing=6,
             credential=7,
+        ),
+        parameter_constraints=dict(
+            name=EnsureStrOrNoneWithEmptyIsNone()
         ),
     ),
     drop=dict(
@@ -247,6 +256,10 @@ api = dict(
             to_git=4,
             version_tag=5,
             amend=6,
+        ),
+        parameter_constraints=dict(
+            message=EnsureStrOrNoneWithEmptyIsNone(),
+            version_tag=EnsureStrOrNoneWithEmptyIsNone(),
         ),
     ),
     update=dict(

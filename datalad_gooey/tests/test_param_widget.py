@@ -15,6 +15,7 @@ from ..param_widgets import (
 from ..param_multival_widget import MultiValueInputWidget
 from ..param_alt_widget import AlternativeParamWidget
 from ..utils import _NoValue
+from ..constraints import EnsureStrOrNoneWithEmptyIsNone
 
 
 def test_GooeyParamWidgetMixin():
@@ -80,3 +81,25 @@ def test_GooeyParamWidgetMixin():
         # not the default
         pw.init_gooey_from_params({pname: val})
         assert pw.get_gooey_param_spec() == {pname: val}
+
+
+def test_param_None_behavior():
+    pname = 'wannabe-none'
+    pw_factory = StrParamWidget
+    default = 'three'
+
+    parent = QWidget()  # we need parent to stick around,
+                        # so nothing gets picked up by GC
+    pw = load_parameter_widget(
+        parent,
+        pw_factory,
+        name=pname,
+        docs='EXPLAIN!',
+        default=default,
+        validator=EnsureStrOrNoneWithEmptyIsNone(),
+    )
+    pw.init_gooey_from_params({pname: default})
+    # now set `None`
+    pw.init_gooey_from_params({pname: None})
+    # verify that it comes back
+    assert pw.get_gooey_param_spec() == {pname: None}
