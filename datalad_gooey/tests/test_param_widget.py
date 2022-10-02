@@ -1,3 +1,5 @@
+import pytest
+
 import functools
 from pathlib import Path
 
@@ -98,3 +100,23 @@ def test_param_None_behavior():
     pw.init_gooey_from_params({pname: None})
     # verify that it comes back
     assert pw.get_gooey_param_spec() == {pname: None}
+
+
+def test_multitype_choices():
+    default = None
+    choices = [None, True, False, 'auto', 'ephemeral']
+    pname, pw, parent = _get_input_widget(
+        functools.partial(ChoiceParamWidget, choices=choices),
+        default)
+    # try all choices (three different types and verify they come out
+    # verbatim
+    for c in choices:
+        pw.init_gooey_from_params({pname: c})
+        assert pw.get_gooey_param_spec() == {
+            pname: _NoValue if c == default else c}
+    # try a non-choice
+    with pytest.raises(ValueError):
+        pw.init_gooey_from_params({pname: 'blowup'})
+    # lastly try a non-choice, non-matching type
+    with pytest.raises(ValueError):
+        pw.init_gooey_from_params({pname: 654})
