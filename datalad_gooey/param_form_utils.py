@@ -255,8 +255,13 @@ def _get_parameter_widget_factory(
     # TODO ideally the suite API would normalize this to a EnsureBool
     # constraint
     elif argparse_action in ('store_true', 'store_false'):
-        type_widget = pw.BoolParamWidget
-    elif isinstance(constraints, EnsureChoice) and argparse_action is None:
+        if default is None:
+            # it wants to be a bool, but isn't quite pure
+            type_widget = functools.partial(
+                pw.BoolParamWidget, allow_none=True)
+        else:
+            type_widget = pw.BoolParamWidget
+    elif isinstance(constraints, EnsureChoice):
         type_widget = functools.partial(
             pw.ChoiceParamWidget, choices=constraints._allowed)
     # TODO ideally the suite API would normalize this to a EnsureChoice
