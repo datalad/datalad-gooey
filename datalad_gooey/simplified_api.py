@@ -1,6 +1,7 @@
 from copy import deepcopy
 
 from .constraints import (
+    EnsureStr,
     EnsureConfigProcedureName,
     EnsureDatasetSiblingName,
     EnsureExistingDirectory,
@@ -32,6 +33,7 @@ api = dict(
             dataset=2,
         ),
         parameter_constraints=dict(
+            source=EnsureStr(min_len=1),
             path=EnsureExistingDirectory(allow_none=True),
         ),
     ),

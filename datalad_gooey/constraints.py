@@ -10,6 +10,7 @@ from datalad.support.constraints import (
     EnsureBool,
     EnsureInt,
     EnsureRange,
+    EnsureListOf,
 )
 from datalad.distribution.dataset import Dataset
 

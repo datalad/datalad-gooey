@@ -1,6 +1,5 @@
 
 from collections.abc import Callable
-import functools
 from itertools import (
     chain,
 )
@@ -11,8 +10,6 @@ from typing import (
 )
 from PySide6.QtWidgets import (
     QFormLayout,
-    QLabel,
-    QWidget,
     QFileDialog,
 )
 
@@ -22,11 +19,10 @@ from datalad.utils import (
     get_wrapped_class,
 )
 
-
 from . import param_widgets as pw
-from .param_path_widget import PathParamWidget
-from .param_multival_widget import MultiValueInputWidget
-from .param_alt_widget import AlternativeParamWidget
+from .param_path import PathParameter
+from .param_multival import MultiValueParameter
+from .param_alt import AlternativesParameter
 from .active_suite import spec as active_suite
 from .api_utils import (
     get_cmd_params,
@@ -35,10 +31,10 @@ from .api_utils import (
 from .utils import _NoValue
 from .constraints import (
     AltConstraints,
-    Constraint,
     EnsureExistingDirectory,
     EnsureDatasetSiblingName,
     EnsureNone,
+    EnsureListOf,
 )
 
 __all__ = ['populate_form_w_params']
@@ -49,7 +45,7 @@ def populate_form_w_params(
         basedir: Path,
         formlayout: QFormLayout,
         cmdname: str,
-        cmdkwargs: Dict) -> None:
+        cmdkwargs: Dict) -> Dict:
     """Populate a given QLayout with data entry widgets for a DataLad command
     """
     # localize to potentially delay heavy import
@@ -63,8 +59,8 @@ def populate_form_w_params(
     # resolve to the interface class that has all the specification
     cmd_cls = get_wrapped_class(cmd)
 
-    # collect widgets for a later connection setup
-    form_widgets = dict()
+    # collect parameter instances for a later connection setup
+    form_params = dict()
 
     def _get_nargs(pname, argparse_spec):
         if pname in cmd_api_spec.get('parameter_nargs', []):
@@ -113,100 +109,55 @@ def populate_form_w_params(
         # populate the layout with widgets for each of them
         # we do not pass Parameter instances further down, but disassemble
         # and homogenize here
-        pwidget = _get_parameter_widget(
-            basedir=basedir,
-            parent=formlayout.parentWidget(),
+        form_param = _get_parameter(
             name=pname,
+            # will also be _NoValue, if there was none
+            default=pdefault,
             constraints=cmd_api_spec['parameter_constraints'][pname]
             if pname in cmd_api_spec.get('parameter_constraints', [])
             else param_spec.constraints,
-            nargs=_get_nargs(pname, param_spec.cmd_kwargs),
-            # will also be _NoValue, if there was none
-            default=pdefault,
             docs=format_param_docs(param_spec._doc),
+            nargs=_get_nargs(pname, param_spec.cmd_kwargs),
+            basedir=basedir,
             # TODO make obsolete
             argparse_spec=param_spec.cmd_kwargs,
         )
-        form_widgets[pname] = pwidget
-        # query for a known display name
-        # first in command-specific spec
-        display_name = cmd_param_display_names.get(
-            pname,
-            # fallback to API specific override
-            active_suite.get('parameter_display_names', {}).get(
-                pname,
-                # last resort:
-                # use capitalized original with _ removed as default
-                pname.replace('_', ' ').capitalize()
-            ),
-        )
-        display_label = QLabel(display_name)
-        display_label.setToolTip(f'API command parameter: `{pname}`')
+        display_label = form_param.get_display_label(cmd_param_display_names)
+        # build the input widget
+        pwidget = form_param.build_input_widget(
+            parent=formlayout.parentWidget())
         formlayout.addRow(display_label, pwidget)
+        form_params[pname] = (display_label, form_param)
 
     # wire widgets up to self update on changes in other widget
     # use case: dataset context change
     # so it could be just the dataset widget sending, and the other receiving.
     # but for now wire all with all others
-    for pname1, pwidget1 in form_widgets.items():
-        for pname2, pwidget2 in form_widgets.items():
+    for pname1, p1 in form_params.items():
+        for pname2, p2 in form_params.items():
             if pname1 == pname2:
                 continue
-            pwidget1.value_changed.connect(
-                pwidget2.init_gooey_from_params)
+            p1[1].value_changed.connect(p2[1].set_from_spec)
     # when all is wired up, set the values that need setting
     # we set the respective default value to all widgets, and
     # update it with the given value, if there was any
     # (the true command parameter default was already set above)
     cmdkwargs_defaults.update(cmdkwargs)
-    for pname, pwidget in form_widgets.items():
-        pwidget.init_gooey_from_params(cmdkwargs_defaults)
+    for pname, p in form_params.items():
+        p[1].set_from_spec(cmdkwargs_defaults)
+
+    return form_params
 
 
 #
 # Internal helpers
 #
 
-def _get_parameter_widget(
-        basedir: Path,
-        parent: QWidget,
-        name: str,
-        constraints: Constraint,
-        nargs: int or str,
-        default: Any = pw._NoValue,
-        docs: str = '',
-        argparse_spec: Dict = None) -> QWidget:
-    """Populate a given layout with a data entry widget for a command parameter
-
-    `value` is an explicit setting requested by the caller. A value of
-    `_NoValue` indicates that there was no specific value given. `default` is a
-    command's default parameter value, with `_NoValue` indicating that the
-    command has no default for a parameter.
-    """
-    # guess the best widget-type based on the argparse setup and configured
-    # constraints
-    pwid_factory = _get_parameter_widget_factory(
-        name,
-        default,
-        constraints,
-        nargs,
-        basedir,
-        # TODO make obsolete
-        argparse_spec)
-    return pw.load_parameter_widget(
-        parent,
-        pwid_factory,
-        name=name,
-        docs=docs,
-        default=default,
-        validator=constraints,
-    )
-
-
-def _get_parameter_widget_factory(
+def _get_parameter(
         name: str,
         default: Any,
         constraints: Callable or None,
+        docs: str,
         nargs: int or str,
         basedir: Path,
         # TODO make obsolete
@@ -217,59 +168,74 @@ def _get_parameter_widget_factory(
     argparse_action = argparse_spec.get('action')
     disable_manual_path_input = active_suite.get('options', {}).get(
         'disable_manual_path_input', False)
+
+    std_param_init_kwargs = dict(
+        name=name,
+        default=default,
+        constraint=constraints,
+    )
+    custom_param_init_kwargs = dict(
+        docs=docs,
+    )
+
     # if we have no idea, use a simple line edit
-    type_widget = pw.StrParamWidget
-    # now some parameters where we can derive semantics from their name
+    type_widget = pw.StrParameter
+    ## now some parameters where we can derive semantics from their name
     if name == 'dataset' or isinstance(constraints, EnsureExistingDirectory):
-        type_widget = functools.partial(
-            PathParamWidget,
+        type_widget = PathParameter
+        custom_param_init_kwargs.update(
             pathtype=QFileDialog.Directory,
             disable_manual_edit=disable_manual_path_input,
-            basedir=basedir)
+            basedir=basedir,
+        )
     elif name == 'path':
-        type_widget = functools.partial(
-            PathParamWidget,
+        type_widget = PathParameter
+        custom_param_init_kwargs.update(
             disable_manual_edit=disable_manual_path_input,
-            basedir=basedir)
+            basedir=basedir,
+        )
     elif name == 'cfg_proc':
-        type_widget = pw.CfgProcParamWidget
+        type_widget = pw.CfgProcParameter
     elif name == 'credential':
-        type_widget = pw.CredentialChoiceParamWidget
+        type_widget = pw.CredentialChoiceParameter
     elif name == 'recursion_limit':
-        type_widget = functools.partial(pw.PosIntParamWidget, allow_none=True)
+        type_widget = pw.PosIntParameter
+        custom_param_init_kwargs.update(allow_none=True)
     elif name == 'message':
-        type_widget = pw.TextParamWidget
+        type_widget = pw.TextParameter
     # now parameters where we make decisions based on their configuration
     elif isinstance(constraints, EnsureNone):
-        type_widget = pw.NoneParamWidget
+        type_widget = pw.NoneParameter
     elif isinstance(constraints, EnsureDatasetSiblingName):
-        type_widget = pw.SiblingChoiceParamWidget
+        type_widget = pw.SiblingChoiceParameter
     # TODO ideally the suite API would normalize this to a EnsureBool
     # constraint
     elif argparse_action in ('store_true', 'store_false'):
         if default is None:
             # it wants to be a bool, but isn't quite pure
-            type_widget = functools.partial(
-                pw.BoolParamWidget, allow_none=True)
+            type_widget = pw.BoolParameter
+            custom_param_init_kwargs.update(allow_none=True)
         else:
-            type_widget = pw.BoolParamWidget
+            type_widget = pw.BoolParameter
     elif isinstance(constraints, EnsureChoice):
-        type_widget = functools.partial(
-            pw.ChoiceParamWidget, choices=constraints._allowed)
-    # TODO ideally the suite API would normalize this to a EnsureChoice
-    # constraint
+        type_widget = pw.ChoiceParameter
+        # TODO not needed, the parameter always also gets the constraint
+        custom_param_init_kwargs.update(choices=constraints._allowed)
+    ## TODO ideally the suite API would normalize this to a EnsureChoice
+    ## constraint
     elif argparse_spec.get('choices'):
-        type_widget = functools.partial(
-            pw.ChoiceParamWidget, choices=argparse_spec.get('choices'))
+        type_widget = pw.ChoiceParameter
+        custom_param_init_kwargs.update(choices=argparse_spec.get('choices'))
     elif isinstance(constraints, AltConstraints):
-        widgets = [
-            _get_parameter_widget_factory(
+        param_alternatives = [
+            _get_parameter(
                 name=name,
                 default=default,
                 constraints=c,
-                # we take care of multi-value specification outside
+                docs=docs,
                 nargs='?',
                 basedir=basedir,
+                # TODO make obsolete
                 argparse_spec={
                     # pass on anything, but not information that
                     # would trigger a MultiValueInputWidget
@@ -282,7 +248,8 @@ def _get_parameter_widget_factory(
             )
             for c in constraints.constraints
         ]
-        type_widget = functools.partial(AlternativeParamWidget, widgets)
+        type_widget = AlternativesParameter
+        custom_param_init_kwargs.update(alternatives=param_alternatives)
 
     # we must consider the following nargs spec for widget selection
     # (int, '*', '+'), plus action=
@@ -294,17 +261,29 @@ def _get_parameter_widget_factory(
     # - 'extend'
     # in some of these cases, we need to expect multiple instances of the data
     # type for which we have selected the input widget above
+    item_constraint = std_param_init_kwargs['constraint']
+    multival_args = dict(
+        ptype=type_widget,
+        # same constraint as an individual item, but a whole list of them
+        # OR with `constraints` to allow fallback on a single item
+        constraint=EnsureListOf(item_constraint) | item_constraint,
+    )
     if isinstance(nargs, int):
         # we have a concrete number
         if nargs > 1:
-            type_widget = functools.partial(
-                # TODO give a fixed N as a parameter too
-                MultiValueInputWidget, type_widget)
+            # TODO give a fixed N as a parameter too
+            std_param_init_kwargs.update(**multival_args)
+            type_widget = MultiValueParameter
     else:
         import argparse
         if (nargs in ('+', '*', argparse.REMAINDER)
                 or argparse_action == 'append'):
-            type_widget = functools.partial(
-                MultiValueInputWidget, type_widget)
+            std_param_init_kwargs.update(**multival_args)
+            type_widget = MultiValueParameter
 
-    return type_widget
+    # create an instance
+    param = type_widget(
+        widget_init=custom_param_init_kwargs,
+        **std_param_init_kwargs
+    )
+    return param

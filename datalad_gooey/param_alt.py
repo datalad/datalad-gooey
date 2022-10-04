@@ -1,3 +1,8 @@
+from typing import (
+    Any,
+    Dict,
+    List,
+)
 from PySide6.QtWidgets import (
     QWidget,
     QFormLayout,
@@ -6,12 +11,11 @@ from PySide6.QtWidgets import (
 
 from datalad.support.exceptions import CapturedException
 
-from .param_widgets import GooeyParamWidgetMixin
+from .param import GooeyCommandParameter
 from .utils import _NoValue
-from .constraints import Constraint
 
 
-class AlternativeParamWidget(QWidget, GooeyParamWidgetMixin):
+class AlternativesParameter(GooeyCommandParameter):
     """Widget to combine multiple, mutually exclusive input widgets
 
     Each input widget can cover a different set of input types.
@@ -28,36 +32,38 @@ class AlternativeParamWidget(QWidget, GooeyParamWidgetMixin):
 
     The first alternative to accept a value is also made active.
     """
-
-    def __init__(self, widget_factories, *args, **kwargs):
+    def _get_widget(self,
+                    alternatives: List,
+                    parent: str or None = None,
+                    docs: str = ''):
         # no point in alternatives, when there is none
-        assert len(widget_factories) > 1
-        super().__init__(*args, **kwargs)
-        self._implicit_None = False
+        assert len(alternatives) > 1
+        wid = QWidget(parent)
         layout = QFormLayout()
         # squash the margins
         margins = layout.contentsMargins()
         # we stay with the default left/right, but minimize vertically
         layout.setContentsMargins(margins.left(), 0, margins.right(), 0)
-        self.setLayout(layout)
+        wid.setLayout(layout)
         # each value is a 2-tuple: (radio button, input widget)
         self._inputs = []
-        for wf in widget_factories:
-            radio = QRadioButton(self)
-            wid = wf(parent=self)
+        for alt in alternatives:
+            radio = QRadioButton(wid)
+            cwid = alt.build_input_widget(parent=wid)
             # we disable any input by default
             # toggling the radio button will enable it
-            wid.setDisabled(True)
-            layout.addRow(radio, wid)
-            self._inputs.append((radio, wid))
+            cwid.setDisabled(True)
+            layout.addRow(radio, cwid)
+            self._inputs.append((radio, alt))
             radio.clicked.connect(self._toggle_input)
+        return wid
 
     def _toggle_input(self):
         button = self.sender()
         for r, i in self._inputs:
-            i.setEnabled(r == button)
+            i.input_widget.setEnabled(r == button)
 
-    def _set_gooey_param_value_in_widget(self, value):
+    def _set_in_widget(self, wid: QWidget, value: Any) -> None:
         # we need not do much
         # init_gooey_from_params() has already placed the values
         # in their respective widget
@@ -76,40 +82,27 @@ class AlternativeParamWidget(QWidget, GooeyParamWidgetMixin):
                     pass
             r.setChecked(False)
 
-    def set_gooey_param_spec(self, name: str, default=_NoValue):
-        super().set_gooey_param_spec(name, default)
-        for r, i in self._inputs:
-            i.set_gooey_param_spec(name, default)
-
-    def init_gooey_from_params(self, spec):
-        super().init_gooey_from_params(spec)
+    def set_from_spec(self, spec: Dict) -> None:
         for r, i in self._inputs:
             try:
-                i.init_gooey_from_params(spec)
-                i.setEnabled(r.isChecked())
+                i.set_from_spec(spec)
+                i.input_widget.setEnabled(r.isChecked())
             except Exception as e:
                 # something went wrong, likely this widget alternative not
                 # supporting the value that needs to be set
                 CapturedException(e)
-                i.setEnabled(False)
+                i.input_widget.setEnabled(False)
                 r.setChecked(False)
 
-    def get_gooey_param_spec(self):
-        spec = {self._gooey_param_name: _NoValue}
+    def get_spec(self) -> Dict:
+        # will give the NoValue default
+        spec = super().get_spec()
         for r, i in self._inputs:
             if not r.isChecked():
                 continue
             # this will already come out validated, no need to do again
-            spec = i.get_gooey_param_spec()
+            spec = i.get_spec()
             break
         return spec \
-            if spec[self._gooey_param_name] != self._gooey_param_default \
-            else {self._gooey_param_name: _NoValue}
-
-    def set_gooey_param_validator(self, validator: Constraint) -> None:
-        # this will be an AltConstraints
-        for i, c in enumerate(validator.constraints):
-            radio, wid = self._inputs[i]
-            if radio:
-                radio.setToolTip(c.long_description())
-            wid.set_gooey_param_validator(c)
+            if spec[self.name] != self.default \
+            else {self.name: _NoValue}

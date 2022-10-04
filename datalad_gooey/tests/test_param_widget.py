@@ -6,117 +6,125 @@ from pathlib import Path
 from PySide6.QtWidgets import QWidget
 
 from ..param_widgets import (
-    BoolParamWidget,
-    StrParamWidget,
-    PosIntParamWidget,
-    ChoiceParamWidget,
-    NoneParamWidget,
-    load_parameter_widget,
+    BoolParameter,
+    StrParameter,
+    PosIntParameter,
+    ChoiceParameter,
+    NoneParameter,
 )
-from ..param_path_widget import PathParamWidget
-from ..param_multival_widget import MultiValueInputWidget
-from ..param_alt_widget import AlternativeParamWidget
+from ..param_path import PathParameter
+from ..param_multival import MultiValueParameter
+from ..param_alt import AlternativesParameter
 from ..utils import _NoValue
-from ..constraints import EnsureStrOrNoneWithEmptyIsNone
+from ..constraints import (
+    EnsureChoice,
+    EnsureStrOrNoneWithEmptyIsNone,
+)
 
 
-def _get_input_widget(pwfactory, default,
-                      pname='peewee', docs='EXPLAIN!', validator=None):
+def _get_input_widget(pwfactory, default, widget_init=None,
+                      pname='peewee', docs='EXPLAIN!', constraint=None):
+    if widget_init is None:
+        widget_init = {}
+    widget_init.update(docs=docs)
     # this is how all parameter widgets are instantiated
     parent = QWidget()
     # this is how all parameter widgets are instantiated
-    pw = load_parameter_widget(
-        parent,
-        pwfactory,
+    param = pwfactory(
         name=pname,
-        docs=docs,
         default=default,
-        validator=validator
+        constraint=constraint,
+        widget_init=widget_init,
     )
+    param.build_input_widget(parent=parent)
     # we need parent to stick around, so nothing gets picked up by GC
-    return pname, pw, parent
+    return pname, param, parent
 
 
-def test_GooeyParamWidgetMixin():
+def test_GooeyCommandParameter():
     # can we set and get a supported value to/from any widget
     # through the GooeyParamWidgetMixin API
 
-    for pw_factory, val, default in (
-            (BoolParamWidget, False, True),
-            (functools.partial(BoolParamWidget, allow_none=True), False, None),
-            (PosIntParamWidget, 4, 1),
-            (functools.partial(PosIntParamWidget, True), 4, None),
-            (StrParamWidget, 'dummy', 'mydefault'),
-            (functools.partial(ChoiceParamWidget, ['a', 'b', 'c']), 'b', 'c'),
-            (PathParamWidget, str(Path.cwd()), 'mypath'),
-            (PathParamWidget, str(Path.cwd()), None),
-            # cannot include MultiValueInputWidget, leads to Python segfault
-            # on garbage collection?!
+    for pw_factory, val, default, winit in (
+            (BoolParameter, False, True, {}),
+            (BoolParameter, False, None, dict(allow_none=True)),
+            (PosIntParameter, 4, 1, {}),
+            (PosIntParameter, 4, None, dict(allow_none=True)),
+            (StrParameter, 'dummy', 'mydefault', {}),
+            (ChoiceParameter, 'b', 'c', dict(choices=['a', 'b', 'c'])),
+            (PathParameter, str(Path.cwd()), 'mypath', {}),
+            (PathParameter, str(Path.cwd()), None, {}),
             (functools.partial(
-                MultiValueInputWidget, PathParamWidget),
+                MultiValueParameter, ptype=PathParameter),
              [str(Path.cwd()), 'temp'],
-             'mypath'),
+             'mypath', {}),
             (functools.partial(
-                MultiValueInputWidget, PathParamWidget),
+                MultiValueParameter, ptype=PathParameter),
              [str(Path.cwd()), 'temp'],
-             None),
-            # alternatives with value and default associated with different
-            # types
-            (functools.partial(
-                AlternativeParamWidget,
-                [BoolParamWidget, PosIntParamWidget]),
-             False, 5),
-            # alternatives with a superfluous "None widget" (ChoiceParamWidget
-            # can handle that too)
-            (functools.partial(
-                AlternativeParamWidget,
-                [functools.partial(ChoiceParamWidget, ['a', 'b']),
-                 NoneParamWidget]),
-             'b', None),
+             None, {}),
+            # XXX construction of the alternatives is hard without the
+            # _get_parameter() helper
+            ### alternatives with value and default associated with different
+            ### types
+            #(AlternativesParameter,
+            # False, 5,
+            # dict(alternatives=[
+            #     BoolParameter(name='some', default=),
+            #     PosIntParameter()])),
+            ### alternatives with a superfluous "None widget" (ChoiceParameter
+            ### can handle that too)
+            ##(functools.partial(
+            ##    AlternativesParameter,
+            ##    [functools.partial(ChoiceParameter, ['a', 'b']),
+            ##     NoneParameter]),
+            ## 'b', None),
 
     ):
-        pname, pw, parent = _get_input_widget(pw_factory, default=default)
+        pname, pw, parent = _get_input_widget(
+            pw_factory, default=default, widget_init=winit)
         # If nothing was set yet, we expect `_NoValue` as the "representation
         # of default" here:
-        assert pw.get_gooey_param_spec() == {pname: _NoValue}, \
+        assert pw.get_spec() == {pname: _NoValue}, \
             f"Default value not retrieved from {pw_factory}"
         # If nothing other than the default was set yet,
         # we still expect `_NoValue` as the "representation of default" here:
-        pw.init_gooey_from_params({pname: default})
-        assert pw.get_gooey_param_spec() == {pname: _NoValue}, \
+        pw.set(default)
+        assert pw.get_spec() == {pname: _NoValue}, \
             f"Default value not retrieved from {pw_factory}"
         # with a different value set, we get the set value back,
         # not the default
-        pw.init_gooey_from_params({pname: val})
-        assert pw.get_gooey_param_spec() == {pname: val}
+        pw.set(val)
+        assert pw.get_spec() == {pname: val}
 
 
 def test_param_None_behavior():
     default = 'three'
     pname, pw, parent = _get_input_widget(
-        StrParamWidget, default, validator=EnsureStrOrNoneWithEmptyIsNone())
-    pw.init_gooey_from_params({pname: default})
+        StrParameter, default, constraint=EnsureStrOrNoneWithEmptyIsNone())
+    pw.set_from_spec({pname: default})
     # now set `None`
-    pw.init_gooey_from_params({pname: None})
+    pw.set_from_spec({pname: None})
     # verify that it comes back
-    assert pw.get_gooey_param_spec() == {pname: None}
+    assert pw.get_spec() == {pname: None}
 
 
 def test_multitype_choices():
     default = None
     choices = [None, True, False, 'auto', 'ephemeral']
     pname, pw, parent = _get_input_widget(
-        functools.partial(ChoiceParamWidget, choices=choices),
-        default)
+        ChoiceParameter,
+        default,
+        constraint=EnsureChoice(*choices),
+    )
     # try all choices (three different types and verify they come out
     # verbatim
     for c in choices:
-        pw.init_gooey_from_params({pname: c})
-        assert pw.get_gooey_param_spec() == {
+        pw.set(c)
+        assert pw.get_spec() == {
             pname: _NoValue if c == default else c}
     # try a non-choice
     with pytest.raises(ValueError):
-        pw.init_gooey_from_params({pname: 'blowup'})
+        pw.set('blowup')
     # lastly try a non-choice, non-matching type
     with pytest.raises(ValueError):
-        pw.init_gooey_from_params({pname: 654})
+        pw.set(654)
