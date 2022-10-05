@@ -23,7 +23,7 @@ from .api_utils import (
     get_cmd_displayname,
     format_cmd_docs,
 )
-from .active_suite import spec as active_suite
+from .utils import _NoValue
 
 
 class GooeyDataladCmdUI(QObject):
@@ -37,6 +37,7 @@ class GooeyDataladCmdUI(QObject):
         # start out disabled, there will be no populated form
         self._ui_parent.setDisabled(True)
         self._pform = None
+        self._parameters = None
         self._cmd_title = None
 
     @property
@@ -63,6 +64,8 @@ class GooeyDataladCmdUI(QObject):
             buttonbox.accepted.connect(self._retrieve_input)
             # we disable the UI (however that might look like) on cancel
             buttonbox.rejected.connect(self.disable)
+            # no command execution without parameter validation
+            buttonbox.button(QDialogButtonBox.Ok).setDisabled(True)
         return self._pform
 
     @Slot(str, dict)
@@ -99,13 +102,15 @@ class GooeyDataladCmdUI(QObject):
 
         self.reset_form()
         self._show_cmd_help(cmdname)
-        populate_form_w_params(
+        self._parameters = populate_form_w_params(
             api,
             self._app.rootpath,
             self.pform,
             cmdname,
             cmdkwargs,
         )
+        for l, p in self._parameters.values():
+            p.value_changed.connect(self._check_params)
         # set title afterwards, form might just have been created first, lazily
         self._cmd_title.setText(
             # remove potential shortcut marker
@@ -117,19 +122,51 @@ class GooeyDataladCmdUI(QObject):
         self.pform.datalad_cmd_name = cmdname
         # make sure the UI is visible
         self.pwidget.setEnabled(True)
+        self._check_params()
+
+    def _check_params(self):
+        """Loop over all parameters and run their validators
+
+        If any validator fails, prevent launching the command and annotate the
+        parameter label with an indicator that identifies the problematic one.
+        """
+        ok_pb = self.pwidget.findChild(
+            QDialogButtonBox, 'cmdTabButtonBox').button(QDialogButtonBox.Ok)
+        # check that any parameter has an OK value
+        failed = False
+        invalid_suffix = ' <font color="red">(!)</font>'
+        for label, param in self._parameters.values():
+            label_text = label.text()
+            try:
+                # we test any set value
+                candidate = param.get()
+                # if there is none, we test the default
+                # (we could also trust the default, but would have to verify
+                #  that it is not also _NoValue)
+                if candidate == _NoValue:
+                    candidate = param.default
+                param.get_constraint()(candidate)
+                if label_text.endswith(invalid_suffix):
+                    label.setText(label_text[:-len(invalid_suffix)])
+            except Exception:
+                # TODO annotate display label with a marker that the validator
+                # failed
+                # if anything is not right, block command execution
+                if not label_text.endswith(invalid_suffix):
+                    label.setText(f"{label_text}{invalid_suffix}")
+                ok_pb.setDisabled(True)
+                failed = True
+        if not failed:
+            # ready to go
+            ok_pb.setEnabled(True)
 
     @Slot()
     def _retrieve_input(self):
         from .param_widgets import _NoValue
         params = dict()
-        for i in range(self.pform.rowCount()):
-            # the things is wrapped into a QWidgetItem layout class, hence .wid
-            field_widget = self.pform.itemAt(i, QFormLayout.FieldRole).wid
-            # _get_datalad_param_spec() is our custom private adhoc method
-            # expected to return a dict with a parameter setting, or an
-            # empty dict, when the default shall be used.
+        for pname, p in self._parameters.items():
             params.update({
-                k: v for k, v in field_widget.get_gooey_param_spec().items()
+                k: v for k, v in p[1].get_spec().items()
                 if v is not _NoValue
             })
         self.disable()
@@ -146,6 +183,7 @@ class GooeyDataladCmdUI(QObject):
         self.pwidget.setDisabled(True)
 
     def reset_form(self):
+        self._parameters = None
         if self._cmd_title:
             self._cmd_title.setText('')
         for i in range(self.pform.rowCount() - 1, -1, -1):
