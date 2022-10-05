@@ -60,10 +60,15 @@ def get_help(parent):
 def show_about_info(parent):
     mbox = QMessageBox.information
     title = 'About'
-    msg = 'DataLad and DataLad Gooey are free and open source software. ' \
-          'Read the <a href=https://doi.org/10.21105/joss.03262> paper' \
-          '</a>, or find out more at <a href=http://datalad.org>' \
-          'datalad.org</a>.'
+    msg = \
+'DataLad and DataLad Gooey are free and open source software ' \
+'(<a href="https://mit-license.org">MIT-licensed</a>). ' \
+'Read the <a href="https://doi.org/10.21105/joss.03262">paper</a>, ' \
+'or find out more at <a href="http://datalad.org">datalad.org</a>.\n' \
+'<hr>DataLad Gooey is using the <a href="https://wiki.qt.io/Qt_for_Python">' \
+'PySide package</a>, which is made available under the terms of the ' \
+'<a href="https://www.gnu.org/licenses/lgpl-3.0.en.html">' \
+'GNU Lesser General Public License v3 (LGPL-3.0)</a>.'
     mbox(parent, title, msg)
 
 
