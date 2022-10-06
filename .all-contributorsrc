@@ -125,6 +125,17 @@
             "avatar_url": [
                 "https://avatars.githubusercontent.com/u/15157717?v=4"
             ]
+        },
+        {
+            "login": "christian-monch",
+            "name": "Christian Mönch",
+            "contributions": [
+                "code"
+            ],
+            "profile": "https://github.com/christian-monch",
+            "avatar_url": [
+                "https://avatars.githubusercontent.com/u/17925232?v=4"
+            ]
         }
     ],
     "contributorsPerLine": 7,
