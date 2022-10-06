@@ -1,0 +1,61 @@
+# Deploy manually
+
+name: Build Windows Installer
+
+# Controls when the action will run. Workflow runs when manually triggered using the UI
+# or API.
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: 'Git revision (reference, branch, or tag) of datalad-gooey which should be built'
+        required: true
+        default: 'main'
+        type: string
+
+# Workflow to build installer on windows
+jobs:
+
+  build-installer:
+    # The type of runner that the job will run on
+    runs-on: windows-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+
+      - name: Checkout revision to build repo
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Build installer
+        run: |
+          cd tools\installer_building
+          $build_out = .\build_windows_installer.ps1 ${{ inputs.revision }}
+          $build_time = Get-Date -format yyyyMMddHHmm
+          $build_branch = echo $build_out|Select-String -Pattern "installed_version:"
+          $build_branch = $build_branch.ToString().Substring(19)
+          echo "build_id=$build_time-$build_branch" >> ${env:GITHUB_ENV}
+        shell: powershell
+
+      - name: Create installer release
+        uses: actions/create-release@v1
+        id: create_release
+        with:
+          draft: false
+          prerelease: false
+          release_name: windows ${{ env.build_id }}
+          tag_name: windows-${{ env.build_id }}
+          body_path: tools\installer_building\CHANGELOG.md
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      
+      - name: Upload installer artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: tools\installer_building\datalad-gooey-installer-amd64.exe
+          asset_name: datalad-gooey-installer-amd64.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
