@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Dict
 
 # this is an import target for all constraints used within gooey
 from datalad.support.constraints import (
@@ -36,6 +37,62 @@ class NoConstraint(Constraint):
 
     def __call__(self, value):
         return value
+
+
+class EnsureMapping(Constraint):
+    """Ensure a mapping of a key to a value of a specific nature"""
+
+    def __init__(self,
+                 key: Constraint,
+                 value: Constraint,
+                 delimiter: str = ':'):
+        """
+        Parameters
+        ----------
+        key:
+          Key constraint instance.
+        value:
+          Value constraint instance.
+        delimiter:
+          Delimiter to use for splitting a key from a value for a `str` input.
+        """
+        self._key_constraint = key
+        self._value_constraint = value
+        self._delimiter = delimiter
+
+    def short_description(self):
+        return 'mapping of {} -> {}'.format(
+            self._key_constraint.short_description(),
+            self._value_constraint.short_description(),
+        )
+
+    def __call__(self, value) -> Dict:
+        # determine key and value from various kinds of input
+        if isinstance(value, str):
+            # will raise if it cannot split into two
+            key, val = value.split(sep=self._delimiter, maxsplit=1)
+        elif isinstance(value, dict):
+            if not len(value):
+                raise ValueError('dict does not contain a key')
+            elif len(value) > 1:
+                raise ValueError(f'{value} contains more than one key')
+            key, val = value.copy().popitem()
+        elif isinstance(value, (list, tuple)):
+            if not len(value) == 2:
+                raise ValueError('key/value sequence does not have length 2')
+            key, val = value
+
+        key = self._key_constraint(key)
+        val = self._value_constraint(val)
+        return {key: val}
+
+    def for_dataset(self, dataset: Dataset):
+        # tailor both constraints to the dataset and reuse delimiter
+        return EnsureMapping(
+            key=self._key_constraint.for_dataset(dataset),
+            value=self._value_constraint.for_dataset(dataset),
+            delimiter=self._delimiter,
+        )
 
 
 class EnsureStrOrNoneWithEmptyIsNone(EnsureStr):
