@@ -35,6 +35,7 @@ from .constraints import (
     EnsureDatasetSiblingName,
     EnsureNone,
     EnsureListOf,
+    EnsureDataset,
 )
 
 __all__ = ['populate_form_w_params']
@@ -183,6 +184,12 @@ def _get_parameter(
     ## now some parameters where we can derive semantics from their name
     if name == 'dataset' or isinstance(constraints, EnsureExistingDirectory):
         type_widget = PathParameter
+        std_param_init_kwargs.update(
+            # force our own constraint. DataLad's EnsureDataset
+            # does not handle Path objects
+            # https://github.com/datalad/datalad/issues/7069
+            constraint=EnsureDataset(),
+        )
         custom_param_init_kwargs.update(
             pathtype=QFileDialog.Directory,
             disable_manual_edit=disable_manual_path_input,

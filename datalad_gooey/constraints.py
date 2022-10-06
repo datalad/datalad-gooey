@@ -1,4 +1,7 @@
-from pathlib import Path
+from pathlib import (
+    Path,
+    PurePath,
+)
 import re
 from typing import Dict
 
@@ -14,6 +17,7 @@ from datalad.support.constraints import (
     EnsureRange,
     EnsureListOf,
 )
+from datalad.distribution.dataset import EnsureDataset as CoreEnsureDataset
 from datalad.distribution.dataset import Dataset
 
 
@@ -294,6 +298,24 @@ class EnsureGitRefName(Constraint):
             '(single-level) ' if self._allow_onelevel else '',
             ' or refspec pattern' if self._refspec_pattern else '',
         )
+
+
+class EnsureDataset(CoreEnsureDataset):
+    # for now, this is just as pointless as the implementation in core
+    # plus allowing for Path objects
+    def __call__(self, value):
+        if isinstance(value, Dataset):
+            return value
+        elif isinstance(value, (str, PurePath)):
+            # we cannot convert to a Dataset class right here
+            # - duplicates require_dataset() later on
+            # - we need to be able to distinguish between a bound
+            #   dataset method call and a standalone call for
+            #   relative path argument disambiguation
+            #return Dataset(path=value)
+            return value
+        else:
+            raise ValueError("Can't create Dataset from %s." % type(value))
 
 
 class EnsureDatasetSiblingName(EnsureStr):
