@@ -1,11 +1,12 @@
 from pathlib import Path
+import re
 from typing import Dict
 
 # this is an import target for all constraints used within gooey
 from datalad.support.constraints import (
     AltConstraints,
     Constraint,
-    EnsureStr,
+    EnsureStr as _CoreEnsureStr,
     EnsureChoice,
     EnsureNone,
     EnsureBool,
@@ -37,6 +38,50 @@ class NoConstraint(Constraint):
 
     def __call__(self, value):
         return value
+
+
+# extends the implementation in -core with regex matching
+class EnsureStr(_CoreEnsureStr):
+    """Ensure an input is a string of some min. length and matching a pattern
+
+    Pattern matching is optional and minimum length is zero (empty string is
+    OK).
+
+    No type conversion is performed.
+    """
+    def __init__(self, min_len: int = 0, match: str = None):
+        """
+        Parameters
+        ----------
+        min_len: int, optional
+           Minimal length for a string.
+        match:
+           Regular expression used to match any input value against.
+           Values not matching the expression will cause a
+           `ValueError` to be raised.
+        """
+        super().__init__(min_len=min_len)
+        self._match = match
+        if match is not None:
+            self._match = re.compile(match)
+
+    def __call__(self, value) -> str:
+        value = super().__call__(value)
+        if self._match:
+            if not self._match.match(value):
+                raise ValueError(
+                    f'{value} does not match {self._match.pattern}')
+        return value
+
+    def long_description(self):
+        return 'must be a string{}'.format(
+            f' and match {self._match.pattern}' if self._match else '',
+        )
+
+    def short_description(self):
+        return 'str{}'.format(
+            f'({self._match.pattern})' if self._match else '',
+        )
 
 
 class EnsureMapping(Constraint):

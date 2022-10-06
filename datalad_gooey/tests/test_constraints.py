@@ -4,7 +4,24 @@ from ..constraints import (
     EnsureBool,
     EnsureInt,
     EnsureMapping,
+    EnsureStr,
 )
+
+def test_EnsureStr_match():
+    # alphanum plus _ and ., non-empty
+    pattern = '[a-zA-Z0-9-.]+'
+    constraint = EnsureStr(match=pattern)
+
+    # reports the pattern in the description
+    for m in (constraint.short_description, constraint.long_description):
+        assert pattern in m()
+
+    # must work
+    assert constraint('a0F-2.') == 'a0F-2.'
+
+    for v in ('', '123_abc'):
+        with pytest.raises(ValueError):
+            assert constraint('')
 
 
 def test_EnsureMapping():
