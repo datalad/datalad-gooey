@@ -23,16 +23,14 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
 
-      - name: Checkout installer builder repo
+      - name: Checkout revision to build repo
         uses: actions/checkout@v2
         with:
-          repository: datalad/datalad-gooey
-          path: datalad-gui-windows-installer
           fetch-depth: 0
 
       - name: Build installer
         run: |
-          cd datalad-gooey\tools\installer_building
+          cd tools\installer_building
           $build_out = .\build_windows_installer.ps1 ${{ inputs.revision }}
           $build_time = Get-Date -format yyyy-MM-dd-HH:mm
           $build_branch = echo $build_out|Select-String -Pattern "installed_version:"
@@ -48,7 +46,7 @@ jobs:
           prerelease: false
           release_name: ${{ env.build_id }}
           tag_name: tag-${{ env.build_id }}
-          body_path: datalad-gooey\tools\installer_building\CHANGELOG.md
+          body_path: tools\installer_building\CHANGELOG.md
         env:
           GITHUB_TOKEN: ${{ github.token }}
       
@@ -58,6 +56,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: datalad-gooey\tools\installer_building\datalad-gooey-installer-amd64.exe
+          asset_path: tools\installer_building\datalad-gooey-installer-amd64.exe
           asset_name: datalad-gooey-installer-amd64.exe
           asset_content_type: application/vnd.microsoft.portable-executable
