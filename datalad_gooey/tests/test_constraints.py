@@ -5,7 +5,27 @@ from ..constraints import (
     EnsureInt,
     EnsureMapping,
     EnsureStr,
+    EnsureGitRefName,
 )
+
+
+def test_EnsureGitRefName():
+    assert EnsureGitRefName().short_description() == '(single-level) Git refname'
+    # standard branch name must work
+    assert EnsureGitRefName()('main') == 'main'
+    # normalize is on by default
+    assert EnsureGitRefName()('/main') == 'main'
+    # be able to turn off onelevel
+    with pytest.raises(ValueError):
+        EnsureGitRefName(allow_onelevel=False)('main')
+    assert EnsureGitRefName(allow_onelevel=False)(
+        'refs/heads/main') == 'refs/heads/main'
+    # refspec pattern off by default
+    with pytest.raises(ValueError):
+        EnsureGitRefName()('refs/heads/*')
+    assert EnsureGitRefName(refspec_pattern=True)(
+        'refs/heads/*') == 'refs/heads/*'
+
 
 def test_EnsureStr_match():
     # alphanum plus _ and ., non-empty
