@@ -5,6 +5,7 @@ from pathlib import (
 import re
 from typing import Dict
 
+from datalad import cfg as dlcfg
 # this is an import target for all constraints used within gooey
 from datalad.support.constraints import (
     AltConstraints,
@@ -17,7 +18,10 @@ from datalad.support.constraints import (
     EnsureRange,
 )
 from datalad.distribution.dataset import EnsureDataset as CoreEnsureDataset
-from datalad.distribution.dataset import Dataset
+from datalad.distribution.dataset import (
+    Dataset,
+    require_dataset,
+)
 
 
 # extension for Constraint from datalad-core
@@ -476,7 +480,7 @@ class EnsureConfigProcedureName(EnsureChoice):
     def __init__(self, allow_none=False):
         self._allow_none = allow_none
         # all dataset-independent procedures
-        super().__init__(*self._get_procs_())
+        super().__init__(*self._get_choices_())
 
     def long_description(self):
         return 'value must be the name of a configuration dataset procedure'
@@ -489,7 +493,7 @@ class EnsureConfigProcedureName(EnsureChoice):
             return self
         return EnsureChoice(*self._get_procs_(dataset))
 
-    def _get_procs_(self, dataset: Dataset = None):
+    def _get_choices_(self, dataset: Dataset = None):
         from datalad.local.run_procedure import RunProcedure
         for r in RunProcedure.__call__(
                 dataset=dataset,
@@ -503,6 +507,45 @@ class EnsureConfigProcedureName(EnsureChoice):
             # strip 'cfg_' prefix, even when reporting, we do not want it
             # because commands like `create()` put it back themselves
             yield r['procedure_name'][4:]
+        if self._allow_none:
+            yield None
+
+
+class EnsureCredentialName(EnsureChoice):
+    def __init__(self, allow_none=False, allow_new=False):
+        self._allow_none = allow_none
+        self._allow_new = allow_new
+        # all dataset-independent procedures
+        super().__init__(*self._get_choices_())
+        # if we allow new credentials, we have to take anything
+        # TODO give sane regex?
+        self._new_constraint = EnsureStr(min_len=1)
+        if allow_none:
+            self._new_constraint = self._new_constraint | EnsureNone()
+
+    def long_description(self):
+        return 'value must be the name of a credential'
+
+    def short_description(self):
+        return 'credential name'
+
+    def __call__(self, value):
+        if self._allow_new:
+            return self._new_constraint(value)
+        else:
+            super().__call__(value)
+
+    def for_dataset(self, dataset: Dataset):
+        if not dataset.is_installed():
+            return self
+        return EnsureChoice(*self._get_procs_(dataset))
+
+    def _get_choices_(self, dataset: Dataset = None):
+        from datalad_next.credman import CredentialManager
+        cfgman = dataset.config if dataset else dlcfg
+        credman = CredentialManager(cfgman)
+        for i in credman.query():
+            yield i[0]
         if self._allow_none:
             yield None
 
