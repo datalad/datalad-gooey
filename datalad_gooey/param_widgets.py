@@ -219,7 +219,16 @@ class TextParameter(GooeyCommandParameter):
             wid.setPlainText(str(value))
 
     def _handle_input(self):
-        self.set(self.input_widget.toPlainText())
+        self.set(
+            self.input_widget.toPlainText(),
+            # we just pulled the text from the widget, no need to set it.
+            # in avoiding that, we would miss reflecting the outcome of
+            # constraint processing. But only if it would do some kind
+            # of normalization, we would not miss a failed validation.
+            # currently no normalization of any kind is done, hence this
+            # is safe.
+            set_in_widget=False,
+        )
 
 
 class CfgProcParameter(ChoiceParameter):

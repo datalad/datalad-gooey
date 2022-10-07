@@ -167,7 +167,7 @@ class GooeyCommandParameter(QObject):
         self.__value = val
         self.value_changed.emit(MappingProxyType(self.get_spec()))
         # let widget implementation actually set the value
-        if self._widget:
+        if set_in_widget and self._widget:
             # if there already is one
             self._set_in_widget(self.input_widget, val)
 
