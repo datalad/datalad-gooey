@@ -138,7 +138,7 @@ api = dict(
         ),
         parameter_constraints=dict(
             name=EnsureStrOrNoneWithEmptyIsNone(),
-            publish_depends=EnsureStrOrNoneWithEmptyIsNone(),
+            publish_depends=EnsureDatasetSiblingName(allow_none=True),
         ),
     ),
     create_sibling_webdav=dict(

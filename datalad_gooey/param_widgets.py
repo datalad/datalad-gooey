@@ -100,7 +100,15 @@ class ChoiceParameter(GooeyCommandParameter):
         return '--none--' if val is None else str(val)
 
     def can_present_None(self):
-        return None in self.get_constraint()._allowed
+        # use whatever the constraint says, and trust that the widget
+        # subclasses can represent what is needed
+        # concretely SiblingChoiceParameter need to actually
+        # know choices until a dataset is known
+        try:
+            self.get_constraint()(None)
+            return True
+        except Exception:
+            return False
 
 
 class PosIntParameter(GooeyCommandParameter):
