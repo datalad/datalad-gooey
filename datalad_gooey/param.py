@@ -207,6 +207,15 @@ class GooeyCommandParameter(QObject):
         else:
             return self.__constraint
 
+    def set_constraint(self, constraint) -> None:
+        """Reset the parameter constraint.
+
+        It is typically unnecessary to call this method. It is only needed
+        in conjunction with collapsing needless input widget alternatives.
+        """
+        self.__base_constraint = constraint
+        self.__constraint = self.__base_constraint
+
     def tailor_constraint_to_dataset(self, dataset: Dataset or None) -> None:
         """Alters the parameter contraint to match a particular dataset context
 
@@ -222,6 +231,19 @@ class GooeyCommandParameter(QObject):
         # tailor the active
         self.__constraint = self.get_constraint().for_dataset(dataset)
 
+    def can_present_None(self):
+        """Returns whether the parameter instance can represent `None`
+
+        This means that calling `set(None)` followed by `get()` would
+        return a literal `None`.
+
+        This special method is used to determine whether an alternative
+        constraint with an `EnsureNone()` component requires a dedicated
+        input widget for this special value that is a frequent default,
+        or whether one of the other alternatives can also represent
+        it, and thereby enable a user to set `None`.
+        """
+        return False
     #
     # drag&drop related API
     #
