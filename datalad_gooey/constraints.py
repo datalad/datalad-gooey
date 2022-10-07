@@ -181,6 +181,10 @@ class EnsureIterableOf(Constraint):
         self._max_len = max_len
         super().__init__()
 
+    @property
+    def item_constraint(self):
+        return self._item_constraint
+
     def __call__(self, value):
         iter = self._iter_type(
             self._item_constraint(i) for i in value
