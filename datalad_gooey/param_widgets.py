@@ -318,7 +318,6 @@ class CredentialChoiceParameter(ChoiceParameter):
         wid.currentTextChanged.connect(self._handle_input)
         wid.setSizeAdjustPolicy(
             QComboBox.AdjustToMinimumContentsLengthWithIcon)
-        self._saw_dataset = False
         self._init_choices(wid)
         return wid
 
@@ -331,36 +330,36 @@ class CredentialChoiceParameter(ChoiceParameter):
         # reset first
         dataset = None if spec.get('dataset', _NoValue) in (_NoValue, None) \
             else Dataset(spec['dataset'])
-
-        if dataset:
-            self._saw_dataset = True
-
         self._init_choices(wid, dataset)
 
     def _init_choices(self, wid, dataset=None):
+        oldchoice = wid.currentText()
         wid.clear()
-        # one to type new stuff
-        wid.addItem('')
-        # rest from credman
         self.tailor_constraint_to_dataset(dataset)
         for c in self.get_constraint()._allowed:
             self._add_item(wid, c)
         if wid.count():
             wid.setEnabled(True)
-            wid.setPlaceholderText('--auto--')
-
-            self._saw_dataset = False
+            if oldchoice in self.get_constraint()._allowed:
+                # reset old value after reinit, avoids jumpy behavior
+                self._set_in_widget(wid, oldchoice)
 
     def _set_in_widget(self, wid: QWidget, value: Any) -> None:
         if value == _NoValue:
             wid.clearEditText()
             return
-        wid.setCurrentText(value or '')
+        if value:
+            wid.setCurrentText(value)
+        else:
+            wid.clearEditText()
 
     def _handle_input(self):
-        choice = self.input_widget.currentText()
+        wid = self.input_widget
+        if not wid:
+            return
+        choice = wid.currentText()
         # an empty thing is None
-        return None if not choice else choice
+        self.set(None if not choice else choice, set_in_widget=False)
 
     def can_present_None(self):
         return True
