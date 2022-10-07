@@ -23,21 +23,13 @@ from .utils import _NoValue
 
 class MultiValueParameter(GooeyCommandParameter):
     def __init__(self, *, name: str, default: Any, constraint=None,
-                 widget_init: Dict, ptype: GooeyCommandParameter):
+                 widget_init: Dict, item_param: GooeyCommandParameter):
         super().__init__(
             name=name,
             default=default,
             constraint=constraint,
-            # the widget_init coming in only goes to the underlying
-            # parameter
-            widget_init={k: v for k, v in widget_init.items() if k == 'docs'})
-        # and the same for the internal parameter instance that
-        # defines the semantics and provides the editor widget
-        self._native_param = ptype(
-            name=name,
-            default=default,
-            constraint=constraint,
             widget_init=widget_init)
+        self._item_param = item_param
 
     def _get_widget(self,
                     *,
@@ -46,7 +38,7 @@ class MultiValueParameter(GooeyCommandParameter):
         wid = MultiValueWidget(
             param=self,
             parent=parent,
-            editor=self._native_param.build_input_widget(parent=parent),
+            editor=self._item_param.build_input_widget(parent=parent),
             docs=docs,
         )
         self._editor = wid._editor
@@ -57,8 +49,8 @@ class MultiValueParameter(GooeyCommandParameter):
         # incremental
         wid._lw.clear()
         # clear any value in editor widget
-        self._native_param._set_in_widget(
-            self._native_param.input_widget,
+        self._item_param._set_in_widget(
+            self._item_param.input_widget,
             _NoValue,
         )
         if value == _NoValue:
@@ -69,7 +61,7 @@ class MultiValueParameter(GooeyCommandParameter):
             wid._add_item(data=val)
 
     def set_from_spec(self, spec: Dict) -> None:
-        self._native_param.set_from_spec(spec)
+        self._item_param.set_from_spec(spec)
 
     def get_spec(self):
         self.input_widget._handle_input()
@@ -97,7 +89,7 @@ class MultiValueParameter(GooeyCommandParameter):
         # first event, try passing the event entirely
         # a user might simply have no aimed good enough to hit the
         # editor widget only
-        if self._native_param._would_accept_drop_event(event):
+        if self._item_param._would_accept_drop_event(event):
             # when we can it, we can just stop here, and in dropEvent()
             # need to make sure to pass it on to the editor in-full too
             return True
@@ -106,11 +98,18 @@ class MultiValueParameter(GooeyCommandParameter):
             # we can only handle URLs
             return False
 
-        if all(self._native_param._would_accept_drop_url(u)
+        if all(self._item_param._would_accept_drop_url(u)
                for u in event.mimeData().urls()):
             return True
         else:
             return False
+
+    def can_present_None(self):
+        # TODO not sure if this is 100% kosher yet
+        # would we need to be able to collapse `[None]` to `None`
+        # in `get()`?
+        # https://github.com/datalad/datalad-gooey/issues/306
+        return self._item_param.can_present_None()
 
 
 class MultiValueWidget(QWidget):
@@ -183,7 +182,7 @@ class MultiValueWidget(QWidget):
             assert len(item)
             item = item[0]
         if data is _NoValue:
-            data = self._mv_param._native_param.get()
+            data = self._mv_param._item_param.get()
         # give it a special value if nothing is set
         # this helps to populate the edit widget with existing
         # values, or not
@@ -199,7 +198,7 @@ class MultiValueWidget(QWidget):
             self._mv_param.set(_NoValue)
 
     def _load_item_in_editor(self, item):
-        self._mv_param._native_param.set(
+        self._mv_param._item_param.set(
             item.data(MultiValueWidget.NativeObjectRole)
         )
 
@@ -242,7 +241,7 @@ class MultiValueWidget(QWidget):
                 self._editor._set_drop_url_in_widget(url)
                 self._update_item(item=self._add_item())
         # clear the editor
-        self._mv_param._native_param.set_in_widget(self, _NoValue)
+        self._mv_param._item_param.set_in_widget(self, _NoValue)
 
 
 def _get_item_display(value) -> str:

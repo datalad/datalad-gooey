@@ -43,6 +43,10 @@ class NoneParameter(GooeyCommandParameter):
         # nothing to set, this is fixed to `None`
         return
 
+    def can_present_None(self):
+        # it sure can!
+        return True
+
 
 class ChoiceParameter(GooeyCommandParameter):
     def _get_widget(self,
@@ -95,6 +99,17 @@ class ChoiceParameter(GooeyCommandParameter):
     def _map_val2label(self, val):
         return '--none--' if val is None else str(val)
 
+    def can_present_None(self):
+        # use whatever the constraint says, and trust that the widget
+        # subclasses can represent what is needed
+        # concretely SiblingChoiceParameter need to actually
+        # know choices until a dataset is known
+        try:
+            self.get_constraint()(None)
+            return True
+        except Exception:
+            return False
+
 
 class PosIntParameter(GooeyCommandParameter):
     def _get_widget(self,
@@ -140,6 +155,10 @@ class BoolParameter(GooeyCommandParameter):
             cb.setTristate(True)
         cb.stateChanged.connect(self._handle_input)
         return cb
+
+    def can_present_None(self):
+        # generally yes, due to the way _set_in_widget() is implemented
+        return True
 
     def _set_in_widget(self, wid: QWidget, value: Any) -> None:
         if value not in (True, False):
@@ -245,8 +264,7 @@ class CfgProcParameter(ChoiceParameter):
             None if spec.get('dataset', _NoValue) in (_NoValue, None)
             else Dataset(spec['dataset'])
         )
-        # look for the choices in the last constraint of an AltConstraints
-        for c in self.get_constraint().constraints[-1]._allowed:
+        for c in self.get_constraint()._allowed:
             self._add_item(wid, c)
         if wid.count():
             wid.setEnabled(True)
@@ -296,7 +314,7 @@ class SiblingChoiceParameter(ChoiceParameter):
             wid.setEnabled(True)
 
 
-class CredentialChoiceParameter(GooeyCommandParameter):
+class CredentialChoiceParameter(ChoiceParameter):
     """Choice widget with items from `credentials()`"""
     def _get_widget(self,
                     parent: str or None = None,
@@ -308,52 +326,48 @@ class CredentialChoiceParameter(GooeyCommandParameter):
         wid.currentTextChanged.connect(self._handle_input)
         wid.setSizeAdjustPolicy(
             QComboBox.AdjustToMinimumContentsLengthWithIcon)
-        wid.setPlaceholderText('--auto--')
-        self._saw_dataset = False
         self._init_choices(wid)
         return wid
 
     def _init_from_spec(self, spec: Dict) -> None:
-        if spec.get('dataset', _NoValue) in (_NoValue, None):
-            # we have items, and no context change evidence exists
+        wid = self.input_widget
+        if wid and wid.count() and spec.get('dataset', _NoValue) is _NoValue:
+            # we have items and no context change is required
             return
-        self._saw_dataset = True
-        self._init_choices(
-            self.input_widget,
-            spec['dataset'] if spec['dataset'] != _NoValue else None)
+
+        # reset first
+        dataset = None if spec.get('dataset', _NoValue) in (_NoValue, None) \
+            else Dataset(spec['dataset'])
+        self._init_choices(wid, dataset)
 
     def _init_choices(self, wid, dataset=None):
-        # the dataset has changed: query!
-        # reset first
+        oldchoice = wid.currentText()
         wid.clear()
-        from datalad_next.credman import CredentialManager
-        from datalad.support.exceptions import (
-            CapturedException,
-            NoDatasetFound,
-        )
-        wid.addItem('')
-        try:
-            credman = CredentialManager(
-                require_dataset(dataset).config if dataset else dlcfg)
-            wid.addItems(i[0] for i in credman.query())
-        except NoDatasetFound as e:
-            CapturedException(e)
-            # TODO this should happen upon validation of the
-            # `dataset` parameter value
-            QMessageBox.critical(
-                self,
-                'No dataset selected',
-                'The path selected for the <code>dataset</code> parameter '
-                'does not point to a valid dataset. '
-                'Please select another path!'
-            )
-            self._saw_dataset = False
+        self.tailor_constraint_to_dataset(dataset)
+        for c in self.get_constraint()._allowed:
+            self._add_item(wid, c)
+        if wid.count():
+            wid.setEnabled(True)
+            if oldchoice in self.get_constraint()._allowed:
+                # reset old value after reinit, avoids jumpy behavior
+                self._set_in_widget(wid, oldchoice)
 
     def _set_in_widget(self, wid: QWidget, value: Any) -> None:
         if value == _NoValue:
-            wid.clear()
+            wid.clearEditText()
             return
-        wid.setCurrentText(value or '')
+        if value:
+            wid.setCurrentText(value)
+        else:
+            wid.clearEditText()
 
     def _handle_input(self):
-        self.set(self.input_widget.currentText() or _NoValue)
+        wid = self.input_widget
+        if not wid:
+            return
+        choice = wid.currentText()
+        # an empty thing is None
+        self.set(None if not choice else choice, set_in_widget=False)
+
+    def can_present_None(self):
+        return True

@@ -148,12 +148,20 @@ class GooeyDataladCmdUI(QObject):
                 param.get_constraint()(candidate)
                 if label_text.endswith(invalid_suffix):
                     label.setText(label_text[:-len(invalid_suffix)])
-            except Exception:
-                # TODO annotate display label with a marker that the validator
+                    # expensive, but reliable, reset tooltip
+                    label.setToolTip(
+                        label.toolTip().split(
+                            ' ~ value not valid: ', maxsplit=1)[0])
+            except Exception as e:
+                # annotate display label with a marker that the validator
                 # failed
                 # if anything is not right, block command execution
                 if not label_text.endswith(invalid_suffix):
                     label.setText(f"{label_text}{invalid_suffix}")
+                    # communicate exception via tooltip
+                    # users can hover over the (!) and get a hint
+                    label.setToolTip(
+                            f'{label.toolTip()} ~ value not valid: {e}')
                 ok_pb.setDisabled(True)
                 failed = True
         if not failed:
