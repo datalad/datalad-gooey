@@ -491,7 +491,7 @@ class EnsureConfigProcedureName(EnsureChoice):
     def for_dataset(self, dataset: Dataset):
         if not dataset.is_installed():
             return self
-        return EnsureChoice(*self._get_procs_(dataset))
+        return EnsureChoice(*self._get_choices_(dataset))
 
     def _get_choices_(self, dataset: Dataset = None):
         from datalad.local.run_procedure import RunProcedure
@@ -538,7 +538,7 @@ class EnsureCredentialName(EnsureChoice):
     def for_dataset(self, dataset: Dataset):
         if not dataset.is_installed():
             return self
-        return EnsureChoice(*self._get_procs_(dataset))
+        return EnsureChoice(*self._get_choices_(dataset))
 
     def _get_choices_(self, dataset: Dataset = None):
         from datalad_next.credman import CredentialManager
