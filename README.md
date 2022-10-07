@@ -60,9 +60,6 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center"><a href="https://github.com/christian-monch"><img src="https://avatars.githubusercontent.com/u/17925232?v=4?s=100" width="100px;" alt="Christian Mönch"/><br /><sub><b>Christian Mönch</b></sub></a><br /><a href="https://github.com/datalad/datalad-gooey/commits?author=christian-monch" title="Code">💻</a></td>
     </tr>
   </tbody>
-  <tfoot>
-    
-  </tfoot>
 </table>
 
 <!-- markdownlint-restore -->
