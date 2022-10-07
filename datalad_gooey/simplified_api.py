@@ -169,7 +169,8 @@ api = dict(
             credential=7,
         ),
         parameter_constraints=dict(
-            name=EnsureStrOrNoneWithEmptyIsNone()
+            name=EnsureStrOrNoneWithEmptyIsNone(),
+            url=EnsureStr(min_len=len('http://e.c')),
         ),
     ),
     drop=dict(
