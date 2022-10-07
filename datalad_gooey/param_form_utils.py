@@ -188,7 +188,7 @@ def _get_parameter(
             # force our own constraint. DataLad's EnsureDataset
             # does not handle Path objects
             # https://github.com/datalad/datalad/issues/7069
-            constraint=EnsureDataset(),
+            constraint=EnsureDataset() | EnsureNone(),
         )
         custom_param_init_kwargs.update(
             pathtype=QFileDialog.Directory,
