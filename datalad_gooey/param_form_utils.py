@@ -149,6 +149,9 @@ def populate_form_w_params(
 # or the API of the active_suite should override this
 # already
 override_constraint_by_param_name = {
+    # force our own constraint. DataLad's EnsureDataset
+    # does not handle Path objects
+    # https://github.com/datalad/datalad/issues/7069
     'dataset': EnsureDataset(),
     'path': EnsurePath(),
     'credential': EnsureCredentialName(allow_none=True, allow_new=True),
@@ -173,17 +176,6 @@ def _get_comprehensive_constraint(
         else override_constraint_by_param_name.get(
             pname,
             param_spec.constraints)
-
-    print("CONST", pname, constraint)
-
-    if isinstance(constraint, CoreEnsureDataset):
-        print("NAME", pname)
-        if not isinstance(constraint, EnsureDataset):
-            print("BINGO")
-        # force our own constraint. DataLad's EnsureDataset
-        # does not handle Path objects
-        # https://github.com/datalad/datalad/issues/7069
-        constraint = EnsureDataset()
 
     if not constraint:
         if action in ('store_true', 'store_false'):
@@ -225,6 +217,9 @@ def _get_comprehensive_constraint(
             list, constraint, min_len=nargs, max_len=nargs)
     elif nargs == '*':
         # sequence of any length, but always a sequence
+        #constraint = EnsureIterableOf(list, constraint)
+        # XXX yeah, not quite. datalad expects things often to also
+        # work for a single item
         constraint = EnsureIterableOf(list, constraint)
     elif nargs == '+':
         # sequence of at least 1 item, always a sequence
@@ -296,7 +291,6 @@ def _get_parameter(
             basedir=basedir,
         )
     elif isinstance(constraint, EnsureCredentialName):
-        print("CHOICE")
         type_widget = pw.CredentialChoiceParameter
     elif constraint == EnsureInt() & EnsureRange(min=0):
         type_widget = pw.PosIntParameter

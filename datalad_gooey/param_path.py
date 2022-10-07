@@ -51,6 +51,16 @@ class PathParameter(GooeyCommandParameter):
         # treat an empty path as None
         self.set(val if val else None)
 
+    def can_present_None(self):
+        return True
+
+    def set(self, value, set_in_widget=True):
+        # re-implement, because we want to treat `None` like `_NoValue`
+        # consistently
+        if value is None:
+            value = _NoValue
+        super().set(value, set_in_widget=set_in_widget)
+
     def _set_in_widget(self, wid: QWidget, value: Any) -> None:
         if value and value is not _NoValue:
             # TODO this could use some abstraction on the widget side
@@ -190,7 +200,7 @@ class PathParamWidget(QWidget):
                 # if the selection was canceled, clear the path,
                 # otherwise users have no ability to unset a previous
                 # selection
-                self._param._set_in_widget(_NoValue)
+                self._param._set_in_widget(self._param.input_widget, _NoValue)
             # otherwise just keep the present value as-is
             return
         dialog = self.sender()
