@@ -149,7 +149,9 @@ class GooeyDataladCmdUI(QObject):
                 if label_text.endswith(invalid_suffix):
                     label.setText(label_text[:-len(invalid_suffix)])
                     # expensive, but reliable, reset tooltip
-                    label.setToolTip(param.get_display_label().toolTip())
+                    label.setToolTip(
+                        label.toolTip().split(
+                            ' ~ value not valid: ', maxsplit=1)[0])
             except Exception as e:
                 # annotate display label with a marker that the validator
                 # failed
@@ -158,7 +160,8 @@ class GooeyDataladCmdUI(QObject):
                     label.setText(f"{label_text}{invalid_suffix}")
                     # communicate exception via tooltip
                     # users can hover over the (!) and get a hint
-                    label.setToolTip(str(e))
+                    label.setToolTip(
+                            f'{label.toolTip()} ~ value not valid: {e}')
                 ok_pb.setDisabled(True)
                 failed = True
         if not failed:
