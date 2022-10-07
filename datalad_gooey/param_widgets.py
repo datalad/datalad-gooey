@@ -148,6 +148,10 @@ class BoolParameter(GooeyCommandParameter):
         cb.stateChanged.connect(self._handle_input)
         return cb
 
+    def can_present_None(self):
+        # generally yes, due to the way _set_in_widget() is implemented
+        return True
+
     def _set_in_widget(self, wid: QWidget, value: Any) -> None:
         if value not in (True, False):
             # if the value is not representable by a checkbox
