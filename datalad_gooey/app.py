@@ -53,6 +53,7 @@ from .fsbrowser import GooeyFilesystemBrowser
 from .resource_provider import gooey_resources
 from . import utility_actions as ua
 from . import credentials as cred
+from .metadata_widget import MetadataWidget
 
 lgr = logging.getLogger('datalad.ext.gooey.app')
 
@@ -65,6 +66,7 @@ class GooeyQMainWindow(QMainWindow):
         'contextTabs': QTabWidget,
         'cmdTab': QWidget,
         'metadataTab': QWidget,
+        'metadataTabWidget': MetadataWidget,
         'helpBrowser': QTextBrowser,
         'propertyBrowser': QTextBrowser,
         'fsBrowser': QTreeWidget,
@@ -157,7 +159,7 @@ class GooeyApp(QObject):
 
         self._dlapi = None
         self._main_window : GooeyQMainWindow = \
-            load_ui('main_window', custom_widgets=[GooeyQMainWindow])
+            load_ui('main_window', custom_widgets=[GooeyQMainWindow, MetadataWidget])
         self._cmdexec = GooeyDataladCmdExec()
         self._cmdui = GooeyDataladCmdUI(self, self.get_widget('cmdTab'))
 
@@ -344,6 +346,22 @@ class GooeyApp(QObject):
     @property
     def rootpath(self):
         return self._path
+
+    def _edit_metadata(self):
+        """Private slot to pull up a metadata editor"""
+        action = self.sender()
+        if action is not None:
+            path, metadata_type = action.data()
+        if path is None or metadata_type is None:
+            raise ValueError(
+                'MetadataWidget.setup_for() called without a path or metadata '
+                'type specifier')
+
+        tab = self.get_widget('metadataTab')
+        metadata_widget = self.get_widget('metadataTabWidget')
+        metadata_widget.setup_for(path=path, metadata_type=metadata_type)
+        # open the metadata tab
+        self.get_widget('contextTabs').setCurrentWidget(tab)
 
     def _populate_datalad_menu(self):
         """Private slot to populate connected QMenus with dataset actions"""

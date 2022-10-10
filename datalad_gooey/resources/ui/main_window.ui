@@ -113,6 +113,11 @@
          <attribute name="title">
           <string>Metadata</string>
          </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_5">
+          <item>
+           <widget class="MetadataWidget" name="metadataTabWidget" native="true"/>
+          </item>
+         </layout>
         </widget>
         <widget class="QWidget" name="propertiesTab">
          <attribute name="title">
@@ -379,6 +384,14 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>MetadataWidget</class>
+   <extends>QWidget</extends>
+   <header>datalad_gooey.metadata_widget</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>

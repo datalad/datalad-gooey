@@ -482,6 +482,12 @@ class GooeyFilesystemBrowser(QObject):
             setbase.triggered.connect(self._app._set_root_path)
             context.addAction(setbase)
 
+        if path_type == 'annexed-file':
+            meta = QAction('&Metadata...', context)
+            meta.setData((ipath, 'git-annex'))
+            meta.triggered.connect(self._app._edit_metadata)
+            context.addAction(meta)
+
         if item == self._root_item:
             # for now this is the same as resetting the base to the same
             # root -- but later it could be more clever
