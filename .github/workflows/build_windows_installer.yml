@@ -19,10 +19,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-      - name: Checkout released code
+      - name: Checkout repository with build specs
         uses: actions/checkout@v3
-        with:
-          ref: ${{ steps.get_release.outputs.tag_name }}
 
       - name: Build installer
         run: |
