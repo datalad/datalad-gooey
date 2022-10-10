@@ -1,7 +1,7 @@
 # Workflow to build installer on windows. Workflow runs when manually
 # triggered using the UI or API.
 
-name: Build Windows Installer for the Latest Release
+name: Build Windows Installer
 
 on:
   workflow_dispatch:
@@ -20,6 +20,17 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+      - name: Get latest release info
+        id: get_release
+        run: |
+          $result = Invoke-WebRequest `
+            -UseBasicParsing `
+            https://api.github.com/repos/datalad/datalad-gooey/releases/latest `
+            |ConvertFrom-Json
+          $upload_url = $result.upload_url
+          echo "Upload URL: $upload_url"
+          echo "upload_url=$upload_url" >> ${env:GITHUB_ENV}
+
       - name: Checkout repository with build specs
         uses: actions/checkout@v3
 
@@ -32,18 +43,12 @@ jobs:
           echo "build_id=$build_branch" >> ${env:GITHUB_ENV}
         shell: powershell
 
-      - name: Get latest release info
-        id: get_release
-        uses: bruceadams/get-release@v1.2.2
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-
       - name: Upload installer artifact
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
-          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          upload_url: ${{ env.upload_url }}
           asset_path: tools\installer_building\datalad-gooey-installer-amd64.exe
           asset_name: datalad-gooey-${{ env.build_id }}-installer-amd64.exe
           asset_content_type: application/vnd.microsoft.portable-executable
