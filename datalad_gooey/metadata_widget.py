@@ -21,8 +21,10 @@ class MetadataWidget(QWidget):
     def __init__(self, parent):
         super().__init__(parent)
         layout = QVBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
         # title
+        # TODO request a title from the metadata editor
         label = QLabel('META!')
         layout.addWidget(label)
         # path and metadata-type selector
@@ -67,6 +69,7 @@ class MetadataWidget(QWidget):
         self.__path_edit.setText(str(path))
 
         editor = editor_type(self)
+        editor.set_path(path)
         # locate any previous editor widget (second to last in layout)
         prev_editor_widget = self.layout().itemAt(
             self.layout().count() - 2).widget()
