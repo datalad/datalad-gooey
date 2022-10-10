@@ -149,6 +149,10 @@ class FSBrowserItem(QTreeWidgetItem):
             # show an expansion indiciator, even when we do not have
             # children in the item yet
             self.setChildIndicatorPolicy(QTreeWidgetItem.ShowIndicator)
+        else:
+            # set performance-related flag indicating that never-ever
+            # can this item have children
+            self.setFlags(self.flags() | Qt.ItemNeverHasChildren)
 
         if path_type == 'directory':
             # a regular directory with proper permissions has no state
