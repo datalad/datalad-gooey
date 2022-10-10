@@ -64,6 +64,7 @@ class GooeyQMainWindow(QMainWindow):
     _widgets = {
         'contextTabs': QTabWidget,
         'cmdTab': QWidget,
+        'metadataTab': QWidget,
         'helpBrowser': QTextBrowser,
         'propertyBrowser': QTextBrowser,
         'fsBrowser': QTreeWidget,

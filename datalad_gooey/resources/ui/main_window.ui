@@ -109,6 +109,11 @@
           </item>
          </layout>
         </widget>
+        <widget class="QWidget" name="metadataTab">
+         <attribute name="title">
+          <string>Metadata</string>
+         </attribute>
+        </widget>
         <widget class="QWidget" name="propertiesTab">
          <attribute name="title">
           <string>Properties</string>
