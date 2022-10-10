@@ -3,7 +3,14 @@
 
 name: Build Windows Installer for the Latest Release
 
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      revision:
+        description: 'Git revision (reference, branch, or tag) of datalad-gooey which should be built'
+        required: true
+        default: 'main'
+        type: string
 
 jobs:
 
@@ -13,24 +20,23 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - name: Get latest release info
-        id: get_release
-        uses: bruceadams/get-release@v1.2.2
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-
       - name: Checkout repository with build specs
         uses: actions/checkout@v3
 
       - name: Build windows 64-bit installer
         run: |
           cd tools\installer_building
-          $build_out = .\build_windows_installer.ps1 ${{ steps.get_release.outputs.tag_name }}
-          $build_time = Get-Date -format yyyyMMddHHmm
+          $build_out = .\build_windows_installer.ps1 ${{ inputs.revision }}
           $build_branch = echo $build_out|Select-String -Pattern "installed_version:"
           $build_branch = $build_branch.ToString().Substring(19)
           echo "build_id=$build_branch" >> ${env:GITHUB_ENV}
         shell: powershell
+
+      - name: Get latest release info
+        id: get_release
+        uses: bruceadams/get-release@v1.2.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Upload installer artifact
         uses: actions/upload-release-asset@v1
@@ -39,5 +45,5 @@ jobs:
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: tools\installer_building\datalad-gooey-installer-amd64.exe
-          asset_name: datalad-gooey-installer-${{ steps.get_release.outputs.tag_name }}-amd64.exe
+          asset_name: datalad-gooey-${{ env.build_id }}-installer-amd64.exe
           asset_content_type: application/vnd.microsoft.portable-executable
