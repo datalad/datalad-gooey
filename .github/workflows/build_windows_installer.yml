@@ -27,9 +27,9 @@ jobs:
             -UseBasicParsing `
             https://api.github.com/repos/datalad/datalad-gooey/releases/latest `
             |ConvertFrom-Json
-          $url = $result.upload_url       
-          $url = $url.Substring(0, $url.IndexOf("{?"))
-          echo "upload_url=$url" >> ${env:GITHUB_ENV}
+          $upload_url = $result.upload_url
+          echo "Upload URL: $upload_url"
+          echo "upload_url=$upload_url" >> ${env:GITHUB_ENV}
 
       - name: Checkout repository with build specs
         uses: actions/checkout@v3
