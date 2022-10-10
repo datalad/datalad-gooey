@@ -28,7 +28,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Build installer
+      - name: Build windows 64-bit installer
         run: |
           cd tools\installer_building
           $build_out = .\build_windows_installer.ps1 ${{ inputs.revision }}
