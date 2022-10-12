@@ -316,6 +316,10 @@ class ItemWidget(QWidget):
             pixmap = QPixmap(0, 0)
         else:
             pixmap = self.style().standardPixmap(stdpixmap)
+        # shrink the standard pixmap to the height of the editor
+        # if it happens to be humongous in some platform
+        if pixmap.size().height() > self.__editor.size().height():
+            pixmap = pixmap.scaledToHeight(self.__editor.size().height())
         self.__state_label.setPixmap(pixmap)
 
         if not tooltip:
