@@ -482,8 +482,8 @@ class GooeyApp(QObject):
     def eventFilter(self, watched, event):
         if event.type() == QEvent.Close and watched is self.main_window:
             self._store_configuration()
-            return False
-        elif event.type() == QEvent.Destroy:
+            return super().eventFilter(watched, event)
+        elif event.type() in (QEvent.Destroy, QEvent.ChildRemoved):
             # must catch this one or the access of `watched` in the `else`
             # will crash the app, because it is already gone
             return False
