@@ -515,6 +515,10 @@ class GooeyApp(QObject):
 
 
 def main():
+    # must set this flag to make Qt WebEngine initialize properly
+    from PySide6 import QtCore
+    QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
+
     qtapp = QApplication(sys.argv)
     gooey = GooeyApp()
     gooey.main_window.show()
