@@ -23,23 +23,23 @@ class CatalogMetadataWebEditor(MetadataEditor):
         layout = QVBoxLayout()
         self.setLayout(layout)
         browser = QWebEngineView(parent)
-        # browser.page().profile().downloadRequested.connect(
-        #     self._download_requested
-        # )
-        # remote_url = "https://datalad.github.io/datalad-catalog/metadata-entry.html"
-        # browser.setUrl(QUrl(remote_url))
-        # layout.addWidget(browser)
+        browser.page().profile().downloadRequested.connect(
+            self._download_requested
+        )
+        remote_url = "https://datalad.github.io/datalad-catalog/metadata-entry.html"
+        browser.setUrl(QUrl(remote_url))
+        layout.addWidget(browser)
 
     def set_path(self, path: Path):
         pass
 
-    # @Slot()
-    # def _download_requested(self, download):
-    #     old_path = download.url().path()  # download.path()
-    #     suffix = QFileInfo(old_path).suffix()
-    #     path, _ = QFileDialog.getSaveFileName(
-    #         self, "Save File", old_path, "*." + suffix
-    #     )
-    #     if path:
-    #         download.setPath(path)
-    #         download.accept()
+    @Slot()
+    def _download_requested(self, download):
+        old_path = download.url().path()  # download.path()
+        suffix = QFileInfo(old_path).suffix()
+        path, _ = QFileDialog.getSaveFileName(
+            self, "Save File", old_path, "*." + suffix
+        )
+        if path:
+            download.setPath(path)
+            download.accept()
