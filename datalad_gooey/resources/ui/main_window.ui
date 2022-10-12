@@ -154,7 +154,7 @@
        <property name="currentIndex">
         <number>0</number>
        </property>
-       <widget class="QWidget" name="tabCommandLog">
+       <widget class="QWidget" name="commandLogTab">
         <attribute name="title">
          <string>Command log</string>
         </attribute>
