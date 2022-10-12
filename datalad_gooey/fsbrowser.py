@@ -493,6 +493,14 @@ class GooeyFilesystemBrowser(QObject):
             setbase.triggered.connect(self._app._set_root_path)
             context.addAction(setbase)
 
+        # TODO: generalize dataset metadata entry
+        if path_type == 'dataset':
+            from .custom_metadata import CustomMetadataWebEditor
+            meta = QAction('&Metadata...', context)
+            meta.setData((ipath, CustomMetadataWebEditor))
+            meta.triggered.connect(self._app._edit_metadata)
+            context.addAction(meta)
+
         if path_type == 'annexed-file':
             from .annex_metadata import AnnexMetadataEditor
             meta = QAction('&Metadata...', context)
