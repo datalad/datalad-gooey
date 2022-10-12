@@ -257,13 +257,6 @@ class GooeyApp(QObject):
         if not self._cmdexec.n_running:
             self.main_window.setCursor(QCursor(Qt.ArrowCursor))
 
-    def deinit(self):
-        dlui.ui.set_backend(self._prev_ui_backend)
-        # restore any possible term prompt setup
-        for var, val in self._restore_env.items():
-            if val is not None:
-                environ[var] = val
-
     #@cached_property not available for PY3.7
     @property
     def main_window(self):
@@ -482,6 +475,12 @@ class GooeyApp(QObject):
     def eventFilter(self, watched, event):
         if event.type() == QEvent.Close and watched is self.main_window:
             self._store_configuration()
+            # undo UI backend
+            dlui.ui.set_backend(self._prev_ui_backend)
+            # restore any possible term prompt setup
+            for var, val in self._restore_env.items():
+                if val is not None:
+                    environ[var] = val
             return super().eventFilter(watched, event)
         elif event.type() in (QEvent.Destroy, QEvent.ChildRemoved):
             # must catch this one or the access of `watched` in the `else`

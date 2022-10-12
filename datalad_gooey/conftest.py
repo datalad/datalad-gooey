@@ -16,11 +16,7 @@ def get_headless_qtapp():
 
 @pytest.fixture(scope="function")
 def gooey_app(tmp_path):
-    try:
-        gooey = GooeyApp(tmp_path)
-        # maybe leave that to a caller?
-        gooey.main_window.show()
-        yield gooey
-    finally:
-        if gooey is not None:
-            gooey.deinit()
+    gooey = GooeyApp(tmp_path)
+    # maybe leave that to a caller?
+    gooey.main_window.show()
+    yield gooey

@@ -84,9 +84,6 @@ class Gooey(Interface):
         # capture Qt's own exit code for error reporting
         qt_exitcode = qtapp.exec()
 
-        # tell the app to undo its modifications (UI redirection etc.)
-        gooey.deinit()
-
         yield get_status_dict(
             action='gooey',
             path=str(gooey.rootpath),
