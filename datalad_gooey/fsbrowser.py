@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QTreeWidget,
     QTreeWidgetItem,
+    QWidget,
 )
 
 from datalad.interface.base import Interface
@@ -452,7 +453,6 @@ class GooeyFilesystemBrowser(QObject):
             else:
                 pbrowser.setText(f'No information on {ipath}')
 
-
     def _custom_context_menu(self, onpoint):
         """Present a context menu for the item click in the directory browser
         """
@@ -470,53 +470,24 @@ class GooeyFilesystemBrowser(QObject):
             # to happen)
             return
         ipath = item.pathobj
-        cmdkwargs = dict()
         context = QMenu(parent=self._tree)
 
-        def _check_add_api_submenu(title, api):
-            if not api:
-                return
-            submenu = context.addMenu(title)
-            add_cmd_actions_to_menu(
-                self._tree, self._app._cmdui.configure,
-                api,
-                submenu,
-                cmdkwargs,
-            )
-
-        if path_type == 'dataset':
-            cmdkwargs['dataset'] = ipath
-            from .active_suite import dataset_api
-            _check_add_api_submenu('Dataset commands', dataset_api)
-        elif path_type == 'directory':
-            dsroot = get_dataset_root(ipath)
-            # path the directory path to the command's `path` argument
-            cmdkwargs['path'] = ipath
-            if dsroot:
-                # also pass dsroot
-                cmdkwargs['dataset'] = dsroot
-                from .active_suite import directory_in_ds_api as cmdapi
-            else:
-                from .active_suite import directory_api as cmdapi
-            _check_add_api_submenu('Directory commands', cmdapi)
-        elif path_type in ('file', 'symlink', 'annexed-file'):
-            dsroot = get_dataset_root(ipath)
-            cmdkwargs['path'] = ipath
-            if dsroot:
-                cmdkwargs['dataset'] = dsroot
-                if path_type == 'annexed-file':
-                    from .active_suite import annexed_file_api as cmdapi
-                else:
-                    from .active_suite import file_in_ds_api as cmdapi
-            else:
-                from .active_suite import file_api as cmdapi
-            _check_add_api_submenu('File commands', cmdapi)
+        # test for and populate with select command actions matching this path
+        _populate_context_cmds(
+            context, path_type, ipath, self._tree, self._app._cmdui.configure)
 
         if path_type in ('directory', 'dataset'):
             setbase = QAction('Set &base directory here', context)
             setbase.setData(ipath)
             setbase.triggered.connect(self._app._set_root_path)
             context.addAction(setbase)
+
+        if path_type == 'annexed-file':
+            from .annex_metadata import AnnexMetadataEditor
+            meta = QAction('&Metadata...', context)
+            meta.setData((ipath, AnnexMetadataEditor))
+            meta.triggered.connect(self._app._edit_metadata)
+            context.addAction(meta)
 
         if item == self._root_item:
             # for now this is the same as resetting the base to the same
@@ -529,3 +500,52 @@ class GooeyFilesystemBrowser(QObject):
         if not context.isEmpty():
             # present the menu at the clicked point
             context.exec(self._tree.viewport().mapToGlobal(onpoint))
+
+
+def _populate_context_cmds(
+        context: QMenu,
+        path_type: str,
+        path: Path,
+        parent: QWidget,
+        receiver: callable):
+
+    cmdkwargs = dict()
+
+    def _check_add_api_submenu(title, api):
+        if not api:
+            return
+        submenu = context.addMenu(title)
+        add_cmd_actions_to_menu(
+            parent, receiver,
+            api,
+            submenu,
+            cmdkwargs,
+        )
+
+    if path_type == 'dataset':
+        cmdkwargs['dataset'] = path
+        from .active_suite import dataset_api
+        _check_add_api_submenu('Dataset commands', dataset_api)
+    elif path_type == 'directory':
+        dsroot = get_dataset_root(path)
+        # path the directory path to the command's `path` argument
+        cmdkwargs['path'] = path
+        if dsroot:
+            # also pass dsroot
+            cmdkwargs['dataset'] = dsroot
+            from .active_suite import directory_in_ds_api as cmdapi
+        else:
+            from .active_suite import directory_api as cmdapi
+        _check_add_api_submenu('Directory commands', cmdapi)
+    elif path_type in ('file', 'symlink', 'annexed-file'):
+        dsroot = get_dataset_root(path)
+        cmdkwargs['path'] = path
+        if dsroot:
+            cmdkwargs['dataset'] = dsroot
+            if path_type == 'annexed-file':
+                from .active_suite import annexed_file_api as cmdapi
+            else:
+                from .active_suite import file_in_ds_api as cmdapi
+        else:
+            from .active_suite import file_api as cmdapi
+        _check_add_api_submenu('File commands', cmdapi)

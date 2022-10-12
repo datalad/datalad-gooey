@@ -109,6 +109,35 @@
           </item>
          </layout>
         </widget>
+        <widget class="QWidget" name="metadataTab">
+         <attribute name="title">
+          <string>Metadata</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_5">
+          <item>
+           <widget class="QScrollArea" name="scrollArea">
+            <property name="widgetResizable">
+             <bool>true</bool>
+            </property>
+            <widget class="QWidget" name="scrollAreaWidgetContents">
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>0</y>
+               <width>428</width>
+               <height>263</height>
+              </rect>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_6">
+              <item>
+               <widget class="MetadataWidget" name="metadataTabWidget" native="true"/>
+              </item>
+             </layout>
+            </widget>
+           </widget>
+          </item>
+         </layout>
+        </widget>
         <widget class="QWidget" name="propertiesTab">
          <attribute name="title">
           <string>Properties</string>
@@ -125,7 +154,7 @@
        <property name="currentIndex">
         <number>0</number>
        </property>
-       <widget class="QWidget" name="tabCommandLog">
+       <widget class="QWidget" name="commandLogTab">
         <attribute name="title">
          <string>Command log</string>
         </attribute>
@@ -224,7 +253,7 @@
          </item>
         </layout>
        </widget>
-       <widget class="QWidget" name="tabHelp">
+       <widget class="QWidget" name="helpTab">
         <attribute name="title">
          <string>Help</string>
         </attribute>
@@ -374,6 +403,14 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>MetadataWidget</class>
+   <extends>QWidget</extends>
+   <header>datalad_gooey.metadata_widget</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>

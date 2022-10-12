@@ -53,6 +53,7 @@ from .fsbrowser import GooeyFilesystemBrowser
 from .resource_provider import gooey_resources
 from . import utility_actions as ua
 from . import credentials as cred
+from .metadata_widget import MetadataWidget
 
 lgr = logging.getLogger('datalad.ext.gooey.app')
 
@@ -63,7 +64,12 @@ class GooeyQMainWindow(QMainWindow):
     # up widget (e.g. to connect their signals/slots)
     _widgets = {
         'contextTabs': QTabWidget,
+        'consoleTabs': QTabWidget,
         'cmdTab': QWidget,
+        'commandLogTab': QWidget,
+        'metadataTab': QWidget,
+        'metadataTabWidget': MetadataWidget,
+        'helpTab': QWidget,
         'helpBrowser': QTextBrowser,
         'propertyBrowser': QTextBrowser,
         'fsBrowser': QTreeWidget,
@@ -156,7 +162,7 @@ class GooeyApp(QObject):
 
         self._dlapi = None
         self._main_window : GooeyQMainWindow = \
-            load_ui('main_window', custom_widgets=[GooeyQMainWindow])
+            load_ui('main_window', custom_widgets=[GooeyQMainWindow, MetadataWidget])
         self._cmdexec = GooeyDataladCmdExec()
         self._cmdui = GooeyDataladCmdUI(self, self.get_widget('cmdTab'))
 
@@ -236,6 +242,10 @@ class GooeyApp(QObject):
         self._connect_menu_view(self.get_widget('menuView'))
 
     def _setup_ongoing_cmdexec(self, thread_id, cmdname, cmdargs, exec_params):
+        # bring console tab to the front
+        self.get_widget('consoleTabs').setCurrentWidget(
+            self.get_widget('commandLogTab'))
+
         self.get_widget('statusbar').showMessage(f'Started `{cmdname}`')
         self.main_window.setCursor(QCursor(Qt.BusyCursor))
         # and give a persistent visual indication of what exactly is happening
@@ -343,6 +353,30 @@ class GooeyApp(QObject):
     @property
     def rootpath(self):
         return self._path
+
+    def _edit_metadata(self):
+        """Private slot to pull up a metadata editor"""
+        action = self.sender()
+        if action is not None:
+            path, editor_type = action.data()
+        if path is None or editor_type is None:
+            raise ValueError(
+                'MetadataWidget.setup_for() called without a path or metadata '
+                'editor type')
+
+        tab = self.get_widget('metadataTab')
+        metadata_widget = self.get_widget('metadataTabWidget')
+        metadata_widget.setup_for(path=path, editor_type=editor_type)
+        self.show_help(metadata_widget.get_doc_text())
+        # open the metadata tab
+        self.get_widget('contextTabs').setCurrentWidget(tab)
+
+    def show_help(self, text: str):
+        hbrowser = self.get_widget('helpBrowser')
+        hbrowser.setPlainText(text)
+        # bring help tab to the front
+        self.get_widget('consoleTabs').setCurrentWidget(
+            self.get_widget('helpTab'))
 
     def _populate_datalad_menu(self):
         """Private slot to populate connected QMenus with dataset actions"""

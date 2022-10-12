@@ -205,14 +205,10 @@ class GooeyDataladCmdUI(QObject):
         # get the matching callable from the DataLad API
         cmd = getattr(dlapi, cmdname)
         cmd_cls = get_wrapped_class(cmd)
-        hbrowser = self._app.get_widget('helpBrowser')
         # TODO we could use the sphinx RST parser to convert the docstring
-        # into html and do
-        #hbrowser.setHtml()
+        # into html and do .setHtml()
         # but it would have to be the sphinx one, plain docutils is not
         # enough.
         # waiting to be in the right mood for diving into the twisted world
         # of sphinx again
-        hbrowser.setPlainText(
-            format_cmd_docs(cmd_cls.__doc__)
-        )
+        self._app.show_help(format_cmd_docs(cmd_cls.__doc__))
