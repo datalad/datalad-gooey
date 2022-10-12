@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QLabel,
     QVBoxLayout,
+    QSizePolicy,
 )
 
 from .metadata_editor_base import MetadataEditor
@@ -28,6 +29,9 @@ class CatalogMetadataWebEditor(MetadataEditor):
         )
         remote_url = "https://datalad.github.io/datalad-catalog/metadata-entry.html"
         browser.setUrl(QUrl(remote_url))
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        sizePolicy.setVerticalPolicy(QSizePolicy.MinimumExpanding)
+        browser.setSizePolicy(sizePolicy)
         layout.addWidget(browser)
 
     def set_path(self, path: Path):
