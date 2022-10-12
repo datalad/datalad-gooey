@@ -122,9 +122,6 @@ class GooeyApp(QObject):
         self._setup_looknfeel()
 
         self._dlapi = None
-        self._main_window = \
-            load_ui('main_window', custom_widgets=[MetadataWidget])
-        self._main_window.installEventFilter(self)
         self._cmdexec = GooeyDataladCmdExec()
         self._cmdui = GooeyDataladCmdUI(self, self.get_widget('cmdTab'))
 
@@ -269,13 +266,23 @@ class GooeyApp(QObject):
     #@cached_property not available for PY3.7
     @property
     def main_window(self):
-        return self._main_window
+        if self.__main_window is None:
+            self.__main_window = load_ui(
+                'main_window',
+                custom_widgets=[
+                    MetadataWidget,
+                ]
+            )
+            # hook into all events that the main window receives
+            # e.g. to catch close events and store window configuration
+            self.__main_window.installEventFilter(self)
+        return self.__main_window
 
     def get_widget(self, name: str) -> QWidget:
         wgt_cls = self._widgets.get(name)
         if not wgt_cls:
             raise ValueError(f"Unknown widget {name}")
-        wgt = cast(QWidget, self._main_window.findChild(wgt_cls, name=name))
+        wgt = cast(QWidget, self.main_window.findChild(wgt_cls, name=name))
         if not wgt:
             # if this happens, our internal _widgets is out of sync
             # with the UI declaration
@@ -450,7 +457,7 @@ class GooeyApp(QObject):
             suite_menu.addAction(action)
 
     def _restore_configuration(self) -> None:
-        mw = self._main_window
+        mw = self.main_window
         # Restore prior configuration
         self._qt_settings = QSettings("datalad", self.__class__.__name__)
         mw.restoreGeometry(self._qt_settings.value('geometry'))
