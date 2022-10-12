@@ -351,15 +351,15 @@ class GooeyApp(QObject):
         """Private slot to pull up a metadata editor"""
         action = self.sender()
         if action is not None:
-            path, metadata_type = action.data()
-        if path is None or metadata_type is None:
+            path, editor_type = action.data()
+        if path is None or editor_type is None:
             raise ValueError(
                 'MetadataWidget.setup_for() called without a path or metadata '
-                'type specifier')
+                'editor type')
 
         tab = self.get_widget('metadataTab')
         metadata_widget = self.get_widget('metadataTabWidget')
-        metadata_widget.setup_for(path=path, metadata_type=metadata_type)
+        metadata_widget.setup_for(path=path, editor_type=editor_type)
         # open the metadata tab
         self.get_widget('contextTabs').setCurrentWidget(tab)
 

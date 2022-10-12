@@ -26,6 +26,9 @@ from .flowlayout import FlowLayout
 
 
 class AnnexMetadataEditor(MetadataEditor):
+    # used as the widget title
+    _widget_title = 'Annex metadata'
+
     def __init__(self, parent):
         super().__init__(parent)
 
@@ -59,6 +62,7 @@ class AnnexMetadataEditor(MetadataEditor):
         bbx.accepted.connect(self._save_metadata)
         self.__bbx = bbx
         editor_layout.addWidget(bbx)
+        editor_layout.addStretch()
 
     def set_path(self, path: Path):
         self.__path = path

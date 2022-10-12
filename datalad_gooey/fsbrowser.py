@@ -483,8 +483,9 @@ class GooeyFilesystemBrowser(QObject):
             context.addAction(setbase)
 
         if path_type == 'annexed-file':
+            from .annex_metadata import AnnexMetadataEditor
             meta = QAction('&Metadata...', context)
-            meta.setData((ipath, 'git-annex'))
+            meta.setData((ipath, AnnexMetadataEditor))
             meta.triggered.connect(self._app._edit_metadata)
             context.addAction(meta)
 

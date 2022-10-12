@@ -9,6 +9,11 @@ from PySide6.QtWidgets import (
     QLineEdit,
 )
 
+from .metadata_editor_base import (
+    MetadataEditor,
+    NoMetadataEditor,
+)
+
 
 class MetadataWidget(QWidget):
     """Generic handler for all metadata-type editors/visualizers
@@ -23,64 +28,52 @@ class MetadataWidget(QWidget):
         layout = QVBoxLayout()
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
-        # title
-        # TODO request a title from the metadata editor
-        label = QLabel('META!')
-        layout.addWidget(label)
-        # path and metadata-type selector
+
+        # the actual editor -- no-edit by default
+        self.__editor = NoMetadataEditor(self)
+        # title is provided by the editor
+        layout.addWidget(self.__editor.get_title_widget())
+
+        # path selector
         slayout = QHBoxLayout()
         layout.addLayout(slayout)
-        slayout.addWidget(QLabel("Path"))
+        slayout.addWidget(QLabel("For"))
+        # TODO use proper path selection widget
         path_edit = QLineEdit(self)
-        # for now
+
+        # until suppored, merely use it for display purposed
         path_edit.setDisabled(True)
         self.__path_edit = path_edit
         slayout.addWidget(path_edit)
-        slayout.addStretch()
-        slayout.addWidget(QLabel("Type"))
-        md_select = QComboBox(self)
-        md_select.addItems(['git-annex'])
-        # for now
-        md_select.setDisabled(True)
-        self.__metadatatype_select = md_select
-        slayout.addWidget(md_select)
-        # eventual metadata-editor
-        layout.addWidget(QLabel("Select path and metadata type for editing"))
-        # spacer (in case of a small editor
-        layout.addStretch()
 
-    def setup_for(self, path: Path = None, metadata_type: str = None):
-        if path is None or metadata_type is None:
+        # last, the editor itself
+        layout.addWidget(self.__editor)
+
+    def setup_for(self,
+                  path: Path = None,
+                  editor_type: MetadataEditor = None):
+        if path is None or editor_type is None:
             action = self.sender()
             if action is not None:
                 path, metadata_type = action.data()
-        if path is None or metadata_type is None:
+        if path is None or editor_type is None:
             raise ValueError(
                 'MetadataWidget.setup_for() called without a path or metadata '
                 'type specifier')
 
-        if metadata_type == 'git-annex':
-            from .annex_metadata import AnnexMetadataEditor
-            editor_type = AnnexMetadataEditor
-        else:
-            raise ValueError(f'Unsupported metadata type {metadata_type}')
-
-        self.__metadatatype_select.setCurrentText(metadata_type)
         self.__path_edit.setText(str(path))
 
         editor = editor_type(self)
+        # initialize with the path
         editor.set_path(path)
-        # locate any previous editor widget (second to last in layout)
-        prev_editor_widget = self.layout().itemAt(
-            self.layout().count() - 2).widget()
-        # and replace with the new one
-        old_layout_item = self.layout().replaceWidget(
-            prev_editor_widget,
-            editor,
-        )
-        # gracefully retire the previous editor
-        prev_editor_widget.close()
-        del old_layout_item
-        del prev_editor_widget
-        # show the new one
-        editor.show()
+        # replace old editor components with new ones
+        for old_w, new_w in (
+                (self.__editor.get_title_widget(), editor.get_title_widget()),
+                (self.__editor, editor),
+        ):
+            old_layout_item = self.layout().replaceWidget(old_w, new_w)
+            # gracefully retire
+            old_w.close()
+            del old_layout_item
+        # lastly replace old editor in full and let garbage collection RIP it
+        self.__editor = editor
