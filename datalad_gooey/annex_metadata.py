@@ -7,10 +7,12 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QFormLayout,
     QPushButton,
+    QToolButton,
     QDialogButtonBox,
     QWidget,
     QLineEdit,
     QStyle,
+    QFrame,
 )
 from PySide6.QtGui import (
     QValidator,
@@ -238,7 +240,7 @@ class AnnexMetadataEditor(MetadataEditor):
             layout.removeWidget(item)
 
 
-class ItemWidget(QWidget):
+class ItemWidget(QFrame):
     # track fields for a particular path across all class
     # instances
     _field_tracker = dict()
@@ -259,24 +261,29 @@ class ItemWidget(QWidget):
         items = self._field_tracker[group_id]
         items.add(self)
 
+        self.setFrameStyle(QFrame.StyledPanel)
+        # all components in a horizontal arrangement
         layout = QHBoxLayout()
+        # tight fit
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
-        db = QPushButton(self)
-        db.setIcon(self.style().standardIcon(QStyle.SP_DialogDiscardButton))
-        db.clicked.connect(lambda: editor._discard_item(self))
-        layout.addWidget(db)
+        # edit first
         edit = QLineEdit(self)
         edit.setClearButtonEnabled(True)
-        #edit.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         edit.textChanged.connect(self._on_textchanged)
         edit.editingFinished.connect(self._on_editingfinished)
         edit.setValidator(ItemWidget._validators[group_id])
         layout.addWidget(edit)
         self.__editor = edit
+        # state label
         state = QLabel(self)
         self.__state_label = state
         layout.addWidget(state)
+        # discard button
+        db = QToolButton(self)
+        db.setIcon(self.style().standardIcon(QStyle.SP_DialogDiscardButton))
+        db.clicked.connect(lambda: editor._discard_item(self))
+        layout.addWidget(db)
 
     def closeEvent(self, *args, **kwargs):
         # unregister this item from its parent group
