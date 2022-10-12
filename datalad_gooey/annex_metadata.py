@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 from typing import Any
 
 from PySide6.QtWidgets import (
@@ -171,7 +172,11 @@ class AnnexMetadataEditor(MetadataEditor):
         # field name edit, make the editor itself the parent
         # the items will group themselves by parent to validate as a set
         # within a group
-        fn = ItemWidget(self, self, self, allow_discard=not from_record)
+        fn = ItemWidget(
+            self, self, self,
+            is_field_name=True,
+            allow_discard=not from_record,
+        )
         # layout to contain all field
         flow_layout = FlowLayout()
         flow_layout.setContentsMargins(0, 0, 0, 0)
@@ -259,6 +264,7 @@ class ItemWidget(QFrame):
                  group_id: Any,
                  editor: AnnexMetadataEditor,
                  parent: QWidget,
+                 is_field_name: bool = False,
                  allow_discard: bool = True):
         super().__init__(parent)
         self.__annex_metadata_editor = editor
@@ -266,7 +272,10 @@ class ItemWidget(QFrame):
         if group_id not in ItemWidget._field_tracker:
             items_widgets = set()
             ItemWidget._field_tracker[group_id] = items_widgets
-            ItemWidget._validators[group_id] = SetFieldNameValidator(group_id, editor)
+            ItemWidget._validators[group_id] = \
+                AnnexMetadataFieldNameValidator(group_id, editor) \
+                if is_field_name else \
+                AnnexMetadataValueValidator(group_id, editor)
         # register item in the group of its parent
         items = self._field_tracker[group_id]
         items.add(self)
@@ -358,12 +367,12 @@ class ItemWidget(QFrame):
         self.__editor.setText(value)
 
 
-class SetFieldNameValidator(QValidator):
+class AnnexMetadataValueValidator(QValidator):
     def __init__(self, group_id: Any, parent: QWidget):
         super().__init__(parent)
         self.__group_id = group_id
 
-    def validate(self, input: str, pos: int):
+    def validate(self, input: str, pos: int, compare_lower=False):
         # we cannot ever invalidate, because a user could always
         # enter another char to make it right
         if not input:
@@ -371,13 +380,27 @@ class SetFieldNameValidator(QValidator):
 
         # check all items from this group
         matching_items = sum(
-            input == i.value
+            (input.lower() == i.value.lower()
+             if compare_lower
+             else input == i.value)
             for i in ItemWidget._field_tracker[self.__group_id]
         )
         if matching_items > 1:
             return QValidator.Intermediate
         else:
             return QValidator.Acceptable
+
+
+class AnnexMetadataFieldNameValidator(AnnexMetadataValueValidator):
+    # from https://git-annex.branchable.com/metadata
+    _valid_regex = re.compile('^[a-z0-9.\-_]+$')
+
+    def validate(self, input: str, pos: int):
+        if not AnnexMetadataFieldNameValidator._valid_regex.match(
+                input.lower()):
+            return QValidator.Invalid
+        # otherwise like normal, but case-insensitive
+        return super().validate(input, pos, compare_lower=True)
 
 
 def _run_annex_metadata(path, data=None):
