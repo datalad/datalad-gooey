@@ -106,7 +106,7 @@ class AnnexMetadataEditor(MetadataEditor):
                 last_changed[f[:-1 * len(last_changed_marker)]] = fields[f][0]
                 continue
 
-            fw, fv_layout = self._add_field()
+            fw, fv_layout = self._add_field(from_record=True)
             fw.set_value(f)
             for v in fields[f]:
                 fv = self._add_field_value(fw, fv_layout)
@@ -167,11 +167,11 @@ class AnnexMetadataEditor(MetadataEditor):
         assert isinstance(res, dict)
         self._set_metadata_from_annexjson(res)
 
-    def _add_field(self):
+    def _add_field(self, from_record=False):
         # field name edit, make the editor itself the parent
         # the items will group themselves by parent to validate as a set
         # within a group
-        fn = ItemWidget(self, self, self)
+        fn = ItemWidget(self, self, self, allow_discard=not from_record)
         # layout to contain all field
         flow_layout = FlowLayout()
         flow_layout.setContentsMargins(0, 0, 0, 0)
@@ -258,7 +258,8 @@ class ItemWidget(QFrame):
     def __init__(self,
                  group_id: Any,
                  editor: AnnexMetadataEditor,
-                 parent: QWidget):
+                 parent: QWidget,
+                 allow_discard: bool = True):
         super().__init__(parent)
         self.__annex_metadata_editor = editor
         self.__group_id = group_id
@@ -291,7 +292,14 @@ class ItemWidget(QFrame):
         # discard button
         db = QToolButton(self)
         db.setIcon(self.style().standardIcon(QStyle.SP_DialogDiscardButton))
-        db.clicked.connect(lambda: editor._discard_item(self))
+        if allow_discard:
+            db.clicked.connect(lambda: editor._discard_item(self))
+        else:
+            db.setDisabled(True)
+            db.setToolTip(
+                'Field present in existing record. '
+                'Discard all values and save, to delete the entire field.'
+            )
         layout.addWidget(db)
 
     def closeEvent(self, *args, **kwargs):
