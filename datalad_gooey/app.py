@@ -122,6 +122,7 @@ class GooeyApp(QObject):
         self._setup_looknfeel()
 
         self._dlapi = None
+        self.__main_window = None
         self._cmdexec = GooeyDataladCmdExec()
         self._cmdui = GooeyDataladCmdUI(self, self.get_widget('cmdTab'))
 
@@ -463,7 +464,7 @@ class GooeyApp(QObject):
         mw.restoreGeometry(self._qt_settings.value('geometry'))
         mw.restoreState(self._qt_settings.value('state'))
 
-        fs_browser: QTreeWidget = cast(QTreeWidget, self.get_widget('fsBrowser'))
+        fs_browser: QWidget = self.get_widget('fsBrowser')
         fs_browser.restoreGeometry(self._qt_settings.value('geometry/fsBrowser'))
         fs_browser.header().restoreState(
             self._qt_settings.value('state/fsBrowser/header'))
@@ -474,7 +475,7 @@ class GooeyApp(QObject):
         self._qt_settings.setValue('geometry', mw.saveGeometry())
         self._qt_settings.setValue('state', mw.saveState())
 
-        fs_browser: QTreeWidget = cast(QTreeWidget, self.get_widget('fsBrowser'))
+        fs_browser: QWidget = self.get_widget('fsBrowser')
         self._qt_settings.setValue('geometry/fsBrowser', fs_browser.saveGeometry())
         self._qt_settings.setValue('state/fsBrowser/header', fs_browser.header().saveState())
 
