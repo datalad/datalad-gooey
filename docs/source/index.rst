@@ -19,6 +19,8 @@ The current core functionality supported via the simplified suite includes:
 * `saving`_ the state of a dataset
 * `updating`_ from a sibling
 
+In addition, DataLad Gooey adds support for querying and setting :ref:`credentials <credentials>`, :ref:`git-annex metadata <annexmeta>`, and :ref:`general metadata <metadata>`.
+
 What DataLad Gooey is not
 =========================
 DataLad Gooey has a number of cool features, but here are features that you will need to use other tools for:
@@ -36,6 +38,9 @@ Overview
    getting-started
    datalad-concepts
    gin
+   credentials
+   annexmetadata
+   metadata
 
 Commands and API
 ================
