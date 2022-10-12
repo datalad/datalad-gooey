@@ -202,11 +202,17 @@ class AnnexMetadataEditor(MetadataEditor):
 
     def _add_field_value_add_pb(self, group_id, layout):
         # '+' button to add a new value
-        pb = QPushButton(self)
+        frame = QFrame(self)
+        frame.setFrameStyle(QFrame.StyledPanel)
+        pb = QToolButton(frame)
         pb.setText('+')
         pb.clicked.connect(lambda: self._on_add_field_value_clicked(
-            group_id, replace=pb))
-        layout.addWidget(pb)
+            group_id, replace=frame))
+        bl = QVBoxLayout()
+        bl.setContentsMargins(0, 0, 0, 0)
+        bl.addWidget(pb)
+        frame.setLayout(bl)
+        layout.addWidget(frame)
         self.enable_save()
 
     def _find_form_row_by_name_widget(self, widget):
