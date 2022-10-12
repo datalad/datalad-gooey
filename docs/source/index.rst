@@ -6,7 +6,7 @@ a free and open source distributed data management tool. DataLad Gooey
 is compatible with all major operating systems and allows access to 
 DataLad's operations via both a simplified and complete suite.
 
-.. image:: _static/command_pane_filled.png
+.. image:: _static/screenshots-gin/created.png
 
 While using DataLad Gooey assumes at least some familiarity with DataLad concepts, the simplified command suite makes starting with DataLad easier via tailor-made command selections, condensed parameter specifications, and tool tips.
 The current core functionality supported via the simplified suite includes:
