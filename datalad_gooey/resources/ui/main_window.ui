@@ -253,7 +253,7 @@
          </item>
         </layout>
        </widget>
-       <widget class="QWidget" name="tabHelp">
+       <widget class="QWidget" name="helpTab">
         <attribute name="title">
          <string>Help</string>
         </attribute>

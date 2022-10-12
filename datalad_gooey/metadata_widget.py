@@ -77,3 +77,6 @@ class MetadataWidget(QWidget):
             del old_layout_item
         # lastly replace old editor in full and let garbage collection RIP it
         self.__editor = editor
+
+    def get_doc_text(self):
+        return self.__editor.get_doc_text()

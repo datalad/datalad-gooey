@@ -5,6 +5,8 @@ from PySide6.QtWidgets import (
     QLabel,
 )
 
+from .api_utils import format_cmd_docs
+
 
 class MetadataEditor(QWidget):
     def __init__(self, parent):
@@ -19,6 +21,9 @@ class MetadataEditor(QWidget):
         if self.__title_widget is None:
             self.__title_widget = QLabel(self._widget_title)
         return self.__title_widget
+
+    def get_doc_text(self):
+        return format_cmd_docs(self.__doc__)
 
 
 class NoMetadataEditor(MetadataEditor):

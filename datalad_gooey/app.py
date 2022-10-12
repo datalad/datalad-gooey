@@ -64,9 +64,11 @@ class GooeyQMainWindow(QMainWindow):
     # up widget (e.g. to connect their signals/slots)
     _widgets = {
         'contextTabs': QTabWidget,
+        'consoleTabs': QTabWidget,
         'cmdTab': QWidget,
         'metadataTab': QWidget,
         'metadataTabWidget': MetadataWidget,
+        'helpTab': QWidget,
         'helpBrowser': QTextBrowser,
         'propertyBrowser': QTextBrowser,
         'fsBrowser': QTreeWidget,
@@ -360,8 +362,16 @@ class GooeyApp(QObject):
         tab = self.get_widget('metadataTab')
         metadata_widget = self.get_widget('metadataTabWidget')
         metadata_widget.setup_for(path=path, editor_type=editor_type)
+        self.show_help(metadata_widget.get_doc_text())
         # open the metadata tab
         self.get_widget('contextTabs').setCurrentWidget(tab)
+
+    def show_help(self, text: str):
+        hbrowser = self.get_widget('helpBrowser')
+        hbrowser.setPlainText(text)
+        # bring help tab to the front
+        self.get_widget('consoleTabs').setCurrentWidget(
+            self.get_widget('helpTab'))
 
     def _populate_datalad_menu(self):
         """Private slot to populate connected QMenus with dataset actions"""

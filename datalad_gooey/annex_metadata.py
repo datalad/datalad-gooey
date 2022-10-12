@@ -17,7 +17,6 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtGui import (
     QValidator,
-    QFontMetrics,
     QPixmap,
 )
 from PySide6.QtCore import (
@@ -29,6 +28,29 @@ from .flowlayout import FlowLayout
 
 
 class AnnexMetadataEditor(MetadataEditor):
+    """Git-annex metadata editor
+
+    Git-annex supports assigning metadata to any "annexed" file in a dataset.
+    More precisely, such metadata are associated with the underlying annex-key,
+    the content identifier. Therefore, multiple files that have the exact same
+    content will also report the same metadata record. When a file with
+    git-annex metadata is modified, the metadata of the previous version will
+    be copied to the new annex-key when the modified file is saved in the
+    dataset.
+
+    Each metadata record can have any number of metadata fields, which each can
+    have any number of values. For example, to tag files, the "tag" field is
+    typically used, with values set to each tag that applies to the file.
+
+    The field names are limited to alphanumerics (and [_-.]), and are case
+    insensitive. The metadata values can contain any text.
+
+    Importantly, both metadata field names and all values of a particular field
+    are technically a set, there cannot be duplicate values.
+
+    To remove an entire field from an existing metadata record, all of its
+    values have to be removed.
+    """
     # used as the widget title
     _widget_title = 'Annex metadata'
 
