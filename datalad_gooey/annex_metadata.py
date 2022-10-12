@@ -39,11 +39,14 @@ class AnnexMetadataEditor(MetadataEditor):
         self.__path = None
 
         editor_layout = QVBoxLayout()
-        #editor_layout.setContentsMargins(0, 0, 0, 0)
+        editor_layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(editor_layout)
         # first the form with the fields
         self.__field_form = QFormLayout()
-        #self.__field_form.setContentsMargins(0, 0, 0, 0)
+        # enforce alignment across platforms, flow layout looks weird
+        # with centered items
+        self.__field_form.setFormAlignment(Qt.AlignLeft | Qt.AlignTop)
+        self.__field_form.setContentsMargins(0, 0, 0, 0)
         self.__field_form.addRow(
             QLabel('Field'),
             QLabel('Value'),
