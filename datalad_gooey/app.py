@@ -488,6 +488,11 @@ class GooeyApp(QObject):
                 # instead we set a flag to trigger another close
                 # event when a command exits
                 self.__app_close_requested = True
+                # prevent further commands from starting, even if already
+                # queued
+                self._cmdexec.shutdown()
+                self.get_widget('statusbar').showMessage(
+                    'Shutting down, waiting for pending commands to finish...')
                 event.ignore()
                 return True
             self._store_configuration()
