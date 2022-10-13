@@ -138,6 +138,16 @@
           </item>
          </layout>
         </widget>
+        <widget class="QWidget" name="historyTab">
+         <attribute name="title">
+          <string>History</string>
+         </attribute>
+         <layout class="QVBoxLayout" name="verticalLayout_7">
+          <item>
+           <widget class="HistoryWidget" name="historyWidget" native="true"/>
+          </item>
+         </layout>
+        </widget>
         <widget class="QWidget" name="propertiesTab">
          <attribute name="title">
           <string>Properties</string>
@@ -408,6 +418,12 @@
    <class>MetadataWidget</class>
    <extends>QWidget</extends>
    <header>datalad_gooey.metadata_widget</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>HistoryWidget</class>
+   <extends>QWidget</extends>
+   <header>datalad_gooey.history_widget</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
