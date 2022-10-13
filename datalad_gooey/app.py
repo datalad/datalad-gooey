@@ -52,6 +52,7 @@ from .fsbrowser import GooeyFilesystemBrowser
 from .resource_provider import gooey_resources
 from . import utility_actions as ua
 from . import credentials as cred
+from .history_widget import HistoryWidget
 from .metadata_widget import MetadataWidget
 
 lgr = logging.getLogger('datalad.ext.gooey.app')
@@ -72,6 +73,7 @@ class GooeyApp(QObject):
         'commandLogTab': QWidget,
         'metadataTab': QWidget,
         'metadataTabWidget': MetadataWidget,
+        'historyWidget': HistoryWidget,
         'helpTab': QWidget,
         'helpBrowser': QTextBrowser,
         'propertyBrowser': QTextBrowser,
@@ -270,6 +272,7 @@ class GooeyApp(QObject):
             self.__main_window = load_ui(
                 'main_window',
                 custom_widgets=[
+                    HistoryWidget,
                     MetadataWidget,
                 ]
             )

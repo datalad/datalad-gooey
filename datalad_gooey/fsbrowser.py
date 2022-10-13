@@ -416,15 +416,20 @@ class GooeyFilesystemBrowser(QObject):
         lgr.log(9, "_inspect_changed_dir() -> requested update")
 
     def _item_click_handler(self, item: QTreeWidgetItem, column: int):
+        hbrowser = self._app.get_widget('historyWidget')
+        ipath = item.pathobj
+        # TODO ths could be cached in the browser item!
+        dsroot = get_dataset_root(ipath)
+        hbrowser.show_for(dsroot, ipath)
+
         pbrowser = self._app.get_widget('propertyBrowser')
+        # TODO this handling must move into the property browser
         if not pbrowser.isVisible():
             # save on cycle and do not update, when nothing is shown
             return
         itype = item.datalad_type
-        ipath = item.pathobj
         pbrowser.clear()
 
-        dsroot = get_dataset_root(ipath)
         if itype in ('file', 'annexed-file'):
             if dsroot is None:
                 # untracked file, we don't know anything
