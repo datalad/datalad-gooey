@@ -203,10 +203,6 @@ class GooeyApp(QObject):
         self._connect_menu_view(self.get_widget('menuView'))
 
     def _setup_ongoing_cmdexec(self, thread_id, cmdname, cmdargs, exec_params):
-        # bring console tab to the front
-        self.get_widget('consoleTabs').setCurrentWidget(
-            self.get_widget('commandLogTab'))
-
         self.get_widget('statusbar').showMessage(f'Started `{cmdname}`')
         self.main_window.setCursor(QCursor(Qt.BusyCursor))
         # and give a persistent visual indication of what exactly is happening
@@ -215,6 +211,10 @@ class GooeyApp(QObject):
             # but not for internal calls
             # https://github.com/datalad/datalad-gooey/issues/182
             return
+        # bring console tab to the front
+        self.get_widget('consoleTabs').setCurrentWidget(
+            self.get_widget('commandLogTab'))
+
         self.get_widget('commandLog').appendHtml(
             f"<hr>{render_cmd_call(cmdname, cmdargs, 'Running')}"
         )
