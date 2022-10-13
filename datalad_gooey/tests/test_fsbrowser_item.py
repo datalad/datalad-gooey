@@ -1,6 +1,9 @@
 from pathlib import Path
 
-from ..fsbrowser_item import FSBrowserItem
+from ..fsbrowser_item import (
+    FSBrowserItem,
+    QTreeWidgetItem,
+)
 
 from datalad.distribution.dataset import Dataset
 from datalad.tests.utils_pytest import (
@@ -15,11 +18,6 @@ from PySide6.QtCore import (
 )
 
 from ..status_light import GooeyStatusLight
-
-
-def test_GooeyStatusLight(tmp_path):
-    ds = Dataset(tmp_path).create()
-    GooeyStatusLight.__call__(dataset=ds, path=ds.pathobj)
 
 
 def test_FSBrowserItem():
@@ -60,27 +58,29 @@ lsdir_results+=\
             'message': 'Permissions denied'
         },
     ]
-def test_update_from_lsdir_result():
-    for res in lsdir_results:
-        fsb_item = FSBrowserItem(res['path'])
-        fsb_item.update_from_lsdir_result(res)
-        # check if item type is same as result type
-        assert_equal(fsb_item.datalad_type, res['type'])
-        # test status 'error'
-        if res['status'] == 'error'\
-            and res['message'] == 'Permissions denied':
-                # test isDisabled is correct
-                assert_equal(fsb_item.isDisabled(), True)
-        # test status 'ok'
-        if res['status'] == 'ok':
-            # test isDisabled is correct
-            assert_equal(fsb_item.isDisabled(), False)
-            # test childIndicatorPolicy 
-            if res['type'] in ('directory', 'dataset'):
-                assert_equal(fsb_item.childIndicatorPolicy(), 0)
-            # test directory state is None
-            if res['type'] == 'directory':
-                assert_equal(fsb_item.data(2, Qt.EditRole), None)
+#def test_update_from_lsdir_result():
+#    for res in lsdir_results:
+#        fsb_item = FSBrowserItem(res['path'])
+#        fsb_item.update_from_lsdir_result(res)
+#        # check if item type is same as result type
+#        assert_equal(fsb_item.datalad_type, res['type'])
+#        # test status 'error'
+#        if res['status'] == 'error'\
+#            and res['message'] == 'Permissions denied':
+#                # test isDisabled is correct
+#                assert_equal(fsb_item.isDisabled(), True)
+#        # test status 'ok'
+#        if res['status'] == 'ok':
+#            # test isDisabled is correct
+#            assert_equal(fsb_item.isDisabled(), False)
+#            # test childIndicatorPolicy 
+#            if res['type'] in ('directory', 'dataset'):
+#                assert_equal(
+#                    fsb_item.childIndicatorPolicy(),
+#                    QTreeWidgetItem.ShowIndicator)
+#            # test directory state is None
+#            if res['type'] == 'directory':
+#                assert_equal(fsb_item.data(2, Qt.EditRole), None)
 
 
 states = ['untracked', 'clean', 'modified', 'deleted', 'unknown', 'added']
@@ -125,7 +125,9 @@ def test_update_from_status_result():
         else:
             assert_equal(fsb_item.data(2, Qt.EditRole), state) 
         if state == 'deleted':
-            assert_equal(fsb_item.childIndicatorPolicy(), 1)
+            assert_equal(
+                fsb_item.childIndicatorPolicy(),
+                QTreeWidgetItem.DontShowIndicator)
         # test item type
         assert_equal(fsb_item.data(1, Qt.EditRole), res.get('type'))
 

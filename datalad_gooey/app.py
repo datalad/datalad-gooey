@@ -6,7 +6,6 @@ from os import environ
 from pathlib import Path
 from PySide6.QtWidgets import (
     QApplication,
-    QMainWindow,
     QMenu,
     QPlainTextEdit,
     QStatusBar,
@@ -23,10 +22,10 @@ from PySide6.QtCore import (
     Qt,
     Signal,
     Slot,
+    QEvent,
 )
 from PySide6.QtGui import (
     QAction,
-    QCloseEvent,
     QCursor,
     QGuiApplication,
 )
@@ -58,7 +57,11 @@ from .metadata_widget import MetadataWidget
 lgr = logging.getLogger('datalad.ext.gooey.app')
 
 
-class GooeyQMainWindow(QMainWindow):
+class GooeyApp(QObject):
+
+    execute_dataladcmd = Signal(str, MappingProxyType, MappingProxyType)
+    configure_dataladcmd = Signal(str, MappingProxyType)
+
     # Mapping of key widget names used in the main window to their widget
     # classes.  This mapping is used (and needs to be kept up-to-date) to look
     # up widget (e.g. to connect their signals/slots)
@@ -87,48 +90,6 @@ class GooeyQMainWindow(QMainWindow):
         'actionGetHelp': QAction,
         'actionDiagnostic_infos': QAction,
     }
-
-    def closeEvent(self, event: QCloseEvent) -> None:
-        self._store_configuration()
-        super().closeEvent(event)
-
-    def get_widget(self, name: str) -> QWidget:
-        wgt_cls = self._widgets.get(name)
-        if not wgt_cls:
-            raise ValueError(f"Unknown widget {name}")
-        wgt = cast(QWidget, self.findChild(wgt_cls, name=name))
-        if not wgt:
-            # if this happens, our internal _widgets is out of sync
-            # with the UI declaration
-            raise RuntimeError(
-                f"Could not locate widget {name} ({wgt_cls.__name__})")
-        return wgt
-
-    def _restore_configuration(self) -> None:
-        # Restore prior configuration
-        self._qt_settings = QSettings("datalad", self.__class__.__name__)
-        self.restoreGeometry(self._qt_settings.value('geometry'))
-        self.restoreState(self._qt_settings.value('state'))
-
-        fs_browser: QTreeWidget = cast(QTreeWidget, self.get_widget('fsBrowser'))
-        fs_browser.restoreGeometry(self._qt_settings.value('geometry/fsBrowser'))
-        fs_browser.header().restoreState(
-            self._qt_settings.value('state/fsBrowser/header'))
-
-    def _store_configuration(self) -> None:
-        # Store configuration of main elements we care storing
-        self._qt_settings.setValue('geometry', self.saveGeometry())
-        self._qt_settings.setValue('state', self.saveState())
-
-        fs_browser: QTreeWidget = cast(QTreeWidget, self.get_widget('fsBrowser'))
-        self._qt_settings.setValue('geometry/fsBrowser', fs_browser.saveGeometry())
-        self._qt_settings.setValue('state/fsBrowser/header', fs_browser.header().saveState())
-
-
-class GooeyApp(QObject):
-
-    execute_dataladcmd = Signal(str, MappingProxyType, MappingProxyType)
-    configure_dataladcmd = Signal(str, MappingProxyType)
 
     def __init__(self, path: Path = None):
         super().__init__()
@@ -161,8 +122,8 @@ class GooeyApp(QObject):
         self._setup_looknfeel()
 
         self._dlapi = None
-        self._main_window : GooeyQMainWindow = \
-            load_ui('main_window', custom_widgets=[GooeyQMainWindow, MetadataWidget])
+        self.__main_window = None
+        self.__app_close_requested = False
         self._cmdexec = GooeyDataladCmdExec()
         self._cmdui = GooeyDataladCmdUI(self, self.get_widget('cmdTab'))
 
@@ -214,7 +175,7 @@ class GooeyApp(QObject):
         if dlcfg.get('user.name') is None or dlcfg.get('user.email') is None:
             ua.set_git_identity(self.main_window)
 
-        self._main_window._restore_configuration()
+        self._restore_configuration()
 
     def _setup_menus(self):
         # arrange for the dataset menu to populate itself lazily once
@@ -242,10 +203,6 @@ class GooeyApp(QObject):
         self._connect_menu_view(self.get_widget('menuView'))
 
     def _setup_ongoing_cmdexec(self, thread_id, cmdname, cmdargs, exec_params):
-        # bring console tab to the front
-        self.get_widget('consoleTabs').setCurrentWidget(
-            self.get_widget('commandLogTab'))
-
         self.get_widget('statusbar').showMessage(f'Started `{cmdname}`')
         self.main_window.setCursor(QCursor(Qt.BusyCursor))
         # and give a persistent visual indication of what exactly is happening
@@ -254,6 +211,10 @@ class GooeyApp(QObject):
             # but not for internal calls
             # https://github.com/datalad/datalad-gooey/issues/182
             return
+        # bring console tab to the front
+        self.get_widget('consoleTabs').setCurrentWidget(
+            self.get_widget('commandLogTab'))
+
         self.get_widget('commandLog').appendHtml(
             f"<hr>{render_cmd_call(cmdname, cmdargs, 'Running')}"
         )
@@ -297,21 +258,37 @@ class GooeyApp(QObject):
         if not self._cmdexec.n_running:
             self.main_window.setCursor(QCursor(Qt.ArrowCursor))
 
-    def deinit(self):
-        dlui.ui.set_backend(self._prev_ui_backend)
-        # restore any possible term prompt setup
-        for var, val in self._restore_env.items():
-            if val is not None:
-                environ[var] = val
+        # act on any pending close request
+        if self.__app_close_requested:
+            self.__app_close_requested = False
+            self.main_window.close()
 
     #@cached_property not available for PY3.7
     @property
     def main_window(self):
-        return self._main_window
+        if self.__main_window is None:
+            self.__main_window = load_ui(
+                'main_window',
+                custom_widgets=[
+                    MetadataWidget,
+                ]
+            )
+            # hook into all events that the main window receives
+            # e.g. to catch close events and store window configuration
+            self.__main_window.installEventFilter(self)
+        return self.__main_window
 
-    def get_widget(self, name) -> QWidget:
-        # convenience proxy
-        return self._main_window.get_widget(name)
+    def get_widget(self, name: str) -> QWidget:
+        wgt_cls = self._widgets.get(name)
+        if not wgt_cls:
+            raise ValueError(f"Unknown widget {name}")
+        wgt = cast(QWidget, self.main_window.findChild(wgt_cls, name=name))
+        if not wgt:
+            # if this happens, our internal _widgets is out of sync
+            # with the UI declaration
+            raise RuntimeError(
+                f"Could not locate widget {name} ({wgt_cls.__name__})")
+        return wgt
 
     def _set_root_path(self, path: Path = None):
         """Store the application root path and change PWD to it
@@ -478,6 +455,60 @@ class GooeyApp(QObject):
             if description:
                 action.setToolTip(description)
             suite_menu.addAction(action)
+
+    def _restore_configuration(self) -> None:
+        mw = self.main_window
+        # Restore prior configuration
+        self._qt_settings = QSettings("datalad", self.__class__.__name__)
+        mw.restoreGeometry(self._qt_settings.value('geometry'))
+        mw.restoreState(self._qt_settings.value('state'))
+
+        fs_browser: QWidget = self.get_widget('fsBrowser')
+        fs_browser.restoreGeometry(
+            self._qt_settings.value('geometry/fsBrowser'))
+        fs_browser.header().restoreState(
+            self._qt_settings.value('state/fsBrowser/header'))
+
+    def _store_configuration(self) -> None:
+        mw = self.main_window
+        # Store configuration of main elements we care storing
+        self._qt_settings.setValue('geometry', mw.saveGeometry())
+        self._qt_settings.setValue('state', mw.saveState())
+
+        fs_browser: QWidget = self.get_widget('fsBrowser')
+        self._qt_settings.setValue(
+            'geometry/fsBrowser', fs_browser.saveGeometry())
+        self._qt_settings.setValue(
+            'state/fsBrowser/header', fs_browser.header().saveState())
+
+    def eventFilter(self, watched, event):
+        if event.type() == QEvent.Close and watched is self.main_window:
+            if self._cmdexec.n_running:
+                # we ignore close events while exec threads are still running
+                # instead we set a flag to trigger another close
+                # event when a command exits
+                self.__app_close_requested = True
+                # prevent further commands from starting, even if already
+                # queued
+                self._cmdexec.shutdown()
+                self.get_widget('statusbar').showMessage(
+                    'Shutting down, waiting for pending commands to finish...')
+                event.ignore()
+                return True
+            self._store_configuration()
+            # undo UI backend
+            dlui.ui.set_backend(self._prev_ui_backend)
+            # restore any possible term prompt setup
+            for var, val in self._restore_env.items():
+                if val is not None:
+                    environ[var] = val
+            return super().eventFilter(watched, event)
+        elif event.type() in (QEvent.Destroy, QEvent.ChildRemoved):
+            # must catch this one or the access of `watched` in the `else`
+            # will crash the app, because it is already gone
+            return False
+        else:
+            return super().eventFilter(watched, event)
 
 
 def main():
