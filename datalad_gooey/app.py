@@ -123,6 +123,7 @@ class GooeyApp(QObject):
 
         self._dlapi = None
         self.__main_window = None
+        self.__app_close_requested = False
         self._cmdexec = GooeyDataladCmdExec()
         self._cmdui = GooeyDataladCmdUI(self, self.get_widget('cmdTab'))
 
@@ -256,6 +257,11 @@ class GooeyApp(QObject):
             )
         if not self._cmdexec.n_running:
             self.main_window.setCursor(QCursor(Qt.ArrowCursor))
+
+        # act on any pending close request
+        if self.__app_close_requested:
+            self.__app_close_requested = False
+            self.main_window.close()
 
     #@cached_property not available for PY3.7
     @property
@@ -458,7 +464,8 @@ class GooeyApp(QObject):
         mw.restoreState(self._qt_settings.value('state'))
 
         fs_browser: QWidget = self.get_widget('fsBrowser')
-        fs_browser.restoreGeometry(self._qt_settings.value('geometry/fsBrowser'))
+        fs_browser.restoreGeometry(
+            self._qt_settings.value('geometry/fsBrowser'))
         fs_browser.header().restoreState(
             self._qt_settings.value('state/fsBrowser/header'))
 
@@ -469,11 +476,20 @@ class GooeyApp(QObject):
         self._qt_settings.setValue('state', mw.saveState())
 
         fs_browser: QWidget = self.get_widget('fsBrowser')
-        self._qt_settings.setValue('geometry/fsBrowser', fs_browser.saveGeometry())
-        self._qt_settings.setValue('state/fsBrowser/header', fs_browser.header().saveState())
+        self._qt_settings.setValue(
+            'geometry/fsBrowser', fs_browser.saveGeometry())
+        self._qt_settings.setValue(
+            'state/fsBrowser/header', fs_browser.header().saveState())
 
     def eventFilter(self, watched, event):
         if event.type() == QEvent.Close and watched is self.main_window:
+            if self._cmdexec.n_running:
+                # we ignore close events while exec threads are still running
+                # instead we set a flag to trigger another close
+                # event when a command exits
+                self.__app_close_requested = True
+                event.ignore()
+                return True
             self._store_configuration()
             # undo UI backend
             dlui.ui.set_backend(self._prev_ui_backend)
