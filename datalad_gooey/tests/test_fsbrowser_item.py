@@ -1,6 +1,9 @@
 from pathlib import Path
 
-from ..fsbrowser_item import FSBrowserItem
+from ..fsbrowser_item import (
+    FSBrowserItem,
+    QTreeWidgetItem,
+)
 
 from datalad.distribution.dataset import Dataset
 from datalad.tests.utils_pytest import (
@@ -77,7 +80,9 @@ def test_update_from_lsdir_result():
             assert_equal(fsb_item.isDisabled(), False)
             # test childIndicatorPolicy 
             if res['type'] in ('directory', 'dataset'):
-                assert_equal(fsb_item.childIndicatorPolicy(), 0)
+                assert_equal(
+                    fsb_item.childIndicatorPolicy(),
+                    QTreeWidgetItem.ShowIndicator)
             # test directory state is None
             if res['type'] == 'directory':
                 assert_equal(fsb_item.data(2, Qt.EditRole), None)
@@ -125,7 +130,9 @@ def test_update_from_status_result():
         else:
             assert_equal(fsb_item.data(2, Qt.EditRole), state) 
         if state == 'deleted':
-            assert_equal(fsb_item.childIndicatorPolicy(), 1)
+            assert_equal(
+                fsb_item.childIndicatorPolicy(),
+                QTreeWidgetItem.DontShowIndicator)
         # test item type
         assert_equal(fsb_item.data(1, Qt.EditRole), res.get('type'))
 
