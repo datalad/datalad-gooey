@@ -26,3 +26,8 @@ Section "Datalad-Gooey"
     File /r "sources\datalad.ico"
     CreateShortCut /NoWorkingDir "$DESKTOP\Datalad Gooey.lnk" "$INSTDIR\python39\python" "-m datalad_gooey" "$INSTDIR\datalad.ico"
 SectionEnd
+
+Section "Uninstall"
+    Delete $INSTDIR\Uninst.exe ; delete self
+    RMDir $INSTDIR
+SectionEnd
