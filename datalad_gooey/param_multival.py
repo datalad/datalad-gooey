@@ -60,9 +60,6 @@ class MultiValueParameter(GooeyCommandParameter):
         for val in ensure_list(value):
             wid._add_item(data=val)
 
-    def set_from_spec(self, spec: Dict) -> None:
-        self._item_param.set_from_spec(spec)
-
     def get_spec(self):
         self.input_widget._handle_input()
         # we must override, because we need to handle the cases of list vs
