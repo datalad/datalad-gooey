@@ -50,6 +50,10 @@ class CustomMetadataWebEditor(MetadataEditor):
             {
                 "name": "Basic (online/remote)",
                 "qurl": QUrl("https://datalad.github.io/datalad-catalog/metadata-entry.html")
+            },
+            {
+                "name": "Citation.CFF",
+                "qurl": QUrl("https://citation-file-format.github.io/cff-initializer-javascript/#/start")
             }
         ]
         for form in form_data:
@@ -92,7 +96,7 @@ class CustomMetadataWebEditor(MetadataEditor):
     @Slot()
     def _download_requested(self, download):
         path_str, _ = QFileDialog.getSaveFileName(
-            self, "Save File", str(self.__path / "dataset_metadata.json")
+            self, "Save File", str(self.__path / "dataset_metadata")
         )
         if path_str:
             path = Path(path_str)
