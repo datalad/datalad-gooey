@@ -100,7 +100,8 @@ def populate_form_w_params(
             continue
         if pname in cmd_api_spec.get('exclude_parameters', []):
             continue
-        cmdkwargs_defaults[pname] = pdefault
+        cmdkwargs_defaults[pname] = cmd_api_spec.get(
+            'parameter_default', {}).get(pname, pdefault)
         # populate the layout with widgets for each of them
         # we do not pass Parameter instances further down, but disassemble
         # and homogenize here
