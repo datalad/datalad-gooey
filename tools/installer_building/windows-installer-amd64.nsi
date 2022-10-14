@@ -39,5 +39,5 @@ Section "Datalad-Gooey"
     File /r "sources\datalad.ico"
     SetOutPath "$INSTDIR\python39\Scripts"
     File /r "sources\run_gooey.ps1"
-    CreateShortCut /NoWorkingDir "$DESKTOP\Datalad Gooey.lnk" "$INSTDIR\python39\Scripts\run_gooey.ps1" "" "$INSTDIR\datalad.ico"
+    CreateShortCut /NoWorkingDir "$DESKTOP\Datalad Gooey.lnk" "powershell" "$INSTDIR\python39\Scripts\run_gooey.ps1" "$INSTDIR\datalad.ico"
 SectionEnd
