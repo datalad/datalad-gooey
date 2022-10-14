@@ -536,7 +536,7 @@ class EnsureCredentialName(EnsureChoice):
             super().__call__(value)
 
     def for_dataset(self, dataset: Dataset):
-        if not dataset.is_installed():
+        if self._allow_new or not dataset.is_installed():
             return self
         return EnsureChoice(*self._get_choices_(dataset))
 
