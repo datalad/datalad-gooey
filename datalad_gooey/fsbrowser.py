@@ -70,7 +70,6 @@ class GooeyFilesystemBrowser(QObject):
         tw.itemExpanded.connect(self._watch_dir)
         # and also populate it with items for contained paths
         tw.itemExpanded.connect(self._populate_item)
-        tw.itemCollapsed.connect(self._unwatch_dir)
         self._fswatcher.directoryChanged.connect(self._inspect_changed_dir)
 
         # items of directories to be annotated, populated by
@@ -348,16 +347,6 @@ class GooeyFilesystemBrowser(QObject):
             # Git operation outcomes. specifically watch the HEADS to catch
             # updates on any branch
             self._fswatcher.addPath(str(path / '.git' / 'refs' / 'heads'))
-
-    # https://github.com/datalad/datalad-gooey/issues/50
-    def _unwatch_dir(self, item):
-        path = str(item.pathobj)
-        lgr.log(
-            9,
-            "GooeyFilesystemBrowser._unwatch_dir(%r) -> %r",
-            path,
-            self._fswatcher.removePath(path),
-        )
 
     def _inspect_changed_dir(self, path: str):
         pathobj = Path(path)
