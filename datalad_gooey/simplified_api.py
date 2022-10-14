@@ -284,6 +284,11 @@ api = dict(
         parameter_constraints=dict(
             sibling=EnsureDatasetSiblingName(allow_none=True),
         ),
+        parameter_default=dict(
+            # a merge "fetch", the actual default, would result in no
+            # detectable changes within the GUI.
+            how='merge',
+        ),
     ),
 )
 
