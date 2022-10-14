@@ -36,7 +36,7 @@ Application Overview
 The User Interface
 ^^^^^^^^^^^^^^^^^^
 
-In general, the DataLad Gooey interface has three main sections: A tree view on the upper left, command pane on the upper right, and the different log views at the bottom.
+In general, the DataLad Gooey interface has three main sections: A tree view on the upper left, pane on the upper right containing ``Command``, ``Metadata``, ``History``and ``Properties`` tabs, and the different log views at the bottom.
 
 .. image:: _static/screenshots_overview/gooey-overview.png
 
@@ -48,6 +48,8 @@ You can distinguish directories and DataLad datasets and files.
 Within datasets, files are either ``annexed-file``'s or ``file``'s, depending on how these files are tracked in the dataset.
 The ``State`` property indicates the version-state of files, datasets, or directories: A new file, for example, would be annotated with an ``untracked`` state, a directory with a newly added unsaved change would be ``modified``, and neatly saved content would be annotated with a ``clean`` tag.
 
+In addition to the information in the tree view, the ``Properties`` and ``History`` tab will load information for any selected directory or file.
+The ``History`` tab displays past commits associated with the file or directory, and the ``Properties`` tab displays known information such as the annex key or file size of annexed files.
 
 Running a DataLad command
 ^^^^^^^^^^^^^^^^^^^^^^^^^
