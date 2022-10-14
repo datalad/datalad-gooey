@@ -141,6 +141,13 @@ class GooeyCredentialManager(QObject):
         # datalad's choice of `keyring` makes it impossible to
         # discovery credentials without an external name cue
         props['last-modified'] = datetime.now().isoformat()
+        # now compare the to be set properties with the previously stored ones
+        # (if there are any). any property that is no longer around must be
+        # `None`ed explicitly to trigger deletion
+        prev = self._credman.get(name) or {}
+        for p in prev:
+            if p not in props:
+                props[p] = None
         self._credman.set(
             name,
             # although we edited it, this is not a successful usage
