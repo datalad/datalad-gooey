@@ -479,7 +479,10 @@ class GooeyFilesystemBrowser(QObject):
 
         # test for and populate with select command actions matching this path
         _populate_context_cmds(
-            context, path_type, ipath, self._tree, self._app._cmdui.configure)
+            context,
+            ipath, path_type, item.datalad_state,
+            self._tree, self._app._cmdui.configure,
+        )
 
         if path_type in ('directory', 'dataset'):
             setbase = QAction('Set &base directory here', context)
@@ -509,8 +512,9 @@ class GooeyFilesystemBrowser(QObject):
 
 def _populate_context_cmds(
         context: QMenu,
-        path_type: str,
         path: Path,
+        path_type: str,
+        path_state: str,
         parent: QWidget,
         receiver: callable):
 
@@ -528,7 +532,14 @@ def _populate_context_cmds(
         )
 
     if path_type == 'dataset':
-        cmdkwargs['dataset'] = path
+        if path_state == 'absent':
+            # absent datasets are SUBdatasets, it makes no sense to run
+            # a command in the context of an empty directory wanting to
+            # be a dataset.
+            # make it run in the superdataset context.
+            cmdkwargs.update(dataset=get_dataset_root(path), path=path)
+        else:
+            cmdkwargs['dataset'] = path
         from .active_suite import dataset_api
         _check_add_api_submenu('Dataset commands', dataset_api)
     elif path_type == 'directory':

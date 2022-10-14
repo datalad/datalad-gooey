@@ -37,6 +37,10 @@ class FSBrowserItem(QTreeWidgetItem):
     def datalad_type(self):
         return self.data(1, Qt.EditRole)
 
+    @property
+    def datalad_state(self):
+        return self.data(2, Qt.EditRole)
+
     def set_item_type(self, type_: str, icon: str or None = None):
         prev_type = self.data(1, Qt.EditRole)
         if prev_type == type_:
