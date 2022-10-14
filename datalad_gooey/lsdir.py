@@ -84,7 +84,12 @@ class GooeyLsDir(Interface):
                     r['message'] = 'Permissions denied'
                     yield r
                     continue
-                r['type'] = 'dataset' if is_repo else 'directory'
+                if is_repo:
+                    # the dataset must be untracked, or its would not have been
+                    # reported as a 'directory' to begin with
+                    r.update(type='dataset', state='untracked')
+                else:
+                    r.update(type='directory')
             yield r
 
 
