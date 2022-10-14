@@ -2,7 +2,10 @@ from functools import lru_cache
 import logging
 from pathlib import Path
 from types import MappingProxyType
-from typing import List
+from typing import (
+    List,
+    Any,
+)
 
 from PySide6.QtCore import (
     QFileSystemWatcher,
@@ -488,29 +491,35 @@ class GooeyFilesystemBrowser(QObject):
         )
 
         if path_type in ('directory', 'dataset'):
-            setbase = QAction('Set &base directory here', context)
-            setbase.setData(ipath)
-            setbase.triggered.connect(self._app._set_root_path)
-            context.addAction(setbase)
+            _add_payload_action(
+                'Set &base directory here',
+                ipath, self._app._set_root_path, context)
 
         if path_type == 'annexed-file':
             from .annex_metadata import AnnexMetadataEditor
-            meta = QAction('&Metadata...', context)
-            meta.setData((ipath, AnnexMetadataEditor))
-            meta.triggered.connect(self._app._edit_metadata)
-            context.addAction(meta)
+            _add_payload_action(
+                '&Metadata...', (ipath, AnnexMetadataEditor),
+                self._app._edit_metadata, context)
 
         if item == self._root_item:
             # for now this is the same as resetting the base to the same
             # root -- but later it could be more clever
-            reload = QAction('&Refresh directory tree', context)
-            reload.setData(ipath)
-            reload.triggered.connect(self._app._set_root_path)
-            context.addAction(reload)
+            _add_payload_action(
+                '&Refresh directory tree', ipath, self._app._set_root_path,
+                context)
 
         if not context.isEmpty():
             # present the menu at the clicked point
             context.exec(self._tree.viewport().mapToGlobal(onpoint))
+
+
+def _add_payload_action(
+        title: str, data: Any, receiver: callable, menu: QMenu) -> None:
+    """Add an action containing payload data to a menu that calls a slot"""
+    act = QAction(title, menu)
+    act.setData(data)
+    act.triggered.connect(receiver)
+    menu.addAction(act)
 
 
 def _populate_context_cmds(
