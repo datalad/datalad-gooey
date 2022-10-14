@@ -230,7 +230,7 @@ class GooeyUI(DialogUI):
                 title="Input required",
                 # Note, that ui.question's `title` is meant for the prompting
                 # text:
-                text=title + os.linesep + text,
+                text=title or "Input required" + os.linesep + text,
                 choices=choices,
                 default=default,
                 hidden=hidden,
