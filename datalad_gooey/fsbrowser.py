@@ -11,8 +11,12 @@ from PySide6.QtCore import (
     QTimer,
     Signal,
     Slot,
+    QUrl,
 )
-from PySide6.QtGui import QAction
+from PySide6.QtGui import (
+    QAction,
+    QDesktopServices,
+)
 from PySide6.QtWidgets import (
     QMenu,
     QTreeWidget,
@@ -63,6 +67,7 @@ class GooeyFilesystemBrowser(QObject):
 
         # handle clicks
         tw.itemClicked.connect(self._item_click_handler)
+        tw.itemDoubleClicked.connect(self._item_doubleclick_handler)
         tw.customContextMenuRequested.connect(
             self._custom_context_menu)
 
@@ -403,6 +408,15 @@ class GooeyFilesystemBrowser(QObject):
         # now re-explore
         self._populate_and_annotate(item, no_existing_children=False)
         lgr.log(9, "_inspect_changed_dir() -> requested update")
+
+    def _item_doubleclick_handler(self, item: QTreeWidgetItem, column: int):
+        ipath = item.pathobj
+        if ipath.is_dir():
+            # only "open" files
+            return
+        # pass on to standard desktop handler and let the OS/Desktop decide
+        # how to "open" this
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(ipath)))
 
     def _item_click_handler(self, item: QTreeWidgetItem, column: int):
         hbrowser = self._app.get_widget('historyWidget')
