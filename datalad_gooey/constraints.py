@@ -462,6 +462,9 @@ class EnsureDatasetSiblingName(EnsureStr):
             r['name']
             for r in dataset.siblings(
                 action='query',
+                # if not disabled, get annex infor fetching can take
+                # a substantial amount of time
+                get_annex_info=False,
                 return_type='generator',
                 result_renderer='disabled',
                 on_failure='ignore')
