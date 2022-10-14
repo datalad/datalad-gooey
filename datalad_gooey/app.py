@@ -1,4 +1,6 @@
 import logging
+import os
+import platform
 import sys
 from types import MappingProxyType
 from typing import cast
@@ -357,6 +359,20 @@ class GooeyApp(QObject):
         # bring help tab to the front
         self.get_widget('consoleTabs').setCurrentWidget(
             self.get_widget('helpTab'))
+
+    def _start_file_manager(self):
+        """Private slot to start a platform-appropriate file manager"""
+        act = self.sender()
+        if not act:
+            return
+        path = act.data()
+        platform_name = platform.system()
+        if platform_name == 'Linux':
+            os.system(f'xdg-open "{path}"')
+        elif platform_name == 'Darwin':
+            os.system(f'open "{path}"')
+        elif platform_name == 'Windows':
+            os.startfile(str(path))
 
     def _populate_datalad_menu(self):
         """Private slot to populate connected QMenus with dataset actions"""

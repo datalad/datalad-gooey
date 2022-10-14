@@ -494,6 +494,9 @@ class GooeyFilesystemBrowser(QObject):
             _add_payload_action(
                 'Set &base directory here',
                 ipath, self._app._set_root_path, context)
+            _add_payload_action(
+                'Open &directory in file manager',
+                ipath, self._app._start_file_manager, context)
 
         if path_type == 'annexed-file':
             from .annex_metadata import AnnexMetadataEditor
