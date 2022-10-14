@@ -171,6 +171,11 @@ class GooeyApp(QObject):
         # https://github.com/datalad/datalad-gooey/issues/105
         #self._fsbrowser._tree.currentItemChanged.connect(
         #    lambda cur, prev: self._cmdui.reset_form())
+
+        # Set up tab changed handler
+        self._context_tabs = self.get_widget('contextTabs')
+        self._context_tabs.currentChanged.connect(self._tab_changed_handler)
+
         self._setup_menus()
 
         # check if we have an identity. Most of datalad will blow up if not
@@ -512,6 +517,17 @@ class GooeyApp(QObject):
             return False
         else:
             return super().eventFilter(watched, event)
+
+
+    @Slot()
+    def _tab_changed_handler(self):
+        """"""
+        current_item = self._fsbrowser._tree.currentItem()
+        selected_tab = self._context_tabs.currentWidget()
+        # If property browser selected, update content for currently selected tree item
+        pbrowser = self.get_widget('propertyBrowser').parentWidget()
+        if selected_tab == pbrowser and current_item:
+            self._fsbrowser._item_click_handler(current_item, None)
 
 
 def main():
