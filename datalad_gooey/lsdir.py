@@ -2,6 +2,7 @@
 
 __docformat__ = 'restructuredtext'
 
+import os
 import stat
 import logging
 from pathlib import Path
@@ -186,7 +187,8 @@ def _lsfiles(path: Path):
                 type=props['type'],
             )
             if props['type'] == 'symlink':
-                res['symlink_target'] = p.readlink()
+                # could be p.readlink() from PY3.9+
+                res['symlink_target'] = os.readlink(p)
             yield res
     if entirely_untracked_dir:
         # fall back on _iterdir() for wholly untracked directories
@@ -223,7 +225,8 @@ def _iterdir(path: Path):
             type=ctype,
         )
         if ctype == 'symlink':
-            props['symlink_target'] = c.readlink()
+            # could be p.readlink() from PY3.9+
+            props['symlink_target'] = os.readlink(c)
         if ctype != 'directory':
             props['state'] = 'untracked'
         yield props
