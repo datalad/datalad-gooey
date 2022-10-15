@@ -181,10 +181,13 @@ def _lsfiles(path: Path):
         # result), and enable mitigation
         entirely_untracked_dir = p == path
         if not entirely_untracked_dir:
-            yield dict(
+            res = dict(
                 path=str(p),
                 type=props['type'],
             )
+            if props['type'] == 'symlink':
+                res['symlink_target'] = p.readlink()
+            yield res
     if entirely_untracked_dir:
         # fall back on _iterdir() for wholly untracked directories
         yield from _iterdir(path)
@@ -219,6 +222,8 @@ def _iterdir(path: Path):
             path=str(c),
             type=ctype,
         )
+        if ctype == 'symlink':
+            props['symlink_target'] = c.readlink()
         if ctype != 'directory':
             props['state'] = 'untracked'
         yield props
