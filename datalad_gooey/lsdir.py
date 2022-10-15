@@ -219,6 +219,6 @@ def _iterdir(path: Path):
             path=str(c),
             type=ctype,
         )
-        if type != 'directory':
+        if ctype != 'directory':
             props['state'] = 'untracked'
         yield props

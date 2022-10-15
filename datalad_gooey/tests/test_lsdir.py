@@ -70,7 +70,7 @@ def test_lsfiles(path=None):
             assert_equal(len(res), 1)
             assert_equal(res[0].get('status'), 'error')
             assert_equal(res[0].get('message'), 'Permissions denied')
-        
+
 
 dir_tree = {
     "random_file1.txt": "some content",
@@ -84,7 +84,7 @@ dir_tree = {
 directory_content = [
     {'path': 'random_file1.txt', 'type': 'file', 'state': 'untracked'},
     {'path': 'subdataset', 'type': 'dataset', 'state': 'untracked'},
-    {'path': 'some_dir', 'type': 'directory', 'state': 'untracked'}
+    {'path': 'some_dir', 'type': 'directory', 'state': None}
 ]
 # Test _iterdir with directory tree not in dataset/git repo
 @with_tree(tree=dir_tree)
