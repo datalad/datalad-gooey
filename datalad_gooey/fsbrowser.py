@@ -415,11 +415,53 @@ class GooeyFilesystemBrowser(QObject):
     def _item_doubleclick_handler(self, item: QTreeWidgetItem, column: int):
         ipath = item.pathobj
         if ipath.is_dir():
+            if item.datalad_type == 'symlink':
+                # this is an existing directory, because is_dir()
+                # follows the link
+                dir_path = ipath.readlink()
+                if not dir_path.is_absolute():
+                    # resolve against link location
+                    dir_path = (ipath.parent / dir_path).resolve()
+                # if this is ever changed to something other than
+                # "jump to closest", we should start checking if the
+                # target lexists() here, so avoid expensive but futile
+                # exploration
+                if dir_path == self._root_path \
+                        or self._root_path in dir_path.parents:
+                    self.show_closest_item(dir_path)
+                    return
             # only "open" files
             return
         # pass on to standard desktop handler and let the OS/Desktop decide
         # how to "open" this
         QDesktopServices.openUrl(QUrl.fromLocalFile(str(ipath)))
+
+    def show_closest_item(self, path: Path) -> None:
+        """Look for the closest already existing tree item for a path
+
+        Tree population can be expensive, so the method does not try and
+        wait to expand all levels until the target item is reached --
+        unless there already is a matching item, in which case it will
+        expand all levels up to it, and scroll the tree to make the
+        item visiable. If that it is not possible, it will perform the
+        same action with the closest existing item.
+        """
+        item = self._root_item
+        self._tree.expandItem(item)
+        try:
+            ipath = item.pathobj
+            if path == ipath:
+                return
+            for p in path.relative_to(ipath).parts:
+                next_item = item[p]
+                if next_item is None:
+                    # we cannot get closer
+                    return
+                item = next_item
+                self._tree.expandItem(item)
+        finally:
+            self._tree.scrollToItem(item)
+            self._tree.setCurrentItem(item)
 
     def _item_click_handler(self, item: QTreeWidgetItem, column: int):
         hbrowser = self._app.get_widget('historyWidget')
