@@ -31,6 +31,8 @@ dataset_content = [
 content_wo_symlinks = [
     item for item in dataset_content if item.get('type') != 'symlink'
 ]
+
+
 # Test _lsfiles with dataset
 @with_tempfile
 def test_lsfiles(path=None):
@@ -39,7 +41,7 @@ def test_lsfiles(path=None):
     abnormal_filename.unlink()
     # Since this is a dataset, check that _lsfiles is called and not _iterdir
     with patch("datalad_gooey.lsdir._iterdir") as _iterdir,\
-        patch("datalad_gooey.lsdir._lsfiles") as _lsfiles:
+            patch("datalad_gooey.lsdir._lsfiles") as _lsfiles:
         GooeyLsDir.__call__(ds.pathobj)
         _lsfiles.assert_called()
         _iterdir.assert_not_called()
@@ -49,7 +51,7 @@ def test_lsfiles(path=None):
     # use content without symlinks
     content = dataset_content
     if not has_symlink_capability():
-        content = content_wo_symlinks    
+        content = content_wo_symlinks
     # Test result outputs
     assert_equal(len(lsfiles_res), len(content))
     for item in lsfiles_res:
@@ -63,7 +65,8 @@ def test_lsfiles(path=None):
         new_dir = Path(path) / 'interim_dir' / 'inaccessible_dir'
         new_dir.mkdir(parents=True)
         existing_permissions = stat.S_IMODE(new_dir.stat().st_mode)
-        new_permissions = existing_permissions ^ stat.S_IXUSR ^ stat.S_IRUSR ^ stat.S_IWUSR
+        new_permissions = \
+            existing_permissions ^ stat.S_IXUSR ^ stat.S_IRUSR ^ stat.S_IWUSR
         new_dir.chmod(new_permissions)
         with assert_raises(IncompleteResultsError):
             res = list(GooeyLsDir.__call__(Path(path) / 'interim_dir'))
@@ -86,6 +89,8 @@ directory_content = [
     {'path': 'subdataset', 'type': 'dataset', 'state': 'untracked'},
     {'path': 'some_dir', 'type': 'directory', 'state': None}
 ]
+
+
 # Test _iterdir with directory tree not in dataset/git repo
 @with_tree(tree=dir_tree)
 def test_iterdir(root=None, mockdef=None):
