@@ -97,7 +97,7 @@ class ChoiceParameter(GooeyCommandParameter):
         cb.addItem(self._map_val2label(value), userData=value)
 
     def _map_val2label(self, val):
-        return '--none--' if val is None else str(val)
+        return '--none--' if val in (None, _NoValue) else str(val)
 
     def can_present_None(self):
         # use whatever the constraint says, and trust that the widget
@@ -264,7 +264,7 @@ class CfgProcParameter(ChoiceParameter):
             None if spec.get('dataset', _NoValue) in (_NoValue, None)
             else Dataset(spec['dataset'])
         )
-        for c in self.get_constraint()._allowed:
+        for c in sorted(self.get_constraint()._allowed):
             self._add_item(wid, c)
         if wid.count():
             wid.setEnabled(True)
