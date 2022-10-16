@@ -56,6 +56,7 @@ from . import utility_actions as ua
 from . import credentials as cred
 from .history_widget import HistoryWidget
 from .metadata_widget import MetadataWidget
+from .property_widget import PropertyWidget
 
 lgr = logging.getLogger('datalad.ext.gooey.app')
 
@@ -78,7 +79,7 @@ class GooeyApp(QObject):
         'historyWidget': HistoryWidget,
         'helpTab': QWidget,
         'helpBrowser': QTextBrowser,
-        'propertyBrowser': QTextBrowser,
+        'propertyWidget': PropertyWidget,
         'fsBrowser': QTreeWidget,
         'commandLog': QPlainTextEdit,
         'errorLog': QPlainTextEdit,
@@ -276,6 +277,7 @@ class GooeyApp(QObject):
                 custom_widgets=[
                     HistoryWidget,
                     MetadataWidget,
+                    PropertyWidget,
                 ]
             )
             # hook into all events that the main window receives

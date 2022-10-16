@@ -30,7 +30,6 @@ from PySide6.QtWidgets import (
 from datalad.interface.base import Interface
 from datalad.utils import get_dataset_root
 from datalad.dataset.gitrepo import GitRepo
-from datalad.coreapi import Dataset
 from datalad.support.exceptions import CapturedException
 
 from .cmd_actions import add_cmd_actions_to_menu
@@ -464,47 +463,15 @@ class GooeyFilesystemBrowser(QObject):
             self._tree.setCurrentItem(item)
 
     def _item_click_handler(self, item: QTreeWidgetItem, column: int):
-        hbrowser = self._app.get_widget('historyWidget')
         ipath = item.pathobj
         # TODO ths could be cached in the browser item!
         dsroot = get_dataset_root(ipath)
+        # history info
+        hbrowser = self._app.get_widget('historyWidget')
         hbrowser.show_for(dsroot, ipath)
-
-        pbrowser = self._app.get_widget('propertyBrowser')
-        # TODO this handling must move into the property browser
-        if not pbrowser.isVisible():
-            # save on cycle and do not update, when nothing is shown
-            return
-        itype = item.datalad_type
-        pbrowser.clear()
-
-        if itype in ('file', 'annexed-file'):
-            if dsroot is None:
-                # untracked file, we don't know anything
-                pbrowser.setText(f'Untracked file {ipath}')
-            else:
-                res = Dataset(dsroot).status(ipath,
-                                             annex='basic',
-                                             result_renderer='disabled',
-                                             return_type='item-or-list')
-                text = "<table>"
-                for k, v in res.items():
-                    if k in ['action', 'status', 'ds', 'refds']:
-                        continue
-                    text += f"<tr><td>{k}:</td><td>{v}</td></tr>"
-                text += "</table>"
-                pbrowser.setText(text)
-        else:
-            if dsroot is not None:
-                # TODO: consider `wtf -S dataset` as well - at least get the ID
-                dsrepo = Dataset(dsroot).repo
-                if hasattr(dsrepo, 'call_annex'):
-                    text = Dataset(dsroot).repo.call_annex(['info', '--fast'])
-                    pbrowser.setText(text)
-                else:
-                    pbrowser.setText(f'Git repository {ipath}')
-            else:
-                pbrowser.setText(f'No information on {ipath}')
+        # item properties
+        pbrowser = self._app.get_widget('propertyWidget')
+        pbrowser.show_for(dsroot, ipath, item.datalad_type)
 
     def _custom_context_menu(self, onpoint):
         """Present a context menu for the item click in the directory browser

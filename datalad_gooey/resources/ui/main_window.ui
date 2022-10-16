@@ -154,7 +154,7 @@
          </attribute>
          <layout class="QGridLayout" name="gridLayout">
           <item row="0" column="0">
-           <widget class="QTextBrowser" name="propertyBrowser"/>
+           <widget class="PropertyWidget" name="propertyWidget" native="true"/>
           </item>
          </layout>
         </widget>
@@ -424,6 +424,12 @@
    <class>HistoryWidget</class>
    <extends>QWidget</extends>
    <header>datalad_gooey.history_widget</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>PropertyWidget</class>
+   <extends>QWidget</extends>
+   <header>datalad_gooey.property_widget</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
