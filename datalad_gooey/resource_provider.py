@@ -18,6 +18,7 @@ class GooeyResources:
         'clean': 'clean',
         'modified': 'modified',
         'deleted': 'untracked',
+        'absent': 'absent',
         'unknown': 'untracked',
         'added': 'modified',
         'kaboom': 'kaboom',
