@@ -114,6 +114,12 @@ class GooeyApp(QObject):
                 'SSH_ASKPASS',
             )
         }
+        if platform.system() == 'Windows':
+            # https://github.com/datalad/datalad-gooey/issues/371
+            # alternative to https://github.com/datalad/datalad-gooey/pull/380
+            self._restore_env['DISPLAY'] = environ.get('DISPLAY')
+            environ['DISPLAY'] = "0:0"
+
         # prevent any terminal-based interaction of Git
         # do it here, not just for command execution to also catch any possible
         # ad-hoc Git calls
