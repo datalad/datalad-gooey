@@ -68,7 +68,9 @@ class FSBrowserItem(QTreeWidgetItem):
             if self.datalad_type == 'symlink':
                 return f'{self.pathobj.name} -> {self._symlink_target}'
             else:
-                return self.pathobj.name
+                # on windows, show a "drive" would leave `.name` empty
+                return self.pathobj.name \
+                    if self.pathobj.name else str(self.pathobj)
         elif column == 0 and role == Qt.EditRole:
             return self.pathobj.name
         # fall back on default implementation
