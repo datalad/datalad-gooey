@@ -22,6 +22,7 @@ class GooeyAskPass(Interface):
         from PySide6.QtWidgets import (
             QApplication,
             QInputDialog,
+            QLineEdit
         )
 
         QApplication(sys.argv)
@@ -29,6 +30,7 @@ class GooeyAskPass(Interface):
             None,
             'DataLad Gooey',
             sys.argv[1],
+            echo=QLineEdit.EchoMode.Password
         )
         if not ok:
             sys.exit(2)
