@@ -201,11 +201,16 @@ api = dict(
             'reckless',
             'source',
         )),
+        parameter_default=dict(
+            # we are no exposing this, hence we must provide a sane default,
+            # which cannot be get everything always, but rather one level
+            # at a time.
+            recursion_limit=1,
+        ),
         parameter_display_names=dict(
             dataset='Get content in dataset at',
             path='Limit to',
-            # 'all' because we have no recursion_limit enabled
-            recursive='Also get all subdatasets',
+            recursive='Also get subdatasets',
             get_data='Get file content',
         ),
         parameter_order=dict(
@@ -278,6 +283,11 @@ api = dict(
         )),
         parameter_constraints=dict(
             sibling=EnsureDatasetSiblingName(allow_none=True),
+        ),
+        parameter_default=dict(
+            # a merge "fetch", the actual default, would result in no
+            # detectable changes within the GUI.
+            how='merge',
         ),
     ),
 )

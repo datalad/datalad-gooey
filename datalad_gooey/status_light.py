@@ -12,6 +12,7 @@ from datalad.interface.base import Interface
 from datalad.interface.base import build_doc
 from datalad.support.param import Parameter
 from datalad.interface.utils import eval_results
+from datalad.dataset.gitrepo import GitRepo
 from datalad.distribution.dataset import (
     EnsureDataset,
     resolve_path,
@@ -109,15 +110,22 @@ class GooeyStatusLight(Interface):
                     # as an annotation of what it was previously.
                     # apply directly, to simplify logic below
                     r['type'] = modtype
-            if 'state' not in moreprops and r['type'] != 'directory':
-                # there is not really a state for a directory in Git.
-                # assigning one in this annotate-a-single-dir approach
-                # would make the impression that everything underneath
-                # is clean, which we simply do not know
-                # there was no modification detected, so we either
-                # have it clean or untracked
-                moreprops['state'] = \
-                    'untracked' if path in untracked else 'clean'
+            if 'state' not in moreprops:
+                if r['type'] == 'dataset':
+                    # the state is unknown (not modified), but already
+                    # labeled a dataset. this is a subdataset, figure out
+                    # if absent
+                    moreprops['state'] = \
+                        'clean' if GitRepo.is_valid(path) else 'absent'
+                elif r['type'] != 'directory':
+                    # there is not really a state for a directory in Git.
+                    # assigning one in this annotate-a-single-dir approach
+                    # would make the impression that everything underneath
+                    # is clean, which we simply do not know
+                    # there was no modification detected, so we either
+                    # have it clean or untracked
+                    moreprops['state'] = \
+                        'untracked' if path in untracked else 'clean'
             # recode path into the dataset domain
             moreprops['path'] = str(ds.pathobj / path.relative_to(repo_path))
             r.update(moreprops)

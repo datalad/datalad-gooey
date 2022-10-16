@@ -462,6 +462,9 @@ class EnsureDatasetSiblingName(EnsureStr):
             r['name']
             for r in dataset.siblings(
                 action='query',
+                # if not disabled, get annex infor fetching can take
+                # a substantial amount of time
+                get_annex_info=False,
                 return_type='generator',
                 result_renderer='disabled',
                 on_failure='ignore')
@@ -536,7 +539,7 @@ class EnsureCredentialName(EnsureChoice):
             super().__call__(value)
 
     def for_dataset(self, dataset: Dataset):
-        if not dataset.is_installed():
+        if self._allow_new or not dataset.is_installed():
             return self
         return EnsureChoice(*self._get_choices_(dataset))
 

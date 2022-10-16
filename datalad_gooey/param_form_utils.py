@@ -100,7 +100,8 @@ def populate_form_w_params(
             continue
         if pname in cmd_api_spec.get('exclude_parameters', []):
             continue
-        cmdkwargs_defaults[pname] = pdefault
+        cmdkwargs_defaults[pname] = cmd_api_spec.get(
+            'parameter_default', {}).get(pname, pdefault)
         # populate the layout with widgets for each of them
         # we do not pass Parameter instances further down, but disassemble
         # and homogenize here
@@ -216,14 +217,14 @@ def _get_comprehensive_constraint(
         constraint = EnsureIterableOf(
             list, constraint, min_len=nargs, max_len=nargs)
     elif nargs == '*':
-        # sequence of any length, but always a sequence
-        #constraint = EnsureIterableOf(list, constraint)
-        # XXX yeah, not quite. datalad expects things often to also
-        # work for a single item
-        constraint = EnsureIterableOf(list, constraint)
+        # datalad expects things often/always to also work for a single item
+        constraint = EnsureIterableOf(list, constraint) | constraint
     elif nargs == '+':
-        # sequence of at least 1 item, always a sequence
-        constraint = EnsureIterableOf(list, constraint, min_len=1)
+        # sequence of at least 1 item, always a sequence,
+        # but again datalad expects things often/always to also work for
+        # a single item
+        constraint = EnsureIterableOf(
+            list, constraint, min_len=1) | constraint
     # handling of `default` and `const` would be here
     #elif nargs == '?'
 
@@ -339,6 +340,19 @@ def _get_parameter(
                 if not isinstance(p.get_constraint(), EnsureNone)
             ]
             # we must have some left, or all alternatives were EnsureNone
+            assert len(param_alternatives)
+        # now look for the case where we have an OR combination of a constraint
+        # and the same constraint wrapped into an interable contraint.
+        # in this case we can strip the item-constraint,
+        # because MultiValueWidget can handle that as a special case.
+        for iter_constraint in [
+                c.item_constraint for c in constraint.constraints
+                if isinstance(c, EnsureIterableOf)]:
+            param_alternatives = [
+                p for p in param_alternatives
+                if p.get_constraint() != iter_constraint
+            ]
+            # we must have some left, or mih has a logic error
             assert len(param_alternatives)
         # if only one alternative is left, skip the AlternativesParameter
         # entirely, and go with that one

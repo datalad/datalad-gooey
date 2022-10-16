@@ -61,6 +61,7 @@ class GooeyDataladCmdExec(QObject):
             #initargs=
         )
         self._futures = set()
+        self.__skip_all_queued_executions = False
 
         # connect maintenance slot to give us an accurate
         # assessment of ongoing commands
@@ -97,6 +98,11 @@ class GooeyDataladCmdExec(QObject):
             cmdkwargs: MappingProxyType,
             exec_params: MappingProxyType):
         """The code is executed in a worker thread"""
+        if self.__skip_all_queued_executions:
+            # this is a crude way to achieve
+            # self._threadpool.shutdown(cancel_futures=True)
+            # which is only available from PY3.9+
+            return
         # we need to amend the record below, make a mutable version
         cmdkwargs = cmdkwargs.copy()
         preferred_result_interval = exec_params.get(
@@ -215,3 +221,6 @@ class GooeyDataladCmdExec(QObject):
     @property
     def n_running(self):
         return len([f for f in self._futures if f.running()])
+
+    def shutdown(self):
+        self.__skip_all_queued_executions = True

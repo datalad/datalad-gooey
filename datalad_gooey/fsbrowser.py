@@ -2,7 +2,10 @@ from functools import lru_cache
 import logging
 from pathlib import Path
 from types import MappingProxyType
-from typing import List
+from typing import (
+    List,
+    Any,
+)
 
 from PySide6.QtCore import (
     QFileSystemWatcher,
@@ -11,8 +14,12 @@ from PySide6.QtCore import (
     QTimer,
     Signal,
     Slot,
+    QUrl,
 )
-from PySide6.QtGui import QAction
+from PySide6.QtGui import (
+    QAction,
+    QDesktopServices,
+)
 from PySide6.QtWidgets import (
     QMenu,
     QTreeWidget,
@@ -23,7 +30,6 @@ from PySide6.QtWidgets import (
 from datalad.interface.base import Interface
 from datalad.utils import get_dataset_root
 from datalad.dataset.gitrepo import GitRepo
-from datalad.coreapi import Dataset
 from datalad.support.exceptions import CapturedException
 
 from .cmd_actions import add_cmd_actions_to_menu
@@ -63,6 +69,7 @@ class GooeyFilesystemBrowser(QObject):
 
         # handle clicks
         tw.itemClicked.connect(self._item_click_handler)
+        tw.itemDoubleClicked.connect(self._item_doubleclick_handler)
         tw.customContextMenuRequested.connect(
             self._custom_context_menu)
 
@@ -70,7 +77,6 @@ class GooeyFilesystemBrowser(QObject):
         tw.itemExpanded.connect(self._watch_dir)
         # and also populate it with items for contained paths
         tw.itemExpanded.connect(self._populate_item)
-        tw.itemCollapsed.connect(self._unwatch_dir)
         self._fswatcher.directoryChanged.connect(self._inspect_changed_dir)
 
         # items of directories to be annotated, populated by
@@ -349,16 +355,6 @@ class GooeyFilesystemBrowser(QObject):
             # updates on any branch
             self._fswatcher.addPath(str(path / '.git' / 'refs' / 'heads'))
 
-    # https://github.com/datalad/datalad-gooey/issues/50
-    def _unwatch_dir(self, item):
-        path = str(item.pathobj)
-        lgr.log(
-            9,
-            "GooeyFilesystemBrowser._unwatch_dir(%r) -> %r",
-            path,
-            self._fswatcher.removePath(path),
-        )
-
     def _inspect_changed_dir(self, path: str):
         pathobj = Path(path)
         dir_exists = pathobj.exists()
@@ -415,43 +411,67 @@ class GooeyFilesystemBrowser(QObject):
         self._populate_and_annotate(item, no_existing_children=False)
         lgr.log(9, "_inspect_changed_dir() -> requested update")
 
-    def _item_click_handler(self, item: QTreeWidgetItem, column: int):
-        pbrowser = self._app.get_widget('propertyBrowser')
-        if not pbrowser.isVisible():
-            # save on cycle and do not update, when nothing is shown
-            return
-        itype = item.datalad_type
+    def _item_doubleclick_handler(self, item: QTreeWidgetItem, column: int):
         ipath = item.pathobj
-        pbrowser.clear()
+        if ipath.is_dir():
+            if item.datalad_type == 'symlink':
+                # this is an existing directory, because is_dir()
+                # follows the link
+                dir_path = ipath.readlink()
+                if not dir_path.is_absolute():
+                    # resolve against link location
+                    dir_path = (ipath.parent / dir_path).resolve()
+                # if this is ever changed to something other than
+                # "jump to closest", we should start checking if the
+                # target lexists() here, so avoid expensive but futile
+                # exploration
+                if dir_path == self._root_path \
+                        or self._root_path in dir_path.parents:
+                    self.show_closest_item(dir_path)
+                    return
+            # only "open" files
+            return
+        # pass on to standard desktop handler and let the OS/Desktop decide
+        # how to "open" this
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(ipath)))
 
+    def show_closest_item(self, path: Path) -> None:
+        """Look for the closest already existing tree item for a path
+
+        Tree population can be expensive, so the method does not try and
+        wait to expand all levels until the target item is reached --
+        unless there already is a matching item, in which case it will
+        expand all levels up to it, and scroll the tree to make the
+        item visiable. If that it is not possible, it will perform the
+        same action with the closest existing item.
+        """
+        item = self._root_item
+        self._tree.expandItem(item)
+        try:
+            ipath = item.pathobj
+            if path == ipath:
+                return
+            for p in path.relative_to(ipath).parts:
+                next_item = item[p]
+                if next_item is None:
+                    # we cannot get closer
+                    return
+                item = next_item
+                self._tree.expandItem(item)
+        finally:
+            self._tree.scrollToItem(item)
+            self._tree.setCurrentItem(item)
+
+    def _item_click_handler(self, item: QTreeWidgetItem, column: int):
+        ipath = item.pathobj
+        # TODO ths could be cached in the browser item!
         dsroot = get_dataset_root(ipath)
-        if itype in ('file', 'annexed-file'):
-            if dsroot is None:
-                # untracked file, we don't know anything
-                pbrowser.setText(f'Untracked file {ipath}')
-            else:
-                res = Dataset(dsroot).status(ipath,
-                                             annex='basic',
-                                             result_renderer='disabled',
-                                             return_type='item-or-list')
-                text = "<table>"
-                for k, v in res.items():
-                    if k in ['action', 'status', 'ds', 'refds']:
-                        continue
-                    text += f"<tr><td>{k}:</td><td>{v}</td></tr>"
-                text += "</table>"
-                pbrowser.setText(text)
-        else:
-            if dsroot is not None:
-                # TODO: consider `wtf -S dataset` as well - at least get the ID
-                dsrepo = Dataset(dsroot).repo
-                if hasattr(dsrepo, 'call_annex'):
-                    text = Dataset(dsroot).repo.call_annex(['info', '--fast'])
-                    pbrowser.setText(text)
-                else:
-                    pbrowser.setText(f'Git repository {ipath}')
-            else:
-                pbrowser.setText(f'No information on {ipath}')
+        # history info
+        hbrowser = self._app.get_widget('historyWidget')
+        hbrowser.show_for(dsroot, ipath)
+        # item properties
+        pbrowser = self._app.get_widget('propertyWidget')
+        pbrowser.show_for(dsroot, ipath, item.datalad_type)
 
     def _custom_context_menu(self, onpoint):
         """Present a context menu for the item click in the directory browser
@@ -474,38 +494,51 @@ class GooeyFilesystemBrowser(QObject):
 
         # test for and populate with select command actions matching this path
         _populate_context_cmds(
-            context, path_type, ipath, self._tree, self._app._cmdui.configure)
+            context,
+            ipath, path_type, item.datalad_state,
+            self._tree, self._app._cmdui.configure,
+        )
 
         if path_type in ('directory', 'dataset'):
-            setbase = QAction('Set &base directory here', context)
-            setbase.setData(ipath)
-            setbase.triggered.connect(self._app._set_root_path)
-            context.addAction(setbase)
+            _add_payload_action(
+                'Set &base directory here',
+                ipath, self._app._set_root_path, context)
+            _add_payload_action(
+                'Open &directory in file manager',
+                ipath, self._app._start_file_manager, context)
 
         if path_type == 'annexed-file':
             from .annex_metadata import AnnexMetadataEditor
-            meta = QAction('&Metadata...', context)
-            meta.setData((ipath, AnnexMetadataEditor))
-            meta.triggered.connect(self._app._edit_metadata)
-            context.addAction(meta)
+            _add_payload_action(
+                '&Metadata...', (ipath, AnnexMetadataEditor),
+                self._app._edit_metadata, context)
 
         if item == self._root_item:
             # for now this is the same as resetting the base to the same
             # root -- but later it could be more clever
-            reload = QAction('&Refresh directory tree', context)
-            reload.setData(ipath)
-            reload.triggered.connect(self._app._set_root_path)
-            context.addAction(reload)
+            _add_payload_action(
+                '&Refresh directory tree', ipath, self._app._set_root_path,
+                context)
 
         if not context.isEmpty():
             # present the menu at the clicked point
             context.exec(self._tree.viewport().mapToGlobal(onpoint))
 
 
+def _add_payload_action(
+        title: str, data: Any, receiver: callable, menu: QMenu) -> None:
+    """Add an action containing payload data to a menu that calls a slot"""
+    act = QAction(title, menu)
+    act.setData(data)
+    act.triggered.connect(receiver)
+    menu.addAction(act)
+
+
 def _populate_context_cmds(
         context: QMenu,
-        path_type: str,
         path: Path,
+        path_type: str,
+        path_state: str,
         parent: QWidget,
         receiver: callable):
 
@@ -523,7 +556,14 @@ def _populate_context_cmds(
         )
 
     if path_type == 'dataset':
-        cmdkwargs['dataset'] = path
+        if path_state == 'absent':
+            # absent datasets are SUBdatasets, it makes no sense to run
+            # a command in the context of an empty directory wanting to
+            # be a dataset.
+            # make it run in the superdataset context.
+            cmdkwargs.update(dataset=get_dataset_root(path), path=path)
+        else:
+            cmdkwargs['dataset'] = path
         from .active_suite import dataset_api
         _check_add_api_submenu('Dataset commands', dataset_api)
     elif path_type == 'directory':

@@ -72,6 +72,7 @@ class GooeyCredentialManager(QObject):
             reset_pb = self.cwidget('resetPB')
             addrow_pb = self.cwidget('addRowPB')
             delrow_pb = self.cwidget('deleteRowPB')
+            table = self.cwidget('credentialPropsTable')
 
             name_edit.setFocus()
             self.reset()
@@ -91,12 +92,18 @@ class GooeyCredentialManager(QObject):
             def _configure_buttons():
                 # we can allow save, if we have a name and a secret
                 save_pb.setEnabled(
-                    True if name_edit.text() and secret_edit.text() else False)
+                    # we need to have a name and a secret or any other property
+                    # with a value
+                    True if name_edit.text()
+                    and (secret_edit.text() or any(
+                         table.item(row, 0) and table.item(row, 1)
+                         for row in range(table.rowCount())))
+                    else False)
                 # we can allow delete, if we have selected an existing
                 # credential, and did not modify its name
                 del_pb.setEnabled(
                     True if cred_cb.currentText()
-                    and name_edit.text() == cred_cb.currentText()
+                    and name_edit.text() == cred_cb.currentData()[0]
                     else False)
 
             save_pb.clicked.connect(self.save_credential)
@@ -109,11 +116,11 @@ class GooeyCredentialManager(QObject):
                 s.connect(lambda: cred_cb.setCurrentIndex(-1))
             for w in (name_edit, secret_edit):
                 w.textChanged.connect(_configure_buttons)
+            table.itemChanged.connect(_configure_buttons)
             show_secret.stateChanged.connect(_set_echo_mode)
 
             cred_cb.currentIndexChanged.connect(self.load_credential)
 
-            table = self.cwidget('credentialPropsTable')
             addrow_pb.clicked.connect(
                 lambda: table.insertRow(
                     # insert at the current location, if there is any
@@ -141,6 +148,13 @@ class GooeyCredentialManager(QObject):
         # datalad's choice of `keyring` makes it impossible to
         # discovery credentials without an external name cue
         props['last-modified'] = datetime.now().isoformat()
+        # now compare the to be set properties with the previously stored ones
+        # (if there are any). any property that is no longer around must be
+        # `None`ed explicitly to trigger deletion
+        prev = self._credman.get(name) or {}
+        for p in prev:
+            if p not in props:
+                props[p] = None
         self._credman.set(
             name,
             # although we edited it, this is not a successful usage
@@ -169,12 +183,11 @@ class GooeyCredentialManager(QObject):
         if name is not None:
             cb.setCurrentText(name)
             return
-        name = self.cwidget('credentialComboBox').currentText()
-        if not name:
+        if not cb.currentText():
             # credential selection was reset, keep dialog content to
             # enabled incremental editing
             return
-        cred = self._credman.get(name)
+        name, cred = cb.currentData()
         self.cwidget('nameEdit').setText(name)
         if 'secret' in cred:
             for wn in ('secretEdit', 'secretEditRepeat'):
@@ -212,7 +225,15 @@ class GooeyCredentialManager(QObject):
 
         cb = self.cwidget('credentialComboBox')
         cb.setPlaceholderText('Select existing credential...')
-        cb.addItems(i[0] for i in self._credman.query())
+        for credname, cred in sorted(self._credman.query(),
+                                     key=lambda x: x[0]):
+            label = '{}{}'.format(
+                credname,
+                ' [template]' if list(cred.keys()) == ['type']
+                else ' [no secret]' if 'secret' not in cred
+                else '',
+            )
+            cb.addItem(label, (credname, cred))
 
         table = self.cwidget('credentialPropsTable')
         table.setHorizontalHeaderLabels(('Name', 'Value'))

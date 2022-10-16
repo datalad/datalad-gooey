@@ -22,6 +22,7 @@ class FSBrowserItem(QTreeWidgetItem):
         )
         self.setData(0, FSBrowserItem.PathObjRole, path)
         self._child_lookup = None
+        self._symlink_target = None
 
     def __str__(self):
         return f'FSBrowserItem<{self.pathobj}>'
@@ -36,6 +37,10 @@ class FSBrowserItem(QTreeWidgetItem):
     @property
     def datalad_type(self):
         return self.data(1, Qt.EditRole)
+
+    @property
+    def datalad_state(self):
+        return self.data(2, Qt.EditRole)
 
     def set_item_type(self, type_: str, icon: str or None = None):
         prev_type = self.data(1, Qt.EditRole)
@@ -59,10 +64,14 @@ class FSBrowserItem(QTreeWidgetItem):
             self.setIcon(2, icon)
 
     def data(self, column: int, role: int):
-        if column == 0 and role in (Qt.DisplayRole, Qt.EditRole):
-            # for now, we do not distinguish the two, maybe never will
-            # but the default implementation also does this, so we match
-            # behavior explicitly until we know better
+        if column == 0 and role == Qt.DisplayRole:
+            if self.datalad_type == 'symlink':
+                return f'{self.pathobj.name} -> {self._symlink_target}'
+            else:
+                # on windows, show a "drive" would leave `.name` empty
+                return self.pathobj.name \
+                    if self.pathobj.name else str(self.pathobj)
+        elif column == 0 and role == Qt.EditRole:
             return self.pathobj.name
         # fall back on default implementation
         return super().data(column, role)
@@ -131,6 +140,7 @@ class FSBrowserItem(QTreeWidgetItem):
         # - state column for directories
         path_type = res['type']
         self.set_item_type(path_type)
+        self._symlink_target = res.get('symlink_target')
         if res.get('status') == 'error' \
                 and res.get('message') == 'Permissions denied':
             # we cannot get info on it, reflect in UI

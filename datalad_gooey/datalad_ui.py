@@ -1,3 +1,4 @@
+import os
 import threading
 from textwrap import wrap
 from types import MappingProxyType
@@ -226,8 +227,10 @@ class GooeyUI(DialogUI):
             # to make sure that our signal is the only one putting an answer in
             # the queue
             self._uibridge.question_asked.emit(MappingProxyType(dict(
-                title=title,
-                text=text,
+                title="Input required",
+                # Note, that ui.question's `title` is meant for the prompting
+                # text:
+                text=title or "Input required" + os.linesep + text,
                 choices=choices,
                 default=default,
                 hidden=hidden,

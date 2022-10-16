@@ -2,6 +2,7 @@
 
 __docformat__ = 'restructuredtext'
 
+import os
 import stat
 import logging
 from pathlib import Path
@@ -84,7 +85,12 @@ class GooeyLsDir(Interface):
                     r['message'] = 'Permissions denied'
                     yield r
                     continue
-                r['type'] = 'dataset' if is_repo else 'directory'
+                if is_repo:
+                    # the dataset must be untracked, or its would not have been
+                    # reported as a 'directory' to begin with
+                    r.update(type='dataset', state='untracked')
+                else:
+                    r.update(type='directory')
             yield r
 
 
@@ -176,10 +182,14 @@ def _lsfiles(path: Path):
         # result), and enable mitigation
         entirely_untracked_dir = p == path
         if not entirely_untracked_dir:
-            yield dict(
+            res = dict(
                 path=str(p),
                 type=props['type'],
             )
+            if props['type'] == 'symlink':
+                # could be p.readlink() from PY3.9+
+                res['symlink_target'] = os.readlink(p)
+            yield res
     if entirely_untracked_dir:
         # fall back on _iterdir() for wholly untracked directories
         yield from _iterdir(path)
@@ -214,6 +224,9 @@ def _iterdir(path: Path):
             path=str(c),
             type=ctype,
         )
-        if type != 'directory':
+        if ctype == 'symlink':
+            # could be p.readlink() from PY3.9+
+            props['symlink_target'] = os.readlink(c)
+        if ctype != 'directory':
             props['state'] = 'untracked'
         yield props
