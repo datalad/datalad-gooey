@@ -1,4 +1,3 @@
-from pathlib import Path
 from typing import (
     Any,
     Dict,
@@ -7,13 +6,10 @@ from typing import (
 from PySide6.QtCore import (
     QDir,
     QUrl,
-    QMimeData,
-    QModelIndex,
 )
 from PySide6.QtGui import (
     QDragEnterEvent,
     QDropEvent,
-    QStandardItemModel,
 )
 from PySide6.QtWidgets import (
     QFileDialog,
@@ -25,7 +21,10 @@ from PySide6.QtWidgets import (
 
 from .param import GooeyCommandParameter
 from .resource_provider import gooey_resources
-from .utils import _NoValue
+from .utils import (
+    _NoValue,
+    _get_pathobj_from_qabstractitemmodeldatalist,
+)
 
 
 class PathParameter(GooeyCommandParameter):
@@ -224,19 +223,3 @@ class PathParamWidget(QWidget):
                     event, mime_data)))
         else:
             self._param._set_in_widget_from_drop_url(self, mime_data.urls()[0])
-
-
-def _get_pathobj_from_qabstractitemmodeldatalist(
-        event: QDropEvent, mime_data: QMimeData) -> Path:
-    """Helper to extract a path from a dropped FSBrowser item"""
-    # create a temp item model to drop the mime data into
-    model = QStandardItemModel()
-    model.dropMimeData(
-        mime_data,
-        event.dropAction(),
-        0, 0,
-        QModelIndex(),
-    )
-    # and get the path out from column 0
-    from datalad_gooey.fsbrowser_item import FSBrowserItem
-    return model.index(0, 0).data(role=FSBrowserItem.PathObjRole)

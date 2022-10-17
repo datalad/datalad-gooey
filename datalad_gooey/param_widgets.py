@@ -5,7 +5,14 @@ from typing import (
     List,
 )
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import (
+    Qt,
+    QUrl,
+)
+from PySide6.QtGui import (
+    QDropEvent,
+    QDragEnterEvent,
+)
 from PySide6.QtWidgets import (
     QWidget,
     QCheckBox,
@@ -13,19 +20,19 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QSpinBox,
     QTextEdit,
-    QMessageBox,
     QLabel,
 )
 
-from datalad import cfg as dlcfg
 from datalad.distribution.dataset import (
     Dataset,
-    require_dataset,
 )
 
 from .constraints import EnsureChoice
 from .param import GooeyCommandParameter
-from .utils import _NoValue
+from .utils import (
+    _NoValue,
+    _get_pathobj_from_qabstractitemmodeldatalist,
+)
 
 
 #
@@ -182,11 +189,33 @@ class BoolParameter(GooeyCommandParameter):
 
 
 class StrParameter(GooeyCommandParameter):
+    class _DropLineEdit(QLineEdit):
+        def __init__(self, param, parent=None):
+            super().__init__(parent)
+            self._param = param
+            self.setAcceptDrops(True)
+
+        def dropEvent(self, event: QDropEvent) -> None:
+            # we did all the necessary checks before accepting the event in
+            # dragEnterEvent()
+            mime_data = event.mimeData()
+            if mime_data.hasFormat("application/x-qabstractitemmodeldatalist"):
+                # this is a fsbrowser item
+                self.setText(str(
+                    _get_pathobj_from_qabstractitemmodeldatalist(
+                        event, mime_data)))
+            else:
+                self._param._set_in_widget_from_drop_url(
+                    self, mime_data.urls()[0])
+
+        def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+            self._param.standard_dragEnterEvent(event)
+
     def _get_widget(self,
                     parent: str or None = None,
                     docs: str = '',
                     **kwargs):
-        edit = QLineEdit(parent)
+        edit = StrParameter._DropLineEdit(self, parent)
         edit.setPlaceholderText('Not set')
         edit.textChanged.connect(self._handle_input)
         # TODO a proper constraint would be in order, but as long
@@ -207,6 +236,17 @@ class StrParameter(GooeyCommandParameter):
         except Exception:
             # current input is invalid
             self.set(_NoValue, set_in_widget=False)
+
+    def _would_accept_drop_event(self, event: QDropEvent) -> bool:
+        return True
+
+    def _would_accept_drop_url(self, url: QUrl):
+        return True
+
+    def _set_in_widget_from_drop_url(
+            self, wid: QWidget, url: QUrl) -> None:
+        wid.set(str(url))
+
 
 
 class TextParameter(GooeyCommandParameter):

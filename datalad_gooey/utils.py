@@ -5,6 +5,12 @@ from PySide6.QtUiTools import QUiLoader
 from PySide6.QtCore import (
     QFile,
     QIODevice,
+    QMimeData,
+    QModelIndex,
+)
+from PySide6.QtGui import (
+    QDropEvent,
+    QStandardItemModel,
 )
 
 
@@ -55,3 +61,19 @@ def render_cmd_call(cmdname: str, cmdkwargs: Dict, label: str):
     )
     rendered += ")</code>"
     return rendered
+
+
+def _get_pathobj_from_qabstractitemmodeldatalist(
+        event: QDropEvent, mime_data: QMimeData) -> Path:
+    """Helper to extract a path from a dropped FSBrowser item"""
+    # create a temp item model to drop the mime data into
+    model = QStandardItemModel()
+    model.dropMimeData(
+        mime_data,
+        event.dropAction(),
+        0, 0,
+        QModelIndex(),
+    )
+    # and get the path out from column 0
+    from datalad_gooey.fsbrowser_item import FSBrowserItem
+    return model.index(0, 0).data(role=FSBrowserItem.PathObjRole)
