@@ -396,13 +396,13 @@ class GooeyApp(QObject):
                 ('konsole', 'gnome-terminal', 'xterm')
             )
         elif platform_name == 'Windows':
-            self._open_subprocess_terminal(path, ('powershell', 'cmd'))
+            self._open_subprocess_terminal(path, ('powershell', 'cmd'), start=True)
         elif platform_name == 'Darwin':
             self._open_applescript_terminal(path)
         else:
             lgr.error('Unknown platform: %s', platform_name)
 
-    def _open_subprocess_terminal(self, path, image_names):
+    def _open_subprocess_terminal(self, path, image_names, start=False):
         from datalad.runner.coreprotocols import NoCapture
         from datalad.runner.nonasyncrunner import ThreadedRunner
         from datalad.runner.protocol import GeneratorMixIn
@@ -414,7 +414,7 @@ class GooeyApp(QObject):
 
         for image_name in image_names:
             runner = ThreadedRunner(
-                cmd=[image_name],
+                cmd=f'start {image_name}' if start is True else [image_name],
                 protocol_class=RunnerProtocol,
                 stdin=None,
                 cwd=path
