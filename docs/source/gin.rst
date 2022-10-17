@@ -1,8 +1,10 @@
+.. _gin:
+
 Walk-through: Dataset hosting on GIN
 ####################################
 
 In this walkthrough, we will use DataLad Gooey to create a dataset, save it contents,
-and publish it to `GIN <https://gin.g-node.org>`_ (G-Node Infrastructure).
+and publish it to `GIN <https://gin.g-node.org>`__ (G-Node Infrastructure).
 
 Prerequisites
 -------------

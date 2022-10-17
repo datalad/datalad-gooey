@@ -15,6 +15,9 @@ This glossary provides short definitions, and links relevant additional document
    annexed-file
       Files managed by :term:`git-annex` are annotated as "annexed-file". Annexed files have access to additional commands in their context menus such as :term:`get` and :term:`drop`.
 
+   branch
+      Git concept: A lightweight, independent history streak of your dataset. Branches can contain less, more, or changed files compared to other branches, and one can merge the changes a branch contains into another branch. DataLad Gooey only views the currently checked out branch in your dataset, and does not support Git commands that expose branching functionality.
+
    clone
       The `datalad clone <http://docs.datalad.org/en/stable/generated/man/datalad-clone.html>`_ command retrieves a copy of a :term:`Git` repository or :term:`DataLad dataset` from a local or remote path or URL. In Git-terminology, all "installed" datasets
       are clones.
@@ -57,6 +60,8 @@ This glossary provides short definitions, and links relevant additional document
       A distributed file synchronization system, enabling sharing and synchronizing collections
       of large files. It allows managing files with :term:`Git`, without checking the file content into Git.
 
+   git-annex branch
+      A :term:`branch` that exists in your dataset, if the dataset contains an annex. The git-annex branch is completely unconnected to any other branch in your dataset, and contains different types of log files. Its contents are used for git-annex’s internal tracking of the dataset and its annexed contents. DataLad Gooey provides support for adding git annex metadata, but does not otherwise support operations on dataset branches
 
    GitHub
       GitHub is an online platform where one can store and share version controlled projects
