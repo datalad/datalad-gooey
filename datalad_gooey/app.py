@@ -2,6 +2,7 @@ import logging
 import os
 import platform
 import sys
+from tempfile import NamedTemporaryFile
 from types import MappingProxyType
 from typing import cast
 from os import environ
@@ -381,6 +382,84 @@ class GooeyApp(QObject):
             os.system(f'open "{path}"')
         elif platform_name == 'Windows':
             os.startfile(str(path))
+
+    def _open_terminal(self):
+        """Private slot to open a terminal at the given location"""
+        act = self.sender()
+        if not act:
+            return
+        path = act.data()
+        platform_name = platform.system()
+        if platform_name == 'Linux':
+            self._open_subprocess_terminal(
+                path,
+                ('konsole', 'gnome-terminal', 'xterm')
+            )
+        elif platform_name == 'Windows':
+            self._open_subprocess_terminal(path, ('powershell', 'cmd'))
+        elif platform_name == 'Darwin':
+            self._open_applescript_terminal(path)
+        else:
+            lgr.error('Unknown platform: %s', platform_name)
+
+    def _open_subprocess_terminal(self, path, image_names):
+        from datalad.runner.coreprotocols import NoCapture
+        from datalad.runner.nonasyncrunner import ThreadedRunner
+        from datalad.runner.protocol import GeneratorMixIn
+
+        class RunnerProtocol(NoCapture, GeneratorMixIn):
+            def __init__(self, done_future=None, encoding=None):
+                NoCapture.__init__(self, done_future, encoding)
+                GeneratorMixIn.__init__(self)
+
+        for image_name in image_names:
+            runner = ThreadedRunner(
+                cmd=[image_name],
+                protocol_class=RunnerProtocol,
+                stdin=None,
+                cwd=path
+            )
+            try:
+                runner.run()
+                return
+            except FileNotFoundError:
+                continue
+        lgr.error(f'No terminal app found, tried: {image_names}.')
+
+    def _open_applescript_terminal(self, path):
+        """Open a terminal in macOS with cwd set to `path`
+
+        This method uses applescript to start the terminal. In order to make the
+        environment of the caller available in the new terminal, it is written to
+        a temporary file, which is automatically "sourced" and deleted the new
+        terminal.
+
+        :param path: str|Path:
+            the current work dir for the shell in the terminal
+
+        :return: None
+        """
+        import applescript
+
+        # Write the current environment to a temporary file
+        with NamedTemporaryFile(mode='wt', delete=False) as f:
+            temp_file_name = f.name
+            for key, value in os.environ.items():
+                # Skip a few keys that are terminal and shell specific.
+                if key in ('Apple_PubSub_Socket_Renderer', 'TERM_SESSION_ID'):
+                    continue
+                escaped_value = value.replace('\\', '\\\\').replace('"', '\\"')
+                f.write(f'export {key}="{escaped_value}"\n')
+
+        # Start a terminal, read the environment from the temporary file, delete
+        # the temporary file, and change the current working dir to `path`.
+        applescript.tell.app(
+            'Terminal',
+            'do script '
+            f'"source {temp_file_name}; rm -rf {temp_file_name}; cd {str(path)}"'
+        )
+        # Bring the terminal into the foreground
+        applescript.tell.app('Terminal', 'activate')
 
     def _populate_datalad_menu(self):
         """Private slot to populate connected QMenus with dataset actions"""
