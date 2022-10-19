@@ -91,7 +91,7 @@ def open_terminal_at_path(path):
     if platform_name == 'Linux':
         _open_subprocess_terminal(
             path,
-            ('konsole', 'gnome-terminal', 'xterm')
+            ('xdg-terminal', 'konsole', 'gnome-terminal', 'xterm')
         )
     elif platform_name == 'Windows':
         _open_subprocess_terminal(path, ('powershell', 'cmd'), start=True)
