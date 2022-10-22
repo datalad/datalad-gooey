@@ -1,4 +1,3 @@
-from functools import lru_cache
 import logging
 from pathlib import Path
 from types import MappingProxyType
@@ -214,7 +213,12 @@ class GooeyFilesystemBrowser(QObject):
             # we do have this already, good occasion to update it
             target_item.update_from_lsdir_result(res)
 
-    @lru_cache(maxsize=1000)
+    # Not using a cache ATM, because on big trees (30k> items) it has no
+    # measurable performance impact. On top of that, cache invalidation
+    # is an issue, as the cache would need to be invalidated on every
+    # `_inspect_changed_dir()` or `set_root()`, as otherwise references
+    # to deleted items will be returned
+    #@lru_cache(maxsize=1000)
     def _get_item_from_path(self, path: Path, root: FSBrowserItem = None):
         # this is a key function in terms of result UI snappiness
         # it must be as fast as anyhow possible
