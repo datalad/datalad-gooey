@@ -2,7 +2,6 @@ import logging
 import os
 import platform
 import sys
-from tempfile import NamedTemporaryFile
 from types import MappingProxyType
 from typing import cast
 from os import environ
