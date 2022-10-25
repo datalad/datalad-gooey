@@ -2,7 +2,7 @@
 
 - New "metadata" tab to set and manipulate git-annex metadata, with support
   for immediate validation.
-- New "history" tab for providing a quick, location-constraint, overview of
+- New "history" tab for providing a quick, location-constrained, overview of
   past dataset changes.
 - New dialog for credential management. Set, modify, and delete credentials
   or individual properties. The dialog also makes "prospective" credentials
@@ -20,7 +20,7 @@
 - The directory tree browser can now be refreshed manually, too.
 - A user's Git identity can now be configured in a dedicated dialog. If
   undefined, the app automatically prompts for this information.
-- Content of text files dropped into the "message" parameter input is not
+- Content of text files dropped into the "message" parameter input is now
   put into the message, rather than an unhelpful file:// URL to the local
   text file.
 - Expand scope and depth of the documentation, including a new chapter on
