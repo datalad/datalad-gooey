@@ -44,6 +44,7 @@ from datalad.utils import chpwd
 
 from .utils import (
     load_ui,
+    open_terminal_at_path,
     render_cmd_call,
 )
 from .datalad_ui import GooeyUI
@@ -381,6 +382,13 @@ class GooeyApp(QObject):
             os.system(f'open "{path}"')
         elif platform_name == 'Windows':
             os.startfile(str(path))
+
+    def _open_terminal(self):
+        """Private slot to open a terminal at the given location"""
+        act = self.sender()
+        if not act:
+            return
+        open_terminal_at_path(act.data())
 
     def _populate_datalad_menu(self):
         """Private slot to populate connected QMenus with dataset actions"""
