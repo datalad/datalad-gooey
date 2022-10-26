@@ -205,6 +205,7 @@ def _run_git(cwd, cmd):
         cmd,
         cwd=cwd,
         protocol=StdOutCapture,
+        encoding="utf-8"
     )
     return out
 
