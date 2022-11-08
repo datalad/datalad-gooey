@@ -68,5 +68,5 @@ Installing on macOS
 
 .. _virtualenv: https://virtualenv.pypa.io/en/latest/
 .. _datalad: https://github.com/datalad/datalad
-.. _installer: https://github.com/christian-monch/datalad-gooey-windows-installer/releases
+.. _installer: https://github.com/datalad/datalad-gooey/releases
 .. _DataLad Handbook: https://handbook.datalad.org/en/latest/intro/installation.html

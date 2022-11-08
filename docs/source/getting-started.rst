@@ -3,7 +3,8 @@ Getting started
 
 This section walks through the first steps to take when using ``DataLad Gooey`` and describes its main pieces and functions.
 
-In order to start up ``DataLad Gooey``, double-click the program's icon on your Desktop or in your Explorer if you are on Windows, find it in your Applications folder if you are on Mac, or among your Desktop files if you are using Linux [#f1]_. An initial dialog let's you select a base directory.
+In order to start up ``DataLad Gooey``, double-click the program's icon on your Desktop or in your Explorer if you are on Windows, find it among your Desktop files if you are using Linux, or launch it from the Terminal if you are on Mac [#f1]_.
+An initial dialog lets you select a base directory.
 Navigate to any directory you would like to open up, select it, and click ``Select Folder``.
 
 .. image:: _static/start_location_selection.png
@@ -141,6 +142,6 @@ The ``Help`` menu contains a range of actions to find additional information or 
 ``Diagnostic infos`` will create a report about the details of your installation and system that you can copy-paste into such issues.
 
 
-.. [#f1] If you used ``pip`` to install ``datalad gooey`` you can also start it up from the command line, running ``datalad gooey``. The optional ``--path`` argument lets you specify the root directory.
+.. [#f1] Regardless of the operating system you are using, if you used ``pip`` to install ``datalad gooey`` you can also start it up from the command line, running ``datalad gooey``. The optional ``--path`` argument lets you specify the root directory.
 
 .. [#f2] Windows users may not automatically see underlined letters. To make them visible, press the ``Alt`` key. Mac users won't see underlined letters as it would violate the guidelines of macOS graphical user interface `aqua <https://en.wikipedia.org/wiki/Aqua_%28user_interface%29>`_.
