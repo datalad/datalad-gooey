@@ -37,16 +37,14 @@ from .constraints import (
     EnsureDatasetSiblingName,
     EnsureNone,
     EnsureIterableOf,
-    EnsureListOf,
     EnsureDataset,
-    CoreEnsureDataset,
     EnsureConfigProcedureName,
     EnsurePath,
     EnsureInt,
     EnsureRange,
     EnsureCredentialName,
     EnsureStr,
-    NoConstraint,
+    EnsureParameterConstraint,
 )
 
 __all__ = ['populate_form_w_params']
@@ -169,82 +167,20 @@ def _get_comprehensive_constraint(
         default: Any,
         param_spec: Parameter,
         cmd_api_spec: Dict):
-    action = param_spec.cmd_kwargs.get('action')
-    # definitive per-item constraint, consider override from API
-    # otherwise fall back on Parameter.constraints
-    constraint = cmd_api_spec['parameter_constraints'][pname] \
-        if pname in cmd_api_spec.get('parameter_constraints', []) \
-        else override_constraint_by_param_name.get(
-            pname,
-            param_spec.constraints)
-
-    if not constraint:
-        if action in ('store_true', 'store_false'):
-            constraint = EnsureBool()
-        elif param_spec.cmd_kwargs.get('choices'):
-            constraint = EnsureChoice(*param_spec.cmd_kwargs.get('choices'))
-        else:
-            # always have one for simplicity
-            constraint = NoConstraint()
-
-    # we must addtionally consider the following nargs spec for
-    # a complete constraint specification
-    # (int, '*', '+'), plus action=
-    # - 'store_const' TODO
-    # - 'store_true' and 'store_false' TODO
-    # - 'append'
-    # - 'append_const' TODO
-    # - 'count' TODO
-    # - 'extend' TODO
-
-    # get the definitive argparse "nargs" value
-    nargs = None
-    if pname in cmd_api_spec.get('parameter_nargs', []):
-        # take as gospel
-        nargs = cmd_api_spec['parameter_nargs'][pname]
-    else:
-        # fall back on Parameter attribute
-        nargs = param_spec.cmd_kwargs.get('nargs', None)
-        try:
-            nargs = int(nargs)
-        except (ValueError, TypeError):
-            pass
-
-    # TODO reconsider using `list`, with no length-check it could
-    # be a generator
-    if isinstance(nargs, int):
-        # sequence of a particular length
-        constraint = EnsureIterableOf(
-            list, constraint, min_len=nargs, max_len=nargs)
-    elif nargs == '*':
-        # datalad expects things often/always to also work for a single item
-        constraint = EnsureIterableOf(list, constraint) | constraint
-    elif nargs == '+':
-        # sequence of at least 1 item, always a sequence,
-        # but again datalad expects things often/always to also work for
-        # a single item
-        constraint = EnsureIterableOf(
-            list, constraint, min_len=1) | constraint
-    # handling of `default` and `const` would be here
-    #elif nargs == '?'
-
-    if action == 'append':
-        # wrap into a(nother) sequence
-        # (think: list of 2-tuples, etc.
-        constraint = EnsureIterableOf(list, constraint)
-
-    # lastly try to validate the default, if that fails
-    # wrap into alternative
-    try:
-        constraint(default)
-    except Exception:
-        # should be this TODO
-        #constraint = constraint | EnsureValue(default)
-        # for now
-        if default is None:
-            constraint = constraint | EnsureNone()
-
-    return constraint
+    return EnsureParameterConstraint.from_parameter(
+        param_spec,
+        default,
+        # definitive per-item constraint, consider override from API
+        # otherwise fall back on Parameter.constraints
+        item_constraint=cmd_api_spec['parameter_constraints'][pname]
+        if pname in cmd_api_spec.get('parameter_constraints', [])
+        else override_constraint_by_param_name.get(pname),
+        nargs=cmd_api_spec.get('parameter_nargs', {}).get(pname),
+    ).parameter_constraint
+    # TODO at some point, return the full EnsureParameterConstraint
+    # and also validate the pname with it. this would need the validation
+    # in Parameter.set() to also consider (and pass) the name, or to
+    # access the .parameter_constraint property specifically
 
 
 def _get_parameter(
