@@ -1,11 +1,6 @@
 import logging
-# ensure the next patch-set
-import datalad_next
 
-# later
-#from datalad.core.distributed import clone as mod_clone
-# but for now
-from datalad_next.patches import clone as mod_clone
+from datalad.core.distributed import clone as mod_clone
 
 lgr = logging.getLogger('datalad.core.distributed.clone')
 
