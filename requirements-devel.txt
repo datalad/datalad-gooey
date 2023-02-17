@@ -6,3 +6,4 @@ pytest-xvfb
 coverage
 sphinx
 sphinx_rtd_theme
+git+https://github.com/mih/datalad-next.git@validation#egg=datalad_next
