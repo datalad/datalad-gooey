@@ -21,7 +21,7 @@ from datalad_next.constraints import (
     EnsureRange,
     NoConstraint,
 )
-from datalad_next.constraints.parameter import EnsureParameterConstraint
+from datalad_next.constraints.parameter_legacy import EnsureParameterConstraint
 from datalad.distribution.dataset import EnsureDataset as CoreEnsureDataset
 from datalad.distribution.dataset import (
     Dataset,
