@@ -7,11 +7,13 @@ import stat
 import logging
 from pathlib import Path
 
-from datalad.interface.base import Interface
-from datalad.interface.base import build_doc
+from datalad.interface.base import (
+    Interface,
+    build_doc,
+    eval_results,
+)
 from datalad.support.param import Parameter
 from datalad.support.exceptions import CapturedException
-from datalad.interface.utils import eval_results
 from datalad.interface.results import get_status_dict
 
 from datalad.runner import (
