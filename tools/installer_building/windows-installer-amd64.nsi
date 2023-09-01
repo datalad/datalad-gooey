@@ -1,7 +1,8 @@
 Name "Datalad Gooey"
 
-Outfile "datalad-gooey-installer-amd64.exe"
 RequestExecutionLevel user
+
+Outfile "datalad-gooey-installer-amd64.exe"
 
 Var GOOEYTEMP
 
