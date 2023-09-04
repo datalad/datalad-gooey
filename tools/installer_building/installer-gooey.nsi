@@ -1,17 +1,3 @@
-Name "Datalad Gooey"
-
-RequestExecutionLevel user
-
-Outfile "datalad-gooey-installer-amd64.exe"
-
-Var GOOEYTEMP
-
-
-Section "Initialize"
-    StrCpy $GOOEYTEMP "$TEMP\datalad-gooey-installer-Wlkfd983e"
-    RMDir /r "$GOOEYTEMP"
-SectionEnd
-
 Section "Python 3.9"
     StrCpy $INSTDIR "$LOCALAPPDATA\datalad.org\datalad-gooey"
     SetOutPath "$INSTDIR\python39"
