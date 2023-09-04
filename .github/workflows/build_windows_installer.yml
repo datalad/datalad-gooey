@@ -49,7 +49,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ env.upload_url }}
-          asset_path: tools\installer_building\windows-installer-amd64.exe
+          asset_path: tools\installer_building\datalad-gooey-installer-amd64.exe
           asset_name: datalad-gooey-${{ env.build_id }}-installer-amd64.exe
           asset_content_type: application/vnd.microsoft.portable-executable
 
@@ -59,6 +59,6 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         with:
           upload_url: ${{ env.upload_url }}
-          asset_path: tools\installer_building\windows-installer-gooey-only-amd64.exe
+          asset_path: tools\installer_building\datalad-gooey-installer-gooey-only-amd64.exe
           asset_name: datalad-gooey-${{ env.build_id }}-installer-gooey-only-amd64.exe
           asset_content_type: application/vnd.microsoft.portable-executable
