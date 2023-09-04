@@ -87,7 +87,10 @@ Invoke-WebRequest -UseBasicParsing 'https://downloads.kitenet.net/git-annex/wind
 
 # Copy the installer scripts to the temp directory so it can be run in this environment
 # (there may be other ways to ensure correctness of relative paths)
-Copy-Item $start_dir\*.nsi .
+Copy-Item $start_dir\installer-init.nsi .
+Copy-Item $start_dir\installer-gooey.nsi .
+Copy-Item $start_dir\windows-installer-amd64.nsi .
+Copy-Item $start_dir\windows-installer-gooey-only-amd64.nsi .
 
 # Create the installer
 makensis windows-installer-amd64.nsi
