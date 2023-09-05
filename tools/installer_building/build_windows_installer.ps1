@@ -80,7 +80,7 @@ Copy-Item $start_dir\resources\datalad.ico ${sources_dir}
 Copy-Item $start_dir\resources\run_gooey.ps1 ${sources_dir}
 
 # Fetch git for windows installer
-Invoke-WebRequest -UseBasicParsing 'https://github.com/git-for-windows/git/releases/download/v2.37.3.windows.1/Git-2.37.3-64-bit.exe' -OutFile ${sources_dir}\git-64-bit.exe
+Invoke-WebRequest -UseBasicParsing 'https://github.com/git-for-windows/git/releases/download/v2.42.0.windows.2/Git-2.42.0.2-64-bit.exe' -OutFile ${sources_dir}\git-64-bit.exe
 
 # Fetch git annex for windows
 Invoke-WebRequest -UseBasicParsing 'https://downloads.kitenet.net/git-annex/windows/current/git-annex-installer.exe' -OutFile ${sources_dir}\git-annex-64-bit.exe
