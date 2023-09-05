@@ -1,5 +1,3 @@
-RequestExecutionLevel user
-
 Var GOOEYTEMP
 
 Section "Initialize"

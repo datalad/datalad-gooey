@@ -2,6 +2,8 @@ Name "Datalad Gooey"
 
 Outfile "datalad-gooey-installer-amd64.exe"
 
+RequestExecutionLevel admin
+
 !include installer-init.nsi
 
 Section "git"
