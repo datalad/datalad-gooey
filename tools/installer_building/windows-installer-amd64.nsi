@@ -11,7 +11,7 @@ Section "git"
 SectionEnd
 
 Section "git-annex"
-    SetOutPath "$GOOEYTEMP"
+    SetOutPath "$GOOEYTEMP\"
     File /r "sources\git-annex-64-bit.exe"
     ExecWait "$GOOEYTEMP\git-annex-64-bit.exe"
 SectionEnd
