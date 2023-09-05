@@ -37,6 +37,11 @@ will only install ``datalad-gooey``. It can be executed as admin user or as
 non-admin user. If you use the gooey-only installer, ``git`` and ``git-annex`` have
 to be provided by other means, e.g. an administrator installs them.
 
+Note: if the full installer is executed and the system has already a newer
+version of ``git`` or ``git-annex`` installed, the ``git`` or
+``git-annex``-installer can be canceled and installation of the remaining
+components will continue.
+
 The installers can be downloaded `here`_.
 
 
