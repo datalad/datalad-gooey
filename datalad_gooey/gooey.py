@@ -77,6 +77,10 @@ class Gooey(Interface):
             perform_post_install_tasks()
             return
 
+        # must set this flag to make Qt WebEngine initialize properly
+        from PySide6 import QtCore, QtQuick
+        QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
+        QtQuick.QQuickWindow.setGraphicsApi(QtQuick.QSGRendererInterface.OpenGL)
         qtapp = QApplication(sys.argv)
         gooey = GooeyApp(path)
         gooey.main_window.show()
