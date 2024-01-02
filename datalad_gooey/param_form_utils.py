@@ -32,6 +32,7 @@ from .api_utils import (
 from .utils import _NoValue
 from .constraints import (
     AltConstraints,
+    ConstraintWithPassthrough,
     EnsureBool,
     EnsureExistingDirectory,
     EnsureDatasetSiblingName,
@@ -212,6 +213,12 @@ def _get_parameter(
 
     # if we have no idea, use a simple line edit
     type_widget = pw.StrParameter
+
+    if isinstance(constraint, ConstraintWithPassthrough):
+        # to make proper constraint identification below work, get the
+        # internal constraint:
+        constraint = constraint.constraint
+
     ### now some parameters where we can derive semantics from their name
     if isinstance(constraint, EnsureDataset) \
             or isinstance(constraint, EnsureExistingDirectory):

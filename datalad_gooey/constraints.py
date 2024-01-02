@@ -22,6 +22,7 @@ from datalad_next.constraints import (
     NoConstraint,
 )
 from datalad_next.constraints.parameter_legacy import EnsureParameterConstraint
+from datalad_next.constraints.compound import ConstraintWithPassthrough
 from datalad.distribution.dataset import EnsureDataset as CoreEnsureDataset
 from datalad.distribution.dataset import (
     Dataset,
