@@ -29,11 +29,20 @@ use a dedicated `virtualenv`_:
 Installing on Windows
 ---------------------
 
-Download and run the `installer`_. Follow the prompts to complete the setup.
+The current version of ``datalad-gooey`` comes with two installers, a full installer
+and a gooey-only installer. The full
+installer will install ``datalad-gooey`` as well as  ``git`` and ``git-annex``.
+it requires admin privileges to execute successfully. The gooey-only installer
+will only install ``datalad-gooey``. It can be executed as admin user or as
+non-admin user. If you use the gooey-only installer, ``git`` and ``git-annex`` have
+to be provided by other means, e.g. an administrator installs them.
 
-The installer comes with ``git`` and ``git-annex`` installers. If you have
-``git`` and ``git-annex`` already installed, just quit the ``git`` and
-``git-annex`` installers when they are executed.
+Note: if the full installer is executed and the system has already a newer
+version of ``git`` or ``git-annex`` installed, the ``git`` or
+``git-annex``-installer can be canceled and installation of the remaining
+components will continue.
+
+The installers can be downloaded `here`_.
 
 
 Installing on Linux
@@ -68,5 +77,5 @@ Installing on macOS
 
 .. _virtualenv: https://virtualenv.pypa.io/en/latest/
 .. _datalad: https://github.com/datalad/datalad
-.. _installer: https://github.com/datalad/datalad-gooey/releases
+.. _here: https://github.com/datalad/datalad-gooey/releases
 .. _DataLad Handbook: https://handbook.datalad.org/en/latest/intro/installation.html
