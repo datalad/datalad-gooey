@@ -8,10 +8,12 @@ from pathlib import (
     PurePosixPath,
 )
 
-from datalad.interface.base import Interface
-from datalad.interface.base import build_doc
+from datalad.interface.base import (
+    Interface,
+    build_doc,
+    eval_results,
+)
 from datalad.support.param import Parameter
-from datalad.interface.utils import eval_results
 from datalad.dataset.gitrepo import GitRepo
 from datalad.distribution.dataset import (
     EnsureDataset,

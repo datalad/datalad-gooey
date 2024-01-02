@@ -544,7 +544,7 @@ class EnsureCredentialName(EnsureChoice):
         return EnsureChoice(*self._get_choices_(dataset))
 
     def _get_choices_(self, dataset: Dataset = None):
-        from datalad_next.utils.credman import CredentialManager
+        from datalad_next.credman import CredentialManager
         cfgman = dataset.config if dataset else dlcfg
         credman = CredentialManager(cfgman)
         for i in credman.query():
