@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
     QToolButton,
 )
 
-from datalad_next.utils.credman import CredentialManager
+from datalad_next.credman import CredentialManager
 
 from .utils import (
     load_ui,
