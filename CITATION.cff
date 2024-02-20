@@ -1,0 +1,53 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: datalad-gooey
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Michael
+    family-names: Hanke
+    orcid: 'https://orcid.org/0000-0001-6398-6370'
+  - given-names: Yaroslav O.
+    family-names: Halchenko
+    orcid: 'https://orcid.org/0000-0003-3456-2493'
+  - given-names: Christopher
+    family-names: Markiewicz
+    orcid: 'https://orcid.org/0000-0002-6533-164X'
+  - given-names: Adina S.
+    family-names: Wagner
+    orcid: 'https://orcid.org/0000-0003-2917-3450'
+  - given-names: John T.
+    family-names: Wodder
+  - given-names: Benjamin
+    family-names: Poldrack
+  - given-names: Stephan
+    family-names: Heunis
+    orcid: 'https://orcid.org/0000-0003-3503-9872'
+  - given-names: Michał
+    family-names: Szczepanik
+    orcid: 'https://orcid.org/0000-0002-4028-2087'
+  - given-names: Alex Q.
+    family-names: Waite
+  - given-names: Leonardo
+    family-names: Muller-Rodriguez
+    orcid: 'https://orcid.org/0000-0002-9188-8003'
+  - given-names: Laura K.
+    family-names: Waite
+  - given-names: Christian
+    family-names: Mönch
+repository-code: 'https://github.com/datalad/datalad-gooey'
+url: 'http://docs.datalad.org/projects/gooey'
+abstract: >-
+  DataLad Gooey is a Graphical User Interface (GUI) for
+  using DataLad, a free and open source distributed data
+  management tool. DataLad Gooey is compatible with all
+  major operating systems and allows access to DataLad's
+  operations via both a simplified and complete suite.
+license: MIT
+commit: 3254c4c
+version: 0.2.0
+date-released: '2022-10-25'
